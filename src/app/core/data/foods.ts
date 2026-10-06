@@ -1,0 +1,48 @@
+import { Food } from '../models';
+
+export const FOODS: Record<string, Food> = {
+  egg: { name: 'Yumurta', unit: 'ədəd', k: 78, p: 6.3, c: 0.6, f: 5.3, role: 'protein', step: 1, min: 1, max: 4 },
+  eggwhite: { name: 'Yumurta ağı', unit: 'ədəd', k: 17, p: 3.6, c: 0.2, f: 0.1, role: 'protein', step: 1, min: 1, max: 6 },
+  chicken: { name: 'Toyuq döşü (bişmiş)', unit: 'q', k: 165, p: 31, c: 0, f: 3.6, role: 'protein', step: 20, min: 80, max: 250 },
+  thigh: { name: 'Toyuq budu, dərisiz (bişmiş)', unit: 'q', k: 177, p: 24, c: 0, f: 8.5, role: 'protein', step: 20, min: 80, max: 220 },
+  beef: { name: 'Mal əti, yağsız (bişmiş)', unit: 'q', k: 190, p: 27, c: 0, f: 8.5, role: 'protein', step: 20, min: 80, max: 220, alt: 'chicken' },
+  fish: { name: 'Ağ balıq — xek/sudak (bişmiş)', unit: 'q', k: 105, p: 22, c: 0, f: 1.5, role: 'protein', step: 25, min: 100, max: 300 },
+  tuna: { name: 'Tuna konservi (öz suyunda)', unit: 'q', k: 116, p: 26, c: 0, f: 1, role: 'protein', step: 20, min: 80, max: 200, alt: 'chicken' },
+  cottage: { name: 'Kəsmik (2–5%)', unit: 'q', k: 110, p: 17, c: 3, f: 3.5, role: 'protein', bloat: 1, step: 25, min: 100, max: 300, alt: 'eggwhite' },
+  yogurt: { name: 'Qatıq (2.5%)', unit: 'q', k: 60, p: 3.3, c: 4.5, f: 2.5, role: 'dairy', bloat: 1, step: 50, min: 100, max: 300, alt: 'kefir' },
+  kefir: { name: 'Kefir (1%)', unit: 'q', k: 40, p: 3.4, c: 4.7, f: 1, role: 'dairy', bloat: 1, step: 50, min: 150, max: 400, alt: 'yogurt' },
+  milk: { name: 'Süd (2.5%)', unit: 'q', k: 52, p: 3, c: 4.7, f: 2.5, role: 'dairy', bloat: 2, step: 50, min: 100, max: 300, alt: 'kefir' },
+  cheese: { name: 'Ağ pendir (az duzlu)', unit: 'q', k: 260, p: 17, c: 1, f: 21, role: 'fat', step: 10, min: 10, max: 40 },
+  oats: { name: 'Yulaf (quru)', unit: 'q', k: 379, p: 13, c: 67, f: 6.5, role: 'carb', bloat: 1, step: 10, min: 40, max: 100, alt: 'buckwheat' },
+  rice: { name: 'Düyü (bişmiş)', unit: 'q', k: 130, p: 2.7, c: 28, f: 0.3, role: 'carb', step: 25, min: 100, max: 350 },
+  potato: { name: 'Kartof (qaynadılmış/sobada)', unit: 'q', k: 87, p: 1.9, c: 20, f: 0.1, role: 'carb', step: 50, min: 150, max: 400 },
+  buckwheat: { name: 'Qarabaşaq (bişmiş)', unit: 'q', k: 92, p: 3.4, c: 20, f: 0.6, role: 'carb', step: 25, min: 100, max: 300 },
+  pasta: { name: 'Makaron, bərk buğda (bişmiş)', unit: 'q', k: 158, p: 5.8, c: 31, f: 0.9, role: 'carb', bloat: 1, step: 25, min: 100, max: 280, alt: 'rice' },
+  bulgur: { name: 'Bulqur (bişmiş)', unit: 'q', k: 83, p: 3.1, c: 18.6, f: 0.2, role: 'carb', bloat: 1, step: 25, min: 100, max: 300, alt: 'rice' },
+  bread: { name: 'Tam taxıl çörək', unit: 'q', k: 247, p: 13, c: 41, f: 3.4, role: 'carb', bloat: 1, step: 20, min: 40, max: 120, alt: 'potato' },
+  lavash: { name: 'Lavaş (nazik)', unit: 'q', k: 275, p: 9, c: 56, f: 1.2, role: 'carb', bloat: 1, step: 10, min: 40, max: 100, alt: 'potato' },
+  banana: { name: 'Banan', unit: 'ədəd', k: 105, p: 1.3, c: 27, f: 0.4, role: 'fruit', step: 1, min: 1, max: 2 },
+  apple: { name: 'Alma', unit: 'ədəd', k: 95, p: 0.5, c: 25, f: 0.3, role: 'fruit', bloat: 2, step: 1, min: 1, max: 1, alt: 'kiwi' },
+  kiwi: { name: 'Kivi', unit: 'ədəd', k: 42, p: 0.8, c: 10, f: 0.4, role: 'fruit', step: 1, min: 1, max: 3 },
+  orange: { name: 'Portağal', unit: 'ədəd', k: 62, p: 1.2, c: 15, f: 0.2, role: 'fruit', step: 1, min: 1, max: 2, alt: 'kiwi' },
+  berries: { name: 'Giləmeyvə (çiyələk/moruq)', unit: 'q', k: 32, p: 0.7, c: 7.7, f: 0.3, role: 'fruit', step: 50, min: 50, max: 200 },
+  dates: { name: 'Xurma', unit: 'q', k: 282, p: 2.5, c: 75, f: 0.4, role: 'carb', bloat: 1, step: 10, min: 20, max: 60, alt: 'honey' },
+  honey: { name: 'Bal', unit: 'q', k: 304, p: 0.3, c: 82, f: 0, role: 'carb', step: 5, min: 5, max: 25 },
+  almond: { name: 'Badam', unit: 'q', k: 579, p: 21, c: 22, f: 50, role: 'fat', step: 5, min: 10, max: 30, alt: 'walnut' },
+  walnut: { name: 'Qoz', unit: 'q', k: 654, p: 15, c: 14, f: 65, role: 'fat', step: 5, min: 10, max: 25, alt: 'almond' },
+  hazelnut: { name: 'Fındıq', unit: 'q', k: 628, p: 15, c: 17, f: 61, role: 'fat', step: 5, min: 10, max: 25, alt: 'almond' },
+  oil: { name: 'Zeytun yağı', unit: 'q', k: 884, p: 0, c: 0, f: 100, role: 'fat', step: 5, min: 5, max: 15 },
+  salad: { name: 'Xiyar + pomidor + göyərti salatı', unit: 'q', k: 18, p: 0.9, c: 3.6, f: 0.2, role: 'veg', step: 50, min: 100, max: 250 },
+  vegs: { name: 'Bişmiş tərəvəz (balqabaq, yerkökü, kabak)', unit: 'q', k: 35, p: 1.2, c: 7, f: 0.3, role: 'veg', step: 50, min: 100, max: 250 },
+  broccoli: { name: 'Brokoli / gül kələm', unit: 'q', k: 35, p: 2.4, c: 7, f: 0.4, role: 'veg', bloat: 2, step: 50, min: 100, max: 200, alt: 'vegs' },
+  lentil: { name: 'Mərci (bişmiş)', unit: 'q', k: 116, p: 9, c: 20, f: 0.4, role: 'carb', bloat: 3, step: 25, min: 100, max: 200, alt: 'buckwheat' },
+  pb: { name: 'Fıstıq pastası (şəkərsiz)', unit: 'q', k: 588, p: 25, c: 20, f: 50, role: 'fat', step: 5, min: 10, max: 20, alt: 'almond' },
+  whey: { name: 'Whey protein (1 ölçü ≈ 30 q)', unit: 'ölçü', k: 120, p: 24, c: 3, f: 1.5, role: 'supp', step: 1, min: 1, max: 2 },
+};
+
+export const FOOD_IDS = Object.keys(FOODS);
+
+export const foodShort = (id: string): string => {
+  const f = FOODS[id];
+  return f ? f.name.split(' (')[0].split(',')[0] : id.replace(/^x:/, '');
+};
