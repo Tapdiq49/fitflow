@@ -1,5 +1,9 @@
 import { MealItem, SlotId, TrainerMeal, WeekPlan } from '../models';
 
+/** Trainer exercise ids start with this prefix so they never clash with the built-in program's ids. */
+export const TRAINER_EX_PREFIX = 't:';
+export const trainerExId = (name: string): string => TRAINER_EX_PREFIX + name.trim().toLowerCase().replace(/\s+/g, ' ');
+
 /** The trainer's slots in day order with their default times. */
 export const TRAINER_SLOTS: ReadonlyArray<{ slot: SlotId; time: string }> = [
   { slot: 'breakfast', time: '08:00' },

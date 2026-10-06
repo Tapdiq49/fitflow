@@ -21,8 +21,8 @@ import { TypeBadgeComponent } from '../../shared/type-badge.component';
   template: `
     <div class="mb-5 flex flex-wrap items-start justify-between gap-5">
       <div>
-        <div class="eyebrow">{{ ui.isToday() ? 'BUGÜN' : 'SEÇİLMİŞ GÜN' }} · {{ F.long(k()) }}</div>
-        <h1 class="mt-1.5 mb-2.5 text-[length:clamp(24px,3.4vw,36px)] font-extrabold tracking-[-.03em]">BU GÜN NƏ ETMƏLİSƏN?</h1>
+        <div class="eyebrow">{{ eyebrow() }} · {{ F.long(k()) }}</div>
+        <h1 class="mt-1.5 mb-2.5 text-[length:clamp(24px,3.4vw,36px)] font-extrabold tracking-[-.03em]">{{ heading() }}</h1>
         <div class="flex flex-wrap items-center gap-2">
           <app-type-badge [date]="k()" />
           <span class="badge"><app-icon name="target" size="sm" />Həftə {{ phase().wk }} · {{ phase().name }}</span>
@@ -100,6 +100,10 @@ export class TodayHeroComponent {
   private readonly workout = inject(WorkoutService);
 
   protected readonly k = this.ui.viewDate;
+  /** Past, today or future relative to the selected day. */
+  private readonly when = computed(() => (this.k() < this.ui.today() ? 'past' : this.k() > this.ui.today() ? 'future' : 'today'));
+  protected readonly eyebrow = computed(() => ({ past: 'KEÇMİŞ GÜN', today: 'BUGÜN', future: 'GƏLƏCƏK GÜN' })[this.when()]);
+  protected readonly heading = computed(() => ({ past: 'O GÜN NƏ ETMİŞDİN?', today: 'BU GÜN NƏ ETMƏLİSƏN?', future: 'O GÜN NƏ ETMƏLİSƏN?' })[this.when()]);
   protected readonly s = this.store.settings;
   protected readonly items = computed(() => this.day.timeline(this.k()));
   protected readonly score = computed(() => this.day.score(this.k()) ?? 0);

@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { Router } from '@angular/router';
 import { SLOTS } from '../../core/data/meals';
-import { EXERCISES, PROGRAM } from '../../core/data/program';
 import { Meal } from '../../core/models';
 import { mealMacros, menuTotals, sleepMinutes } from '../../core/nutrition';
 import { DayService } from '../../core/services/day.service';
@@ -13,7 +12,7 @@ import { F } from '../../core/utils';
 import { ModalComponent } from '../../shared/modal.component';
 import { TypeBadgeComponent } from '../../shared/type-badge.component';
 
-/** Calendar day details: meals, workout, cardio, water, weight, sleep, bloating. */
+/** Calendar day details: meals, workout, cardio, water, weight, sleep. */
 @Component({
   selector: 'app-day-detail-dialog',
   imports: [ModalComponent, TypeBadgeComponent],
@@ -49,7 +48,7 @@ import { TypeBadgeComponent } from '../../shared/type-badge.component';
         @for (x of logged(); track x.id) {
           <div class="kv"><span>{{ x.name }}</span><b>{{ x.sets }}</b></div>
         } @empty {
-          <div class="kv"><span>Plan</span><b>FULL BODY {{ program.variant(date()) }} — qeyd yoxdur</b></div>
+          <div class="kv"><span>Plan</span><b>{{ workout.title(date()) }} — qeyd yoxdur</b></div>
         }
       } @else {
         <div class="kv"><span>Zal</span><b>Yoxdur</b></div>
@@ -63,7 +62,6 @@ import { TypeBadgeComponent } from '../../shared/type-badge.component';
       @if (store.settings().showCreatine) {
         <div class="kv"><span>Kreatin</span><b>{{ record()?.creatine ? '✓' : '—' }}</b></div>
       }
-      <div class="kv"><span>Köp</span><b>{{ bloatText() }}</b></div>
 
       <div class="mt-[18px] flex justify-end gap-2">
         <button class="btn" (click)="close()">Bağla</button>
@@ -81,7 +79,7 @@ export class DayDetailDialog {
   protected readonly program = inject(ProgramService);
   protected readonly store = inject(StoreService);
   private readonly day = inject(DayService);
-  private readonly workout = inject(WorkoutService);
+  protected readonly workout = inject(WorkoutService);
   private readonly router = inject(Router);
 
   protected readonly record = computed(() => this.store.state().days[this.date()] ?? null);
@@ -94,10 +92,10 @@ export class DayDetailDialog {
 
   protected readonly logged = computed(() => {
     const h = this.store.state().history;
-    return [...PROGRAM.A, ...PROGRAM.B]
-      .map((id) => ({ id, e: (h[id] ?? []).find((x) => x.date === this.date()) }))
+    return Object.keys(h)
+      .map((id) => ({ id, e: h[id].find((x) => x.date === this.date()) }))
       .filter((x) => x.e)
-      .map((x) => ({ id: x.id, name: EXERCISES[x.id].name, sets: this.workout.lastStr(x.e ?? null, EXERCISES[x.id]) }));
+      .map((x) => ({ id: x.id, name: this.workout.defOf(x.id).name, sets: this.workout.lastStr(x.e ?? null, this.workout.defOf(x.id)) }));
   });
 
   protected readonly cardioText = computed(() => {
@@ -111,15 +109,6 @@ export class DayDetailDialog {
     const w = this.store.state().weights.find((x) => x.date === this.date());
     return w ? `${F.kg(w.kg)} kq${w.waist ? ` · bel ${F.kg(w.waist)} sm` : ''}` : '—';
   });
-
-  protected readonly bloatText = computed(
-    () =>
-      this.store
-        .state()
-        .bloat.filter((e) => e.date === this.date())
-        .map((e) => `${e.level}/10`)
-        .join(', ') || '—',
-  );
 
   protected slotLabel(m: Meal): string {
     return SLOTS[m.slot]?.label ?? '';

@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { EXERCISES, PROGRAM } from '../../core/data/program';
 import { ProgramService } from '../../core/services/program.service';
 import { StoreService } from '../../core/services/store.service';
 import { UiService } from '../../core/services/ui.service';
@@ -14,9 +13,9 @@ import { IconComponent } from '../../shared/icon.component';
   host: { class: 'card' },
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    @if (variant(); as v) {
+    @if (variant()) {
       <div class="card-head">
-        <h3><app-icon name="dumbbell" /> Today's Workout — FULL BODY {{ v }}</h3>
+        <h3><app-icon name="dumbbell" /> Today's Workout — {{ workout.title(ui.viewDate()) }}</h3>
         @if (log().savedAt) {
           <span class="badge badge-training"><app-icon name="check" size="sm" />Tamamlandı</span>
         } @else {
@@ -33,7 +32,9 @@ import { IconComponent } from '../../shared/icon.component';
           </div>
         }
       </div>
-      <p class="text-muted" style="margin: 12px 0 0; font-size: 12px">Sağdakı rəqəm — progressive overload-a görə tövsiyə olunan çəki.</p>
+      <p class="text-muted" style="margin: 12px 0 0; font-size: 12px">
+        {{ workout.isTrainer() ? 'Sağdakı rəqəm — keçən məşqdəki çəki və təkrar.' : 'Sağdakı rəqəm — progressive overload-a görə tövsiyə olunan çəki.' }}
+      </p>
     } @else {
       <div class="card-head"><h3><app-icon name="dumbbell" /> Today's Workout</h3></div>
       <div class="empty">
@@ -43,9 +44,9 @@ import { IconComponent } from '../../shared/icon.component';
   `,
 })
 export class WorkoutSummaryComponent {
-  private readonly ui = inject(UiService);
+  protected readonly ui = inject(UiService);
   private readonly program = inject(ProgramService);
-  private readonly workout = inject(WorkoutService);
+  protected readonly workout = inject(WorkoutService);
   private readonly store = inject(StoreService);
   private readonly router = inject(Router);
 
@@ -58,21 +59,21 @@ export class WorkoutSummaryComponent {
     const v = this.variant();
     const k = this.ui.viewDate();
     if (!v) return [];
-    return PROGRAM[v].map((id) => {
-      const ex = EXERCISES[id];
+    return this.workout.exercises(k).map(({ id, ex }) => {
       const rec = this.workout.recommend(id, k);
+      const trainer = this.workout.isTrainer();
       return {
         id,
         name: ex.name,
         done: this.log().ex[id]?.done ?? false,
         target: `${ex.sets}×${ex.min}–${ex.max}${ex.kind === 'time' ? 's' : ''}`,
-        rec: rec.w != null ? `${F.kg(rec.w)} kq` : ex.kind === 'time' ? '—' : 'yeni',
+        rec: trainer ? this.workout.lastStr(rec.last, ex) : rec.w != null ? `${F.kg(rec.w)} kq` : ex.kind === 'time' ? '—' : 'yeni',
       };
     });
   });
   protected readonly nextLabel = computed(() => {
     const nt = this.program.nextTraining(this.ui.viewDate());
-    return nt ? `${AZ_DAYS[DateU.dow(nt) - 1]} — FULL BODY ${this.program.variant(nt)}` : '—';
+    return nt ? `${AZ_DAYS[DateU.dow(nt) - 1]} — ${this.workout.title(nt)}` : '—';
   });
 
   protected start(): void {

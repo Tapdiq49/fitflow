@@ -4,7 +4,6 @@ import { SLOTS, TEMPLATES } from '../data/meals';
 import { DayType, FoodRole, Meal, MealItem, MealTemplate, SlotId, TemplateKey } from '../models';
 import { itemMacros, menuTotals } from '../nutrition';
 import { DateU, clamp, fromMin, rnd, toMin, uid } from '../utils';
-import { BloatService } from './bloat.service';
 import { ProgramService } from './program.service';
 import { StoreService } from './store.service';
 import { TrainerPlanService } from './trainer-plan.service';
@@ -35,13 +34,12 @@ const EXTRAS: ReadonlyArray<readonly [string, number, RegExp]> = [
 /**
  * Builds a varied daily menu from meal templates and scales portions step by step
  * until calories and protein land in the target range. Every food has a portion cap,
- * so oversized (bloating) portions never appear.
+ * so oversized portions never appear.
  */
 @Injectable({ providedIn: 'root' })
 export class MenuService {
   private readonly store = inject(StoreService);
   private readonly program = inject(ProgramService);
-  private readonly bloat = inject(BloatService);
   private readonly plans = inject(TrainerPlanService);
 
   slotsFor(type: DayType, n: number): SlotId[] {
@@ -73,7 +71,6 @@ export class MenuService {
     const prevMenu = this.store.peek(DateU.add(k, -1))?.menu ?? [];
     const avoid = new Set([...prevMenu.map((m) => m.templateId), ...(opts.avoid ?? [])]);
     const prevMains = new Set(prevMenu.filter((m) => ['lunch', 'post', 'dinner'].includes(m.slot)).map((m) => m.main));
-    const triggers = this.bloat.triggers();
     const used = new Set(keep.map((m) => m.templateId));
     const usedMains = new Set(keep.map((m) => m.main).filter(Boolean));
     const meals: Meal[] = keep.map((m) => ({ ...m, locked: true }));
@@ -87,14 +84,11 @@ export class MenuService {
       const tpl = this.pick(cands, (t) => {
         let w = 1;
         if (t.main && (usedMains.has(t.main) || prevMains.has(t.main))) w *= 0.12;
-        const b = t.items.reduce((a, [f]) => a + (FOODS[f].bloat ?? 0), 0);
-        w *= 1 / (1 + b * 0.5);
-        if (t.items.some(([f]) => triggers.has(f))) w *= 0.25;
         return w;
       });
       used.add(tpl.id);
       if (tpl.main) usedMains.add(tpl.main);
-      meals.push(this.buildMeal(slot, tpl, type, triggers));
+      meals.push(this.buildMeal(slot, tpl, type));
     }
     meals.sort((a, b) => a.time.localeCompare(b.time));
     this.balance(meals);
@@ -121,7 +115,7 @@ export class MenuService {
     if (!cands.length) cands = pool.filter((t) => t.id !== m.templateId);
     if (!cands.length) return false;
     const tpl = this.pick(cands, (t) => (t.main && otherMains.has(t.main) ? 0.2 : 1));
-    const nm = this.buildMeal(m.slot, tpl, this.program.dayType(k), this.bloat.triggers());
+    const nm = this.buildMeal(m.slot, tpl, this.program.dayType(k));
     nm.time = m.time;
     menu.forEach((x) => (x.locked = x !== m));
     menu[menu.indexOf(m)] = nm;
@@ -192,7 +186,7 @@ export class MenuService {
     return slot === 'dinner' && slots.includes('post') ? pool.filter((t) => t.light) : pool;
   }
 
-  private buildMeal(slot: SlotId, tpl: MealTemplate, type: DayType, triggers: Set<string>): Meal {
+  private buildMeal(slot: SlotId, tpl: MealTemplate, type: DayType): Meal {
     return {
       id: uid(),
       slot,
@@ -201,21 +195,8 @@ export class MenuService {
       main: tpl.main ?? null,
       time: this.slotTime(slot, type),
       done: false,
-      items: tpl.items.map(([food, amt]) => this.substitute(food, amt, triggers)),
+      items: tpl.items.map(([food, amt]) => ({ food, amt, base: amt })),
     };
-  }
-
-  /** Swaps a personal trigger food for its alternative with roughly equal calories. */
-  private substitute(food: string, amt: number, triggers: Set<string>): MealItem {
-    const f = FOODS[food];
-    const alt = f.alt ? FOODS[f.alt] : undefined;
-    if (f.alt && alt && triggers.has(food) && !triggers.has(f.alt)) {
-      const kcal = itemMacros({ food, amt }).k;
-      const per = alt.unit === 'q' ? alt.k / 100 : alt.k;
-      const na = clamp(Math.round(kcal / per / alt.step) * alt.step, alt.min, alt.max);
-      return { food: f.alt, amt: na, base: na, swapped: food };
-    }
-    return { food, amt, base: amt };
   }
 
   private pick<T>(pool: T[], weight: (t: T) => number): T {

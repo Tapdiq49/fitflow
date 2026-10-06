@@ -3,6 +3,7 @@ import { DayService } from '../../core/services/day.service';
 import { ProgramService } from '../../core/services/program.service';
 import { StoreService } from '../../core/services/store.service';
 import { UiService } from '../../core/services/ui.service';
+import { WorkoutService } from '../../core/services/workout.service';
 import { AZ_DAYS_SHORT, AZ_MONTHS, DateU } from '../../core/utils';
 import { IconComponent } from '../../shared/icon.component';
 
@@ -65,6 +66,7 @@ export class CalendarPage {
   private readonly program = inject(ProgramService);
   private readonly store = inject(StoreService);
   private readonly day = inject(DayService);
+  private readonly workout = inject(WorkoutService);
 
   protected readonly month = signal(this.ui.viewDate().slice(0, 7));
   protected readonly title = computed(() => {
@@ -88,7 +90,7 @@ export class CalendarPage {
         day: DateU.parse(k).getDate(),
         out: DateU.parse(k).getMonth() !== m,
         today: k === this.ui.today(),
-        tag: type === 'training' ? `FB ${this.program.variant(k)}` : type === 'cardio' ? 'Kardio' : 'Bərpa',
+        tag: type === 'training' ? this.workout.tag(k) : type === 'cardio' ? 'Kardio' : 'Bərpa',
         meals: !!d?.menu?.some((x) => x.done),
         trained: !!(d && (d.workout?.savedAt || d.checks['workout'] || d.cardio.done)),
         water: !!d && d.water >= this.day.waterTarget(k),

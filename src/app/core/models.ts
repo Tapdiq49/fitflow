@@ -1,7 +1,7 @@
 export type Unit = 'q' | 'ədəd' | 'ölçü';
 export type FoodRole = 'protein' | 'carb' | 'fat' | 'fruit' | 'veg' | 'dairy' | 'supp';
 
-/** Macros are per 100 q (unit "q") or per piece/scoop. bloat: 0–3 inherent tendency. */
+/** Macros are per 100 q (unit "q") or per piece/scoop. */
 export interface Food {
   name: string;
   unit: Unit;
@@ -10,12 +10,9 @@ export interface Food {
   c: number;
   f: number;
   role: FoodRole;
-  bloat?: number;
   step: number;
   min: number;
   max: number;
-  /** Substitute used when this food is a personal bloat trigger. */
-  alt?: string;
 }
 
 export interface Macros {
@@ -41,7 +38,6 @@ export interface MealItem {
   food?: string;
   amt: number;
   base?: number;
-  swapped?: string;
   note?: string;
   /** Custom (non-database) item fields. */
   name?: string;
@@ -88,6 +84,9 @@ export interface WorkoutLog {
   ex: Record<string, ExerciseLog>;
 }
 
+/** Settings that shape a day's timeline; frozen into past days when the settings change, so history keeps what it was. */
+export type DaySnapshot = Pick<Settings, 'workoutTime' | 'wakeTime' | 'sleepTime' | 'showCreatine'>;
+
 export interface DayRecord {
   menu: Meal[] | null;
   water: number;
@@ -97,6 +96,8 @@ export interface DayRecord {
   creatine: boolean;
   workout: WorkoutLog | null;
   cardio: { type: CardioType; minutes: string; done: boolean };
+  /** Null while the day uses the live settings; set once the day is in the past and a setting changed. */
+  snap: DaySnapshot | null;
 }
 
 export interface HistorySet {
@@ -115,17 +116,11 @@ export interface WeightEntry {
   waist: number | null;
 }
 
-export interface BloatEntry {
-  id: string;
-  date: string;
-  time: string;
-  level: number;
-  foods: string[];
-  note: string;
-}
-
 /** 'auto' = generated menu hitting the kcal/protein targets; 'trainer' = fixed 7-day plan from the trainer. */
 export type MenuMode = 'auto' | 'trainer';
+
+/** 'program' = built-in Full Body A/B with progression; 'trainer' = exercises the trainer gives, entered per week. */
+export type WorkoutMode = 'program' | 'trainer';
 
 export interface Settings {
   height: number;
@@ -135,6 +130,7 @@ export interface Settings {
   mealsPerDay: number;
   useWhey: boolean;
   menuMode: MenuMode;
+  workoutMode: WorkoutMode;
   showCreatine: boolean;
   workoutTime: string;
   wakeTime: string;
@@ -153,14 +149,27 @@ export interface TrainerMeal {
 /** Trainer plan for one week, keyed by weekday (1 = Monday). */
 export type WeekPlan = Record<number, TrainerMeal[]>;
 
+/** One exercise the trainer gave. `id` is derived from the name so history accumulates across weeks. */
+export interface TrainerExercise {
+  id: string;
+  name: string;
+  sets: number;
+  min: number;
+  max: number;
+}
+
+/** Trainer workout for one week, keyed by weekday (1 = Monday). */
+export type WorkoutWeekPlan = Record<number, TrainerExercise[]>;
+
 export interface AppState {
   settings: Settings;
   /** Trainer plans written by the user, keyed by the week's Monday. Weeks without an entry reuse the latest earlier one. */
   weekPlans: Record<string, WeekPlan>;
+  /** Trainer workouts keyed by the week's Monday; a week without an entry reuses the latest earlier one. */
+  workoutPlans: Record<string, WorkoutWeekPlan>;
   days: Record<string, DayRecord>;
   history: Record<string, HistoryEntry[]>;
   weights: WeightEntry[];
-  bloat: BloatEntry[];
 }
 
 export interface Exercise {
@@ -217,14 +226,6 @@ export interface Advice {
   delta?: number;
 }
 
-export interface BloatStat {
-  key: string;
-  sum: number;
-  n: number;
-  avg: number;
-  name: string;
-}
-
 export interface WeekDay {
   k: string;
   type: DayType;
@@ -245,4 +246,5 @@ export const newDay = (): DayRecord => ({
   creatine: false,
   workout: null,
   cardio: { type: 'walk', minutes: '', done: false },
+  snap: null,
 });

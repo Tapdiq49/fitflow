@@ -40,15 +40,6 @@ describe('MenuService (via DayService.ensureDay), auto mode', () => {
     }
   });
 
-  it('substitutes a logged bloat trigger with its alternative', () => {
-    store.mutate((s) => {
-      s.bloat.push({ id: 'a', date: '2026-10-01', time: '10:00', level: 8, foods: ['kefir'], note: '' });
-      s.bloat.push({ id: 'b', date: '2026-10-02', time: '10:00', level: 7, foods: ['kefir'], note: '' });
-    });
-    for (let i = 0; i < 40; i++) day.ensureDay(DateU.add('2026-10-05', i));
-    const foods = Object.values(store.state().days).flatMap((d) => d.menu ?? []).flatMap((m) => m.items.map((it) => it.food));
-    expect(foods).not.toContain('kefir');
-  });
 });
 
 describe('MenuService, trainer mode', () => {
@@ -86,7 +77,7 @@ describe('MenuService, trainer mode', () => {
   });
 
   it('replaces an untouched menu generated earlier in auto mode', () => {
-    const k = '2026-10-05';
+    const k = DateU.add(DateU.today(), 7);
     store.mutate((s) => (s.settings.menuMode = 'auto'));
     day.ensureDay(k);
     store.mutate((s) => (s.settings.menuMode = 'trainer'));
@@ -107,18 +98,44 @@ describe('MenuService, trainer mode', () => {
   it('uses the written plan for its week and carries it to later weeks until a newer one is written', () => {
     const plans = TestBed.inject(TrainerPlanService);
     const meal = (name: string) => ({ slot: 'lunch' as const, time: '14:00', name, items: [] });
-    day.setWeekPlan('2026-10-12', { 1: [meal('A-həftə yeməyi')] });
-    day.setWeekPlan('2026-10-26', { 1: [meal('C-həftə yeməyi')] });
+    const mon = DateU.monday(DateU.add(DateU.today(), 21));
+    const w1 = mon;
+    const w2 = DateU.add(mon, 7);
+    const w3 = DateU.add(mon, 14);
+    day.setWeekPlan(w1, { 1: [meal('A-həftə yeməyi')] });
+    day.setWeekPlan(w3, { 1: [meal('C-həftə yeməyi')] });
     const lunchOn = (k: string) => {
       day.ensureDay(k);
       return store.peek(k)?.menu?.map((m) => m.name);
     };
-    expect(lunchOn('2026-10-05')).toContain('Qreçka + toyuq filesi + xiyar + petruşka'); // before any written plan: built-in
-    expect(lunchOn('2026-10-12')).toEqual(['A-həftə yeməyi']);
-    expect(lunchOn('2026-10-19')).toEqual(['A-həftə yeməyi']); // no plan written: previous week's
-    expect(lunchOn('2026-10-26')).toEqual(['C-həftə yeməyi']);
-    day.setWeekPlan('2026-10-26', null);
-    expect(plans.hasOwn('2026-10-26')).toBe(false);
-    expect(store.peek('2026-10-26')?.menu?.map((m) => m.name)).toEqual(['A-həftə yeməyi']);
+    expect(lunchOn(DateU.add(w1, -7))).toContain('Qreçka + toyuq filesi + xiyar + petruşka'); // before any written plan: built-in
+    expect(lunchOn(w1)).toEqual(['A-həftə yeməyi']);
+    expect(lunchOn(w2)).toEqual(['A-həftə yeməyi']); // no plan written: previous week's
+    expect(lunchOn(w3)).toEqual(['C-həftə yeməyi']);
+    day.setWeekPlan(w3, null);
+    expect(plans.hasOwn(w3)).toBe(false);
+    expect(store.peek(w3)?.menu?.map((m) => m.name)).toEqual(['A-həftə yeməyi']);
+  });
+
+  it('leaves past days untouched when the plan changes', () => {
+    const past = '2026-01-05'; // a Monday long gone
+    day.ensureDay(past);
+    const before = store.peek(past)?.menu?.map((m) => m.name);
+    day.setWeekPlan(past, { 1: [{ slot: 'lunch', time: '14:00', name: 'Yeni plan', items: [] }] });
+    expect(store.peek(past)?.menu?.map((m) => m.name)).toEqual(before);
+  });
+
+  it('keeps past days on the settings they were lived under', () => {
+    const past = '2026-01-05';
+    const future = DateU.monday(DateU.add(DateU.today(), 14));
+    day.ensureDay(past);
+    day.ensureDay(future);
+    const at = (k: string) => day.timeline(k).find((i) => i.id === 'workout')?.time;
+    expect(at(past)).toBe('18:00');
+    store.updateSettings({ ...store.settings(), workoutTime: '21:00', showCreatine: false });
+    expect(at(past)).toBe('18:00');
+    expect(day.timeline(past).some((i) => i.id === 'creatine')).toBe(true);
+    expect(at(future)).toBe('21:00');
+    expect(day.timeline(future).some((i) => i.id === 'creatine')).toBe(false);
   });
 });

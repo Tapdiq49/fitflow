@@ -1,31 +1,33 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { lineChart, lineSeries, ACCENT } from '../../core/charts';
 import { EXERCISES, HEAVY_LIFTS, PROGRAM, SAFETY } from '../../core/data/program';
+import { TRAINER_EX_PREFIX } from '../../core/data/trainer-plan';
 import { Variant } from '../../core/models';
 import { ProgramService } from '../../core/services/program.service';
 import { RestTimerService } from '../../core/services/rest-timer.service';
 import { StoreService } from '../../core/services/store.service';
 import { UiService } from '../../core/services/ui.service';
 import { WorkoutService } from '../../core/services/workout.service';
-import { DateU, F, inputValue } from '../../core/utils';
+import { AZ_DAYS, DateU, F, inputValue } from '../../core/utils';
 import { CardioCardComponent } from '../dashboard/cardio-card.component';
 import { ChartComponent } from '../../shared/chart.component';
 import { IconComponent } from '../../shared/icon.component';
 
 @Component({
   selector: 'app-workout-page',
-  imports: [IconComponent, ChartComponent, CardioCardComponent, NgTemplateOutlet],
+  imports: [IconComponent, ChartComponent, CardioCardComponent, NgTemplateOutlet, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="flex flex-col gap-[18px]">
-      @if (variant(); as v) {
+      @if (variant()) {
         <div
           class="sticky top-0 z-5 mb-4 flex flex-wrap items-center justify-between gap-3 rounded-card border border-border bg-surface/92 px-[18px] py-3.5 backdrop-blur-[10px]"
         >
           <div>
             <div class="eyebrow">{{ F.long(k()) }}</div>
-            <h3 style="font-size: 20px">FULL BODY {{ v }}</h3>
+            <h3 style="font-size: 20px">{{ workout.title(k()) }}</h3>
             <span class="text-muted">{{ doneCount() }}/{{ cards().length }} hərəkət tamamlandı</span>
           </div>
           <div class="flex flex-wrap items-center gap-2">
@@ -43,6 +45,15 @@ import { IconComponent } from '../../shared/icon.component';
         </div>
 
         <ng-container *ngTemplateOutlet="safetyTpl" />
+
+        @if (!cards().length) {
+          <div class="card">
+            <div class="empty">
+              <app-icon name="info" /><br />Bu gün üçün trener məşqi yazılmayıb.<br /><br />
+              <a class="btn btn-sm" routerLink="/plan">Həftə planına keç</a>
+            </div>
+          </div>
+        }
 
         <div class="grid grid-cols-2 gap-4 tablet:grid-cols-1">
           @for (c of cards(); track c.id; let idx = $index) {
@@ -112,7 +123,7 @@ import { IconComponent } from '../../shared/icon.component';
         <div class="card">
           <div class="empty">
             <app-icon name="info" /><br />{{ F.long(k()) }} — <b>{{ program.typeLabel(type()) }}</b>.<br />
-            Növbəti zal günü: <b>{{ next() ? F.long(next()!) + ' — FULL BODY ' + program.variant(next()!) : '—' }}</b>
+            Növbəti zal günü: <b>{{ next() ? F.long(next()!) + ' — ' + workout.title(next()!) : '—' }}</b>
             @if (next(); as n) {
               <br /><br /><button class="btn btn-sm" (click)="ui.viewDate.set(n)">O günə keç</button>
             }
@@ -143,6 +154,22 @@ import { IconComponent } from '../../shared/icon.component';
       </div>
 
       <div class="grid grid-cols-2 gap-4 tablet:grid-cols-1">
+        @if (workout.isTrainer()) {
+          @for (d of weekPlan(); track d.date) {
+            <div class="card">
+              <div class="card-head"><h3>{{ d.label }}</h3></div>
+              <div class="flex flex-col gap-2">
+                @for (e of d.exercises; track e.id) {
+                  <div class="flex justify-between gap-2.5 rounded-[10px] bg-surface-2 px-3 py-[9px] text-[13px] [&_span:last-child]:text-right [&_span:last-child]:text-text-2">
+                    <span>{{ e.ex.name }}</span><span>{{ e.ex.sets }}×{{ e.ex.min }}–{{ e.ex.max }}</span>
+                  </div>
+                } @empty {
+                  <div class="text-muted">Yazılmayıb</div>
+                }
+              </div>
+            </div>
+          }
+        } @else {
         @for (v of variants; track v) {
           <div class="card">
             <div class="card-head"><h3>FULL BODY {{ v }}</h3></div>
@@ -155,6 +182,7 @@ import { IconComponent } from '../../shared/icon.component';
             </div>
           </div>
         }
+        }
       </div>
     </div>
 
@@ -162,7 +190,9 @@ import { IconComponent } from '../../shared/icon.component';
       <div class="alert alert-warn">
         <app-icon name="shield" />
         <div>
-          <b>{{ phase().name }} (həftə {{ phase().wk }}) — RIR {{ phase().rir }}.</b> {{ phase().text }}
+          @if (!workout.isTrainer()) {
+            <b>{{ phase().name }} (həftə {{ phase().wk }}) — RIR {{ phase().rir }}.</b> {{ phase().text }}
+          }
           <ul>
             @for (s of safety; track s) {
               <li>{{ s }}</li>
@@ -200,8 +230,7 @@ export class WorkoutPage {
     const v = this.variant();
     if (!v) return [];
     const log = this.log();
-    return PROGRAM[v].map((id) => {
-      const ex = EXERCISES[id];
+    return this.workout.exercises(this.k()).map(({ id, ex }) => {
       const rec = this.workout.recommend(id, this.k());
       const timed = ex.kind === 'time';
       const arrow = rec.kind === 'up' ? '↑ ' : rec.kind === 'down' ? '↓ ' : '';
@@ -212,9 +241,16 @@ export class WorkoutPage {
         timed,
         done: log.ex[id]?.done ?? false,
         sets: log.ex[id]?.sets ?? [],
-        recLabel: timed ? 'Saniyə' : rec.w != null ? `${arrow}${F.kg(rec.w)} kq` : 'Yeni',
+        recLabel: timed ? 'Saniyə' : rec.w != null ? `${arrow}${F.kg(rec.w)} kq` : this.workout.isTrainer() ? '—' : 'Yeni',
       };
     });
+  });
+  /** The viewed week's gym days with the trainer's exercises (trainer mode). */
+  protected readonly weekPlan = computed(() => {
+    const mon = DateU.monday(this.k());
+    return Array.from({ length: 7 }, (_, i) => DateU.add(mon, i))
+      .filter((date) => this.program.dayType(date) === 'training')
+      .map((date) => ({ date, label: `${AZ_DAYS[DateU.dow(date) - 1]} · ${DateU.short(date)}`, exercises: this.workout.exercises(date) }));
   });
   protected readonly doneCount = computed(() => this.cards().filter((c) => c.done).length);
 
@@ -226,7 +262,7 @@ export class WorkoutPage {
   });
 
   protected readonly historyIds = computed(() =>
-    Object.keys(this.store.state().history).filter((id) => EXERCISES[id] && (this.store.state().history[id]?.length ?? 0) > 0),
+    Object.keys(this.store.state().history).filter((id) => (EXERCISES[id] || id.startsWith(TRAINER_EX_PREFIX)) && (this.store.state().history[id]?.length ?? 0) > 0),
   );
   protected readonly selectedChart = signal<string | null>(null);
   protected readonly chartId = computed(() => {
@@ -237,7 +273,7 @@ export class WorkoutPage {
   protected readonly progressChart = computed(() => {
     const id = this.chartId();
     if (!id) return null;
-    const ex = EXERCISES[id];
+    const ex = this.workout.defOf(id);
     const h = this.store.state().history[id] ?? [];
     const timed = ex.kind === 'time';
     return lineChart(
@@ -248,11 +284,11 @@ export class WorkoutPage {
   });
 
   protected exName(id: string): string {
-    return EXERCISES[id].name;
+    return this.workout.defOf(id).name;
   }
 
   protected targetOf(id: string): string {
-    const e = EXERCISES[id];
+    const e = this.workout.defOf(id);
     return `${e.sets}×${e.min}–${e.max}${e.kind === 'time' ? ' san' : ''}`;
   }
 

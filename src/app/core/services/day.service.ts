@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { SLOTS } from '../data/meals';
-import { PROGRAM, TIPS } from '../data/program';
+import { TIPS } from '../data/program';
 import { Meal, TimelineItem, WeekDay, WeekPlan, newDay } from '../models';
 import { mealMacros, menuTotals, sleepMinutes } from '../nutrition';
 import { DateU, F, clamp, fromMin, hashStr, nowHM, toMin, uid } from '../utils';
@@ -26,7 +26,8 @@ export class DayService {
 
   ensureDay(k: string): void {
     const current = this.store.peek(k)?.menu;
-    if (current && !this.menuModeMismatch(current)) return;
+    // Past days keep the menu they had; only today and later follow a menu-mode change.
+    if (current && (k < DateU.today() || !this.menuModeMismatch(current))) return;
     const menu = this.menu.generate(k, { keep: (current ?? []).filter((m) => m.done || m.custom) });
     this.store.mutateDay(k, (d) => (d.menu = menu));
   }
@@ -36,7 +37,8 @@ export class DayService {
     if (plan) this.plans.save(week, plan);
     else this.plans.clear(week);
     if (this.store.settings().menuMode !== 'trainer') return;
-    for (const k of Object.keys(this.store.state().days).filter((x) => x >= week)) {
+    const from = week > DateU.today() ? week : DateU.today(); // past days keep what they had
+    for (const k of Object.keys(this.store.state().days).filter((x) => x >= from)) {
       const current = this.store.peek(k)?.menu;
       if (!current) continue;
       const menu = this.menu.generate(k, { keep: current.filter((m) => m.done || m.custom) });
@@ -56,7 +58,7 @@ export class DayService {
 
   timeline(k: string): TimelineItem[] {
     const d = this.store.peek(k) ?? newDay();
-    const s = this.store.settings();
+    const s = { ...this.store.settings(), ...d.snap };
     const type = this.program.dayType(k);
     const menu = d.menu ?? [];
     const items: TimelineItem[] = menu.map((m) => {
@@ -72,12 +74,12 @@ export class DayService {
     const breakfast = menu.find((m) => m.slot === 'breakfast')?.time ?? fromMin(toMin(s.wakeTime) + 30);
     if (s.showCreatine) items.push({ id: 'creatine', time: breakfast, label: 'Kreatin 3–5 q', sub: 'Səhər yeməyi ilə, su ilə', done: d.creatine });
     if (type === 'training') {
-      const v = this.program.variantOf(k);
+      const count = this.workout.exercises(k).length;
       items.push({
         id: 'workout',
         time: s.workoutTime,
-        label: `FULL BODY ${v}`,
-        sub: `${PROGRAM[v].length} hərəkət · ~60 dəq · RIR ${this.program.phase(k).rir}`,
+        label: this.workout.title(k),
+        sub: this.workout.isTrainer() ? `${count} hərəkət · ~60 dəq` : `${count} hərəkət · ~60 dəq · RIR ${this.program.phase(k).rir}`,
         done: !!(this.workout.get(k).savedAt || d.checks['workout']),
       });
     } else if (type === 'cardio') {

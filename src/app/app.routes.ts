@@ -11,7 +11,6 @@ export const NAV: NavItem[] = [
   { path: '/workout', icon: 'dumbbell', label: 'Məşq' },
   { path: '/plan', icon: 'utensils', label: 'Həftə planı' },
   { path: '/body', icon: 'scale', label: 'Bədən' },
-  { path: '/digestion', icon: 'leaf', label: 'Həzm' },
   { path: '/supplements', icon: 'pill', label: 'Supplements' },
   { path: '/calendar', icon: 'calendar', label: 'Təqvim' },
   { path: '/settings', icon: 'settings', label: 'Ayarlar' },
@@ -22,7 +21,6 @@ export const routes: Routes = [
   { path: 'workout', title: 'FitFlow — Məşq', loadComponent: () => import('./features/workout/workout.page').then((m) => m.WorkoutPage) },
   { path: 'plan', title: 'FitFlow — Həftə planı', loadComponent: () => import('./features/week-plan/week-plan.page').then((m) => m.WeekPlanPage) },
   { path: 'body', title: 'FitFlow — Bədən', loadComponent: () => import('./features/body/body.page').then((m) => m.BodyPage) },
-  { path: 'digestion', title: 'FitFlow — Həzm', loadComponent: () => import('./features/digestion/digestion.page').then((m) => m.DigestionPage) },
   {
     path: 'supplements',
     title: 'FitFlow — Supplements',

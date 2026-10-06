@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, linkedSignal } from '@angular/core';
-import { MenuMode, Settings } from '../../core/models';
+import { MenuMode, Settings, WorkoutMode } from '../../core/models';
 import { ConfirmService } from '../../core/services/confirm.service';
 import { DayService } from '../../core/services/day.service';
 import { StoreService } from '../../core/services/store.service';
@@ -38,6 +38,13 @@ type TextField = 'workoutTime' | 'wakeTime' | 'sleepTime' | 'programStart';
             <select [value]="form().menuMode" (change)="setMenuMode($event)">
               <option value="trainer">Trener planı (7 günlük)</option>
               <option value="auto">Avto menyu (kalori/protein hədəfi)</option>
+            </select>
+          </label>
+          <label class="field">
+            Məşq rejimi
+            <select [value]="form().workoutMode" (change)="setWorkoutMode($event)">
+              <option value="program">Hazır proqram (Full Body A/B)</option>
+              <option value="trainer">Trener məşqi (həftəlik yazılır)</option>
             </select>
           </label>
           <div class="field">Məşq saatı<app-time-picker label="Məşq saatı" [value]="form().workoutTime" (valueChange)="setTime('workoutTime', $event)" /></div>
@@ -102,6 +109,11 @@ export class SettingsPage {
 
   protected setTime(field: 'workoutTime' | 'wakeTime' | 'sleepTime', v: string): void {
     if (v) this.form.update((f) => ({ ...f, [field]: v }));
+  }
+
+  protected setWorkoutMode(e: Event): void {
+    const v = inputValue(e) as WorkoutMode;
+    if (v === 'program' || v === 'trainer') this.form.update((f) => ({ ...f, workoutMode: v }));
   }
 
   protected setMenuMode(e: Event): void {

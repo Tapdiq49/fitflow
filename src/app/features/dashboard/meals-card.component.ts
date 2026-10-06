@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
-import { foodShort } from '../../core/data/foods';
 import { SLOTS } from '../../core/data/meals';
 import { Meal } from '../../core/models';
 import { itemAmount, itemMacros, itemName, mealMacros, menuTotals } from '../../core/nutrition';
@@ -30,8 +29,8 @@ import { IconComponent } from '../../shared/icon.component';
       <div class="alert alert-warn" style="margin-bottom: 12px">
         <app-icon name="alert" />
         <div>
-          Plan hədəfdən bir qədər kənardadır ({{ F.round(plan().k) }} kcal, {{ F.round(plan().p) }} q protein). Porsiyalar köpün qarşısını
-          almaq üçün məhdudlaşdırılıb. Yeni menyu yaratmağı və ya Ayarlarda yemək sayını dəyişməyi yoxla.
+          Plan hədəfdən bir qədər kənardadır ({{ F.round(plan().k) }} kcal, {{ F.round(plan().p) }} q protein). Porsiyalar
+          məhdudlaşdırılıb. Yeni menyu yaratmağı və ya Ayarlarda yemək sayını dəyişməyi yoxla.
         </div>
       </div>
     }
@@ -77,9 +76,6 @@ import { IconComponent } from '../../shared/icon.component';
                   }
                   <td class="tbl-text">
                     {{ itemName(it) }}
-                    @if (it.swapped) {
-                      <span class="ml-1.5 text-[11px] text-warn" title="Köp qeydlərinə görə əvəz edildi">↺ {{ foodShort(it.swapped) }} əvəzinə</span>
-                    }
                     @if (it.note) {
                       <div class="text-muted" style="font-size: 11px">{{ it.note }}</div>
                     }
@@ -123,7 +119,6 @@ export class MealsCardComponent {
   protected readonly itemMacros = itemMacros;
   protected readonly itemName = itemName;
   protected readonly itemAmount = itemAmount;
-  protected readonly foodShort = foodShort;
   protected readonly macros = mealMacros;
 
   protected readonly day = inject(DayService);

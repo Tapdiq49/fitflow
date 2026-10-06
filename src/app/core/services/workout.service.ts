@@ -1,10 +1,17 @@
 import { Injectable, inject } from '@angular/core';
 import { EXERCISES, PROGRAM } from '../data/program';
+import { TRAINER_EX_PREFIX } from '../data/trainer-plan';
 import { DayRecord, Exercise, HistoryEntry, Recommendation, WorkoutLog } from '../models';
-import { F, parseNum, rnd } from '../utils';
+import { DateU, F, parseNum, rnd } from '../utils';
 import { ProgramService } from './program.service';
 import { StoreService } from './store.service';
 import { ToastService } from './toast.service';
+import { TrainerPlanService } from './trainer-plan.service';
+
+export interface PlannedExercise {
+  id: string;
+  ex: Exercise;
+}
 
 /** Workout logging and double-progression recommendations. */
 @Injectable({ providedIn: 'root' })
@@ -12,6 +19,35 @@ export class WorkoutService {
   private readonly store = inject(StoreService);
   private readonly program = inject(ProgramService);
   private readonly toast = inject(ToastService);
+  private readonly plans = inject(TrainerPlanService);
+
+  /** Short calendar tag for a gym day. */
+  tag(k: string): string {
+    return this.isTrainer() ? 'Zal' : `FB ${this.program.variantOf(k)}`;
+  }
+
+  isTrainer(): boolean {
+    return this.store.settings().workoutMode === 'trainer';
+  }
+
+  title(k: string): string {
+    return this.isTrainer() ? 'TRENER MƏŞQİ' : `FULL BODY ${this.program.variantOf(k)}`;
+  }
+
+  /** Exercises of the day: the built-in A/B program, or what the trainer gave for that weekday (empty on non-gym days). */
+  exercises(k: string): PlannedExercise[] {
+    if (!this.isTrainer()) return PROGRAM[this.program.variantOf(k)].map((id) => ({ id, ex: EXERCISES[id] }));
+    if (this.program.dayType(k) !== 'training') return [];
+    return (this.plans.workoutFor(DateU.monday(k))[DateU.dow(k)] ?? []).map((t) => ({ id: t.id, ex: this.toExercise(t) }));
+  }
+
+  /** Definition of any exercise id: built-in, or the newest trainer entry with that id. */
+  defOf(id: string): Exercise {
+    const base = EXERCISES[id];
+    if (base) return base;
+    const t = this.plans.findExercise(id);
+    return this.toExercise(t ?? { name: id.replace(TRAINER_EX_PREFIX, ''), sets: 3, min: 8, max: 12 });
+  }
 
   blank(k: string): WorkoutLog {
     const variant = this.program.variantOf(k);
@@ -20,7 +56,7 @@ export class WorkoutService {
       startedAt: null,
       savedAt: null,
       ex: Object.fromEntries(
-        PROGRAM[variant].map((id) => [id, { done: false, sets: Array.from({ length: EXERCISES[id].sets }, () => ({ w: '', r: '', done: false })) }]),
+        this.exercises(k).map(({ id, ex }) => [id, { done: false, sets: Array.from({ length: ex.sets }, () => ({ w: '', r: '', done: false })) }]),
       ),
     };
   }
@@ -28,14 +64,14 @@ export class WorkoutService {
   /** Read-only view of the day's log (a blank one if nothing was logged). */
   get(k: string): WorkoutLog {
     const wo = this.store.peek(k)?.workout;
-    if (wo && (wo.variant === this.program.variant(k) || wo.savedAt)) return wo;
+    if (wo && (this.matches(wo, k) || wo.savedAt)) return wo;
     return this.blank(k);
   }
 
   start(k: string): void {
     this.store.mutateDay(k, (d) => {
       const wo = this.ensureIn(d, k);
-      for (const id of PROGRAM[wo.variant]) {
+      for (const id of Object.keys(wo.ex)) {
         const rec = this.recommend(id, k);
         wo.ex[id].sets.forEach((s) => {
           if (s.w === '' && rec.w != null) s.w = String(rec.w);
@@ -56,7 +92,7 @@ export class WorkoutService {
       const wo = this.ensureIn(d, k);
       const s = wo.ex[id].sets[i];
       s.done = !s.done;
-      if (s.done && s.r === '') s.r = String(EXERCISES[id].min);
+      if (s.done && s.r === '') s.r = String(this.defOf(id).min);
       wo.startedAt ??= Date.now();
       done = s.done;
     });
@@ -85,7 +121,7 @@ export class WorkoutService {
   /** Writes logged sets into the per-exercise history. Returns the number of exercises saved. */
   save(k: string): number {
     const wo = this.get(k);
-    const entries = PROGRAM[wo.variant]
+    const entries = Object.keys(wo.ex)
       .map((id) => ({
         id,
         sets: wo.ex[id].sets
@@ -98,7 +134,7 @@ export class WorkoutService {
       return 0;
     }
     this.store.mutate((s) => {
-      for (const id of PROGRAM[wo.variant]) {
+      for (const id of Object.keys(wo.ex)) {
         s.history[id] = (s.history[id] ?? []).filter((e) => e.date !== k);
       }
       for (const e of entries) {
@@ -124,8 +160,13 @@ export class WorkoutService {
    * weight goes up by a small step (capped at ~5% and smaller during the first 4 weeks).
    */
   recommend(id: string, k: string): Recommendation {
-    const ex = EXERCISES[id];
+    const ex = this.defOf(id);
     const hist = this.history(id, k);
+    if (id.startsWith(TRAINER_EX_PREFIX)) {
+      // Trainer exercises: no automatic suggestion, just show what was lifted last time.
+      const last = hist.at(-1) ?? null;
+      return { w: null, last, kind: last ? 'same' : 'new', text: last ? 'Çəkini trenerin tapşırığına görə seç.' : 'İlk dəfə: trenerin dediyi çəki ilə başla.' };
+    }
     if (!hist.length) return { w: null, last: null, kind: 'new', text: 'İlk dəfə: rahat çəki seç, 3–4 təkrar ehtiyatda saxla.' };
     const last = hist[hist.length - 1];
     const sets = last.sets.filter((s) => s.r > 0);
@@ -171,9 +212,20 @@ export class WorkoutService {
     return inc;
   }
 
+  /** Whether an unsaved log still belongs to today's plan (same A/B variant, or the same trainer exercises). */
+  private matches(wo: WorkoutLog, k: string): boolean {
+    if (!this.isTrainer()) return wo.variant === this.program.variant(k);
+    const ids = this.exercises(k).map((e) => e.id);
+    const have = Object.keys(wo.ex);
+    return ids.length === have.length && ids.every((id) => have.includes(id));
+  }
+
+  private toExercise(t: { name: string; sets: number; min: number; max: number }): Exercise {
+    return { name: t.name, sets: t.sets, min: t.min, max: t.max, kind: 'upper', inc: 0, note: '' };
+  }
+
   private ensureIn(d: DayRecord, k: string): WorkoutLog {
-    const v = this.program.variantOf(k);
-    if (!d.workout || (d.workout.variant !== v && !d.workout.savedAt)) d.workout = this.blank(k);
+    if (!d.workout || (!this.matches(d.workout, k) && !d.workout.savedAt)) d.workout = this.blank(k);
     return d.workout;
   }
 }
