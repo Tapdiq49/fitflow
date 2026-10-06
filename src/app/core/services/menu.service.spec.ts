@@ -3,8 +3,9 @@ import { menuTotals } from '../nutrition';
 import { DateU } from '../utils';
 import { StoreService } from './store.service';
 import { DayService } from './day.service';
+import { TrainerPlanService } from './trainer-plan.service';
 
-describe('MenuService (via DayService.ensureDay)', () => {
+describe('MenuService (via DayService.ensureDay), auto mode', () => {
   let store: StoreService;
   let day: DayService;
 
@@ -13,6 +14,7 @@ describe('MenuService (via DayService.ensureDay)', () => {
     TestBed.configureTestingModule({});
     store = TestBed.inject(StoreService);
     day = TestBed.inject(DayService);
+    store.mutate((s) => (s.settings.menuMode = 'auto'));
   });
 
   it('keeps every generated day inside 2600–2800 kcal and 170–190 q protein', () => {
@@ -46,5 +48,77 @@ describe('MenuService (via DayService.ensureDay)', () => {
     for (let i = 0; i < 40; i++) day.ensureDay(DateU.add('2026-10-05', i));
     const foods = Object.values(store.state().days).flatMap((d) => d.menu ?? []).flatMap((m) => m.items.map((it) => it.food));
     expect(foods).not.toContain('kefir');
+  });
+});
+
+describe('MenuService, trainer mode', () => {
+  let store: StoreService;
+  let day: DayService;
+
+  beforeEach(() => {
+    localStorage.clear();
+    TestBed.configureTestingModule({});
+    store = TestBed.inject(StoreService);
+    day = TestBed.inject(DayService);
+  });
+
+  it('is the default and gives every weekday the trainer meals with dinner at 19:30', () => {
+    expect(store.settings().menuMode).toBe('trainer');
+    for (let i = 0; i < 7; i++) {
+      const k = DateU.add('2026-10-05', i);
+      day.ensureDay(k);
+      const menu = store.peek(k)?.menu ?? [];
+      expect(menu.map((m) => m.slot)).toEqual(['breakfast', 'snack', 'lunch', 'snack2', 'dinner']);
+      expect(menu.find((m) => m.slot === 'dinner')?.time).toBe('19:30');
+    }
+  });
+
+  it('keeps eaten meals and refills the rest when regenerating', () => {
+    const k = '2026-10-05';
+    day.ensureDay(k);
+    const first = store.peek(k)?.menu?.[0];
+    day.toggleMeal(k, first?.id ?? '');
+    day.regenerateMenu(k);
+    const menu = store.peek(k)?.menu ?? [];
+    expect(menu).toHaveLength(5);
+    expect(menu[0].id).toBe(first?.id);
+    expect(menu[0].done).toBe(true);
+  });
+
+  it('replaces an untouched menu generated earlier in auto mode', () => {
+    const k = '2026-10-05';
+    store.mutate((s) => (s.settings.menuMode = 'auto'));
+    day.ensureDay(k);
+    store.mutate((s) => (s.settings.menuMode = 'trainer'));
+    day.ensureDay(k);
+    const menu = store.peek(k)?.menu ?? [];
+    expect(menu.map((m) => m.time)).toEqual(['08:00', '11:00', '14:00', '16:00', '19:30']);
+    expect(menu.every((m) => !m.templateId)).toBe(true);
+  });
+
+  it('has no swap alternative for trainer meals', () => {
+    const k = '2026-10-05';
+    day.ensureDay(k);
+    const before = store.peek(k)?.menu?.map((m) => m.name);
+    day.swapMeal(k, store.peek(k)?.menu?.[2].id ?? '');
+    expect(store.peek(k)?.menu?.map((m) => m.name)).toEqual(before);
+  });
+
+  it('uses the written plan for its week and carries it to later weeks until a newer one is written', () => {
+    const plans = TestBed.inject(TrainerPlanService);
+    const meal = (name: string) => ({ slot: 'lunch' as const, time: '14:00', name, items: [] });
+    day.setWeekPlan('2026-10-12', { 1: [meal('A-həftə yeməyi')] });
+    day.setWeekPlan('2026-10-26', { 1: [meal('C-həftə yeməyi')] });
+    const lunchOn = (k: string) => {
+      day.ensureDay(k);
+      return store.peek(k)?.menu?.map((m) => m.name);
+    };
+    expect(lunchOn('2026-10-05')).toContain('Qreçka + toyuq filesi + xiyar + petruşka'); // before any written plan: built-in
+    expect(lunchOn('2026-10-12')).toEqual(['A-həftə yeməyi']);
+    expect(lunchOn('2026-10-19')).toEqual(['A-həftə yeməyi']); // no plan written: previous week's
+    expect(lunchOn('2026-10-26')).toEqual(['C-həftə yeməyi']);
+    day.setWeekPlan('2026-10-26', null);
+    expect(plans.hasOwn('2026-10-26')).toBe(false);
+    expect(store.peek('2026-10-26')?.menu?.map((m) => m.name)).toEqual(['A-həftə yeməyi']);
   });
 });

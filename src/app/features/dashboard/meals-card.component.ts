@@ -3,6 +3,7 @@ import { foodShort } from '../../core/data/foods';
 import { SLOTS } from '../../core/data/meals';
 import { Meal } from '../../core/models';
 import { itemAmount, itemMacros, itemName, mealMacros, menuTotals } from '../../core/nutrition';
+import { ConfirmService } from '../../core/services/confirm.service';
 import { DayService } from '../../core/services/day.service';
 import { StoreService } from '../../core/services/store.service';
 import { UiService } from '../../core/services/ui.service';
@@ -128,6 +129,7 @@ export class MealsCardComponent {
   protected readonly day = inject(DayService);
   protected readonly ui = inject(UiService);
   private readonly store = inject(StoreService);
+  private readonly confirm = inject(ConfirmService);
 
   protected readonly k = this.ui.viewDate;
   private readonly record = computed(() => this.store.state().days[this.k()] ?? null);
@@ -147,8 +149,8 @@ export class MealsCardComponent {
     return SLOTS[m.slot]?.label ?? 'Yemək';
   }
 
-  protected newDay(): void {
-    if (confirm('Bu günün bütün qeydləri (yeməklər, su, checklist, məşq qaralaması) sıfırlansın və yeni plan yaradılsın?')) {
+  protected async newDay(): Promise<void> {
+    if (await this.confirm.ask('Bu günün bütün qeydləri (yeməklər, su, checklist, məşq qaralaması) sıfırlansın və yeni plan yaradılsın?', { confirmLabel: 'Sıfırla', danger: true })) {
       this.day.resetDay(this.k());
     }
   }

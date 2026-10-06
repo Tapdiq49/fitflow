@@ -8,16 +8,17 @@ import { UiService } from '../../core/services/ui.service';
 import { F, inputValue, nowHM, parseNum } from '../../core/utils';
 import { IconComponent } from '../../shared/icon.component';
 import { ModalComponent } from '../../shared/modal.component';
+import { TimePickerComponent } from '../../shared/time-picker.component';
 
 @Component({
   selector: 'app-add-meal-dialog',
-  imports: [ModalComponent, IconComponent],
+  imports: [ModalComponent, IconComponent, TimePickerComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-modal heading="Yemək əlavə et" (closed)="close()">
       <div class="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-3">
         <label class="field">Yeməyin adı<input #name type="text" value="Əlavə yemək" /></label>
-        <label class="field">Vaxt<input #time type="time" [value]="defaultTime" /></label>
+        <div class="field">Vaxt<app-time-picker label="Vaxt" [(value)]="time" /></div>
       </div>
 
       <div class="section-title" style="margin-top: 16px">Bazadan qida əlavə et</div>
@@ -83,7 +84,7 @@ import { ModalComponent } from '../../shared/modal.component';
       <label class="flex cursor-pointer items-center gap-2" style="margin-top: 12px"><input #done type="checkbox" checked /> Yeyilib kimi qeyd et</label>
       <div class="mt-[18px] flex justify-end gap-2">
         <button class="btn" (click)="close()">Ləğv et</button>
-        <button class="btn btn-primary" (click)="save(name.value, time.value, done.checked)"><app-icon name="save" size="sm" />Yadda saxla</button>
+        <button class="btn btn-primary" (click)="save(name.value, time(), done.checked)"><app-icon name="save" size="sm" />Yadda saxla</button>
       </div>
     </app-modal>
   `,
@@ -96,7 +97,7 @@ export class AddMealDialog {
   protected readonly macros = itemMacros;
   protected readonly name_ = itemName;
   protected readonly amount = itemAmount;
-  protected readonly defaultTime = nowHM();
+  protected readonly time = signal(nowHM());
 
   private readonly ui = inject(UiService);
   private readonly day = inject(DayService);

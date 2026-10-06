@@ -1,0 +1,23 @@
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ConfirmService } from '../core/services/confirm.service';
+import { ModalComponent } from './modal.component';
+
+@Component({
+  selector: 'app-confirm-dialog',
+  imports: [ModalComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    @if (confirm.request(); as r) {
+      <app-modal heading="Təsdiq" (closed)="confirm.answer(false)">
+        <p class="m-0 mb-5 text-text-2">{{ r.message }}</p>
+        <div class="flex justify-end gap-2">
+          <button class="btn" (click)="confirm.answer(false)">Ləğv et</button>
+          <button class="btn" [class]="r.danger ? 'btn btn-danger' : 'btn btn-primary'" (click)="confirm.answer(true)">{{ r.confirmLabel }}</button>
+        </div>
+      </app-modal>
+    }
+  `,
+})
+export class ConfirmDialogComponent {
+  protected readonly confirm = inject(ConfirmService);
+}

@@ -124,6 +124,9 @@ export interface BloatEntry {
   note: string;
 }
 
+/** 'auto' = generated menu hitting the kcal/protein targets; 'trainer' = fixed 7-day plan from the trainer. */
+export type MenuMode = 'auto' | 'trainer';
+
 export interface Settings {
   height: number;
   startWeight: number;
@@ -131,14 +134,29 @@ export interface Settings {
   proteinTarget: number;
   mealsPerDay: number;
   useWhey: boolean;
+  menuMode: MenuMode;
+  showCreatine: boolean;
   workoutTime: string;
   wakeTime: string;
   sleepTime: string;
   programStart: string;
 }
 
+/** One meal of the trainer's plan. */
+export interface TrainerMeal {
+  slot: SlotId;
+  time: string;
+  name: string;
+  items: MealItem[];
+}
+
+/** Trainer plan for one week, keyed by weekday (1 = Monday). */
+export type WeekPlan = Record<number, TrainerMeal[]>;
+
 export interface AppState {
   settings: Settings;
+  /** Trainer plans written by the user, keyed by the week's Monday. Weeks without an entry reuse the latest earlier one. */
+  weekPlans: Record<string, WeekPlan>;
   days: Record<string, DayRecord>;
   history: Record<string, HistoryEntry[]>;
   weights: WeightEntry[];

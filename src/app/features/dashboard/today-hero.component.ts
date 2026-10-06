@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ConfirmService } from '../../core/services/confirm.service';
 import { DayService } from '../../core/services/day.service';
 import { ProgramService } from '../../core/services/program.service';
 import { StoreService } from '../../core/services/store.service';
@@ -95,6 +96,7 @@ export class TodayHeroComponent {
   private readonly day = inject(DayService);
   private readonly program = inject(ProgramService);
   private readonly store = inject(StoreService);
+  private readonly confirm = inject(ConfirmService);
   private readonly workout = inject(WorkoutService);
 
   protected readonly k = this.ui.viewDate;
@@ -114,10 +116,11 @@ export class TodayHeroComponent {
     return (pending.find((i) => i.time >= from) ?? pending[0])?.id ?? null;
   });
 
-  protected toggle(id: string): void {
+  protected async toggle(id: string): Promise<void> {
     const k = this.k();
     if (id === 'workout' && !this.items().find((i) => i.id === id)?.done && !this.workout.get(k).savedAt) {
-      if (!confirm('Məşq qeydlərini saxlamadan tamamlandı kimi işarələnsin? (Tarixçə üçün "Məşq" bölməsində Save workout istifadə et)')) return;
+      const ok = await this.confirm.ask('Məşq qeydlərini saxlamadan tamamlandı kimi işarələnsin? (Tarixçə üçün "Məşq" bölməsində Save workout istifadə et)');
+      if (!ok) return;
     }
     this.day.toggle(k, id);
   }

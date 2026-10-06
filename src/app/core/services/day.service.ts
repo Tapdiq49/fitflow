@@ -1,15 +1,18 @@
 import { Injectable, inject } from '@angular/core';
 import { SLOTS } from '../data/meals';
 import { PROGRAM, TIPS } from '../data/program';
-import { Meal, TimelineItem, WeekDay, newDay } from '../models';
+import { Meal, TimelineItem, WeekDay, WeekPlan, newDay } from '../models';
 import { mealMacros, menuTotals, sleepMinutes } from '../nutrition';
 import { DateU, F, clamp, fromMin, hashStr, nowHM, toMin, uid } from '../utils';
-import { BodyService } from './body.service';
 import { MenuService } from './menu.service';
 import { ProgramService } from './program.service';
 import { StoreService } from './store.service';
+import { TrainerPlanService } from './trainer-plan.service';
 import { ToastService } from './toast.service';
 import { WorkoutService } from './workout.service';
+
+/** Daily water target in ml (trainer: minimum 1.5 L). */
+const WATER_TARGET_ML = 1500;
 
 /** Day-level orchestration: plan creation, the "what to do today" timeline, score, water, meals. */
 @Injectable({ providedIn: 'root' })
@@ -17,23 +20,38 @@ export class DayService {
   private readonly store = inject(StoreService);
   private readonly program = inject(ProgramService);
   private readonly menu = inject(MenuService);
+  private readonly plans = inject(TrainerPlanService);
   private readonly workout = inject(WorkoutService);
-  private readonly body = inject(BodyService);
   private readonly toast = inject(ToastService);
 
   ensureDay(k: string): void {
-    if (this.store.peek(k)?.menu) return;
-    const menu = this.menu.generate(k);
+    const current = this.store.peek(k)?.menu;
+    if (current && !this.menuModeMismatch(current)) return;
+    const menu = this.menu.generate(k, { keep: (current ?? []).filter((m) => m.done || m.custom) });
     this.store.mutateDay(k, (d) => (d.menu = menu));
   }
 
-  /** ~35 ml/kg, +500 ml on gym days, +250 ml on cardio days. */
-  waterTarget(k: string): number {
-    let ml = Math.round((this.body.latestKg() * 35) / 250) * 250;
-    const t = this.program.dayType(k);
-    if (t === 'training') ml += 500;
-    else if (t === 'cardio') ml += 250;
-    return ml;
+  /** Saves a week's trainer plan (null = drop it and fall back to the earlier week) and rebuilds stored menus from that week on. */
+  setWeekPlan(week: string, plan: WeekPlan | null): void {
+    if (plan) this.plans.save(week, plan);
+    else this.plans.clear(week);
+    if (this.store.settings().menuMode !== 'trainer') return;
+    for (const k of Object.keys(this.store.state().days).filter((x) => x >= week)) {
+      const current = this.store.peek(k)?.menu;
+      if (!current) continue;
+      const menu = this.menu.generate(k, { keep: current.filter((m) => m.done || m.custom) });
+      this.store.mutateDay(k, (d) => (d.menu = menu));
+    }
+  }
+
+  /** A stored menu built under the other menu mode (generated meals carry a templateId, trainer meals don't). */
+  private menuModeMismatch(menu: Meal[]): boolean {
+    const trainer = this.store.settings().menuMode === 'trainer';
+    return menu.some((m) => !m.custom && !m.done && (trainer ? !!m.templateId : !m.templateId));
+  }
+
+  waterTarget(_k?: string): number {
+    return WATER_TARGET_ML;
   }
 
   timeline(k: string): TimelineItem[] {
@@ -52,7 +70,7 @@ export class DayService {
       };
     });
     const breakfast = menu.find((m) => m.slot === 'breakfast')?.time ?? fromMin(toMin(s.wakeTime) + 30);
-    items.push({ id: 'creatine', time: breakfast, label: 'Kreatin 3–5 q', sub: 'Səhər yeməyi ilə, su ilə', done: d.creatine });
+    if (s.showCreatine) items.push({ id: 'creatine', time: breakfast, label: 'Kreatin 3–5 q', sub: 'Səhər yeməyi ilə, su ilə', done: d.creatine });
     if (type === 'training') {
       const v = this.program.variantOf(k);
       items.push({

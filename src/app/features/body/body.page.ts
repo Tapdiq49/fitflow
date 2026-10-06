@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { WATER, lineChart, lineSeries, weightChart } from '../../core/charts';
 import { BodyService } from '../../core/services/body.service';
+import { ConfirmService } from '../../core/services/confirm.service';
 import { DayService } from '../../core/services/day.service';
 import { StoreService } from '../../core/services/store.service';
 import { UiService } from '../../core/services/ui.service';
@@ -103,6 +104,7 @@ export class BodyPage {
   protected readonly ui = inject(UiService);
   protected readonly day = inject(DayService);
   private readonly body = inject(BodyService);
+  private readonly confirm = inject(ConfirmService);
   private readonly store = inject(StoreService);
 
   protected readonly startWeight = computed(() => this.store.settings().startWeight);
@@ -132,7 +134,7 @@ export class BodyPage {
     }
   }
 
-  protected remove(date: string): void {
-    if (confirm('Bu çəki qeydi silinsin?')) this.body.remove(date);
+  protected async remove(date: string): Promise<void> {
+    if (await this.confirm.ask('Bu çəki qeydi silinsin?', { confirmLabel: 'Sil', danger: true })) this.body.remove(date);
   }
 }

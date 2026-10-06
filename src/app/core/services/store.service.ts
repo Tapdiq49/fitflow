@@ -1,6 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { AppState, DayRecord, Settings, newDay } from '../models';
-import { DateU } from '../utils';
+import { DateU, clamp } from '../utils';
 import { ToastService } from './toast.service';
 
 const STORAGE_KEY = 'fitflow.v1';
@@ -12,6 +12,8 @@ export const DEFAULT_SETTINGS: Omit<Settings, 'programStart'> = {
   proteinTarget: 180,
   mealsPerDay: 5,
   useWhey: true,
+  menuMode: 'trainer',
+  showCreatine: true,
   workoutTime: '18:00',
   wakeTime: '07:00',
   sleepTime: '23:30',
@@ -35,6 +37,7 @@ export class StoreService {
     if (!settings.programStart) settings.programStart = DateU.monday(DateU.today());
     return {
       settings,
+      weekPlans: s.weekPlans && typeof s.weekPlans === 'object' ? s.weekPlans : {},
       days: s.days && typeof s.days === 'object' ? s.days : {},
       history: s.history && typeof s.history === 'object' ? s.history : {},
       weights: Array.isArray(s.weights) ? s.weights : [],
@@ -55,6 +58,23 @@ export class StoreService {
     fn(next);
     this._state.set(next);
     this.persist();
+  }
+
+  /** Persists the settings form with the bounds the form promises. */
+  updateSettings(f: Settings): void {
+    this.mutate((s) => {
+      s.settings = {
+        ...f,
+        kcalTarget: clamp(f.kcalTarget, 1500, 4500),
+        proteinTarget: clamp(f.proteinTarget, 80, 300),
+        mealsPerDay: clamp(Math.round(f.mealsPerDay), 4, 6),
+        programStart: DateU.monday(f.programStart),
+      };
+    });
+  }
+
+  setUseWhey(on: boolean): void {
+    this.mutate((s) => (s.settings.useWhey = on));
   }
 
   mutateDay(k: string, fn: (d: DayRecord, s: AppState) => void): void {

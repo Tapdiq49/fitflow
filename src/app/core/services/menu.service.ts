@@ -7,6 +7,7 @@ import { DateU, clamp, fromMin, rnd, toMin, uid } from '../utils';
 import { BloatService } from './bloat.service';
 import { ProgramService } from './program.service';
 import { StoreService } from './store.service';
+import { TrainerPlanService } from './trainer-plan.service';
 
 const SLOT_PLANS: Record<DayType | 'other', Record<4 | 5 | 6, SlotId[]>> = {
   training: {
@@ -41,6 +42,7 @@ export class MenuService {
   private readonly store = inject(StoreService);
   private readonly program = inject(ProgramService);
   private readonly bloat = inject(BloatService);
+  private readonly plans = inject(TrainerPlanService);
 
   slotsFor(type: DayType, n: number): SlotId[] {
     const c = clamp(Math.round(n) || 5, 4, 6) as 4 | 5 | 6;
@@ -64,6 +66,7 @@ export class MenuService {
   }
 
   generate(k: string, opts: { keep?: Meal[]; avoid?: string[] } = {}): Meal[] {
+    if (this.store.settings().menuMode === 'trainer') return this.trainerMenu(k, opts.keep ?? []);
     const type = this.program.dayType(k);
     const slots = this.slotsFor(type, this.store.settings().mealsPerDay);
     const keep = opts.keep ?? [];
@@ -99,10 +102,18 @@ export class MenuService {
     return meals;
   }
 
+  /** Trainer's plan for the day's week; kept (eaten/custom) meals replace the planned ones in their slot. */
+  private trainerMenu(k: string, keep: Meal[]): Meal[] {
+    const planned = structuredClone(this.plans.planFor(DateU.monday(k))[DateU.dow(k)] ?? [])
+      .filter((t) => !keep.some((m) => m.slot === t.slot))
+      .map((t): Meal => ({ id: uid(), slot: t.slot, name: t.name, main: null, time: t.time, done: false, items: t.items }));
+    return [...keep, ...planned].sort((a, b) => a.time.localeCompare(b.time));
+  }
+
   /** Replaces one meal (in place) with another template for the same slot. */
   swap(menu: Meal[], mealId: string, k: string): boolean {
     const m = menu.find((x) => x.id === mealId);
-    if (!m || m.custom) return false;
+    if (!m || m.custom || !m.templateId) return false;
     const pool = this.pool(m.slot, menu.map((x) => x.slot));
     const others = new Set(menu.filter((x) => x !== m).map((x) => x.templateId));
     const otherMains = new Set(menu.filter((x) => x !== m).map((x) => x.main).filter(Boolean));

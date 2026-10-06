@@ -14,6 +14,7 @@ import { IconComponent } from '../../shared/icon.component';
   template: `
     <div class="flex flex-col gap-[18px]">
       <div class="grid grid-cols-2 gap-4 tablet:grid-cols-1">
+        @if (store.settings().showCreatine) {
         <div class="card">
           <div class="card-head">
             <h3><app-icon name="pill" /> Creatine Monohydrate</h3>
@@ -35,6 +36,7 @@ import { IconComponent } from '../../shared/icon.component';
             Kreatin əzələdə su saxladığı üçün ilk həftələrdə tərəzidə +0.5–1.5 kq görünə bilər — bu yağ deyil.
           </p>
         </div>
+        }
 
         <div class="card">
           <div class="card-head">
@@ -84,7 +86,7 @@ export class SupplementsPage {
 
   protected toggleWhey(e: Event): void {
     const on = (e.target as HTMLInputElement).checked;
-    this.store.mutate((s) => (s.settings.useWhey = on));
+    this.store.setUseWhey(on);
     this.toast.show(on ? 'Whey aktiv' : 'Whey deaktiv');
   }
 }

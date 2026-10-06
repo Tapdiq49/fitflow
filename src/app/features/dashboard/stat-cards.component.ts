@@ -5,11 +5,12 @@ import { StoreService } from '../../core/services/store.service';
 import { UiService } from '../../core/services/ui.service';
 import { F, inputValue } from '../../core/utils';
 import { IconComponent } from '../../shared/icon.component';
+import { TimePickerComponent } from '../../shared/time-picker.component';
 
 /** The four headline cards: Calories, Protein, Water, Sleep. */
 @Component({
   selector: 'app-stat-cards',
-  imports: [IconComponent],
+  imports: [IconComponent, TimePickerComponent],
   host: { class: 'grid grid-cols-4 gap-4 laptop:grid-cols-2 phone:gap-2.5' },
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -44,8 +45,8 @@ import { IconComponent } from '../../shared/icon.component';
       <div class="text-[28px] font-extrabold tracking-[-.02em] tabular-nums phone:text-[22px]">{{ F.dur(sleep()) }} <small class="text-[14px] font-semibold text-muted">/ 7–9 s</small></div>
       <div class="bar bar-sleep"><i [style.width.%]="sleep() ? F.pct(sleep()!, 480) : 0"></i></div>
       <div class="grid grid-cols-[1fr_1fr] gap-2">
-        <label class="field">Yatdım<input class="w-full" type="time" [value]="bed()" (change)="day.setSleep(k(), 'bed', val($event))" /></label>
-        <label class="field">Oyandım<input class="w-full" type="time" [value]="wake()" (change)="day.setSleep(k(), 'wake', val($event))" /></label>
+        <div class="field">Yatdım<app-time-picker label="Yatdım" [value]="bed()" (valueChange)="day.setSleep(k(), 'bed', $event)" /></div>
+        <div class="field">Oyandım<app-time-picker label="Oyandım" [value]="wake()" (valueChange)="day.setSleep(k(), 'wake', $event)" /></div>
       </div>
       <small class="text-muted">{{ sleepNote() }}</small>
     </div>

@@ -60,7 +60,9 @@ import { TypeBadgeComponent } from '../../shared/type-badge.component';
       <div class="kv"><span>Su</span><b>{{ F.liters(record()?.water ?? 0) }} / {{ F.liters(waterTarget()) }} L</b></div>
       <div class="kv"><span>Çəki</span><b>{{ weightText() }}</b></div>
       <div class="kv"><span>Yuxu</span><b>{{ F.dur(sleep()) }}</b></div>
-      <div class="kv"><span>Kreatin</span><b>{{ record()?.creatine ? '✓' : '—' }}</b></div>
+      @if (store.settings().showCreatine) {
+        <div class="kv"><span>Kreatin</span><b>{{ record()?.creatine ? '✓' : '—' }}</b></div>
+      }
       <div class="kv"><span>Köp</span><b>{{ bloatText() }}</b></div>
 
       <div class="mt-[18px] flex justify-end gap-2">
@@ -77,7 +79,7 @@ export class DayDetailDialog {
   protected readonly macros = mealMacros;
   protected readonly ui = inject(UiService);
   protected readonly program = inject(ProgramService);
-  private readonly store = inject(StoreService);
+  protected readonly store = inject(StoreService);
   private readonly day = inject(DayService);
   private readonly workout = inject(WorkoutService);
   private readonly router = inject(Router);

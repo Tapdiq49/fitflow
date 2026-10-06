@@ -1,18 +1,20 @@
 import { ChangeDetectionStrategy, Component, inject, linkedSignal } from '@angular/core';
-import { Settings } from '../../core/models';
+import { MenuMode, Settings } from '../../core/models';
+import { ConfirmService } from '../../core/services/confirm.service';
 import { DayService } from '../../core/services/day.service';
 import { StoreService } from '../../core/services/store.service';
 import { ToastService } from '../../core/services/toast.service';
 import { UiService } from '../../core/services/ui.service';
-import { DateU, clamp, inputValue, parseNum } from '../../core/utils';
+import { DateU, inputValue, parseNum } from '../../core/utils';
 import { IconComponent } from '../../shared/icon.component';
+import { TimePickerComponent } from '../../shared/time-picker.component';
 
 type NumField = 'height' | 'startWeight' | 'kcalTarget' | 'proteinTarget' | 'mealsPerDay';
 type TextField = 'workoutTime' | 'wakeTime' | 'sleepTime' | 'programStart';
 
 @Component({
   selector: 'app-settings-page',
-  imports: [IconComponent],
+  imports: [IconComponent, TimePickerComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="flex flex-col gap-[18px]">
@@ -31,13 +33,23 @@ type TextField = 'workoutTime' | 'wakeTime' | 'sleepTime' | 'programStart';
               }
             </select>
           </label>
-          <label class="field">Məşq saatı<input type="time" [value]="form().workoutTime" (input)="setText('workoutTime', $event)" /></label>
-          <label class="field">Oyanma saatı<input type="time" [value]="form().wakeTime" (input)="setText('wakeTime', $event)" /></label>
-          <label class="field">Yuxu saatı<input type="time" [value]="form().sleepTime" (input)="setText('sleepTime', $event)" /></label>
+          <label class="field">
+            Menyu rejimi
+            <select [value]="form().menuMode" (change)="setMenuMode($event)">
+              <option value="trainer">Trener planı (7 günlük)</option>
+              <option value="auto">Avto menyu (kalori/protein hədəfi)</option>
+            </select>
+          </label>
+          <div class="field">Məşq saatı<app-time-picker label="Məşq saatı" [value]="form().workoutTime" (valueChange)="setTime('workoutTime', $event)" /></div>
+          <div class="field">Oyanma saatı<app-time-picker label="Oyanma saatı" [value]="form().wakeTime" (valueChange)="setTime('wakeTime', $event)" /></div>
+          <div class="field">Yuxu saatı<app-time-picker label="Yuxu saatı" [value]="form().sleepTime" (valueChange)="setTime('sleepTime', $event)" /></div>
           <label class="field">Proqram başlanğıcı (A/B və fazalar)<input type="date" [value]="form().programStart" (input)="setText('programStart', $event)" /></label>
         </div>
         <label class="flex cursor-pointer items-center gap-2" style="margin-top: 14px">
           <input type="checkbox" [checked]="form().useWhey" (change)="setWhey($event)" /> Protein çatmasa menyuya whey əlavə et
+        </label>
+        <label class="flex cursor-pointer items-center gap-2" style="margin-top: 10px">
+          <input type="checkbox" [checked]="form().showCreatine" (change)="setCreatine($event)" /> Kreatini göstər (plan, dashboard, supplements)
         </label>
         <div class="flex flex-wrap items-center gap-2" style="margin-top: 16px">
           <button class="btn btn-primary" (click)="save()"><app-icon name="save" size="sm" />Yadda saxla</button>
@@ -73,6 +85,7 @@ export class SettingsPage {
   private readonly day = inject(DayService);
   private readonly ui = inject(UiService);
   private readonly toast = inject(ToastService);
+  private readonly confirm = inject(ConfirmService);
 
   /** Editable draft, re-synced whenever the stored settings change. */
   protected readonly form = linkedSignal<Settings>(() => ({ ...this.store.settings() }));
@@ -87,24 +100,30 @@ export class SettingsPage {
     if (v) this.form.update((f) => ({ ...f, [field]: v }));
   }
 
+  protected setTime(field: 'workoutTime' | 'wakeTime' | 'sleepTime', v: string): void {
+    if (v) this.form.update((f) => ({ ...f, [field]: v }));
+  }
+
+  protected setMenuMode(e: Event): void {
+    const v = inputValue(e) as MenuMode;
+    if (v === 'auto' || v === 'trainer') this.form.update((f) => ({ ...f, menuMode: v }));
+  }
+
+  protected setCreatine(e: Event): void {
+    const on = (e.target as HTMLInputElement).checked;
+    this.form.update((f) => ({ ...f, showCreatine: on }));
+  }
+
   protected setWhey(e: Event): void {
     const on = (e.target as HTMLInputElement).checked;
     this.form.update((f) => ({ ...f, useWhey: on }));
   }
 
-  protected save(): void {
+  protected async save(): Promise<void> {
     const f = this.form();
-    this.store.mutate((s) => {
-      s.settings = {
-        ...f,
-        kcalTarget: clamp(f.kcalTarget, 1500, 4500),
-        proteinTarget: clamp(f.proteinTarget, 80, 300),
-        mealsPerDay: clamp(Math.round(f.mealsPerDay), 4, 6),
-        programStart: DateU.monday(f.programStart),
-      };
-    });
+    this.store.updateSettings(f);
     this.toast.show('Ayarlar saxlanıldı ✓');
-    if (confirm('Seçilmiş gün üçün menyu yeni ayarlarla yenidən yaradılsın?')) this.day.regenerateMenu(this.ui.viewDate());
+    if (await this.confirm.ask('Seçilmiş gün üçün menyu yeni ayarlarla yenidən yaradılsın?', { confirmLabel: 'Yenidən yarat' })) this.day.regenerateMenu(this.ui.viewDate());
   }
 
   protected exportData(): void {
@@ -133,8 +152,8 @@ export class SettingsPage {
     reader.readAsText(file);
   }
 
-  protected reset(): void {
-    if (!confirm('Bütün məlumatlar silinsin? Bu geri qaytarıla bilməz.')) return;
+  protected async reset(): Promise<void> {
+    if (!(await this.confirm.ask('Bütün məlumatlar silinsin? Bu geri qaytarıla bilməz.', { confirmLabel: 'Hamısını sil', danger: true }))) return;
     this.store.reset();
     this.ui.goToday();
     this.day.ensureDay(this.ui.today());

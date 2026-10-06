@@ -15,12 +15,14 @@ import { IconComponent } from '../../shared/icon.component';
       <h3><app-icon name="pill" /> Supplements</h3>
       <a class="btn btn-sm btn-ghost" routerLink="/supplements">Ətraflı <app-icon name="right" size="sm" /></a>
     </div>
+    @if (store.settings().showCreatine) {
     <div class="kv">
       <span>Creatine Monohydrate 3–5 q</span>
       <button class="btn btn-sm" [class.btn-done]="creatine()" (click)="day.toggle(k(), 'creatine')">
         <app-icon name="check" size="sm" />{{ creatine() ? 'Qəbul edildi' : 'Qəbul et' }}
       </button>
     </div>
+    }
     <div class="kv">
       <span>Whey protein (yalnız çatışmazlıq üçün)</span>
       <button class="btn btn-sm" (click)="day.addWhey(k())"><app-icon name="plus" size="sm" />1 ölçü (+24 q P)</button>
@@ -32,7 +34,7 @@ import { IconComponent } from '../../shared/icon.component';
 })
 export class SuppQuickComponent {
   protected readonly day = inject(DayService);
-  private readonly store = inject(StoreService);
+  protected readonly store = inject(StoreService);
   private readonly ui = inject(UiService);
 
   protected readonly k = this.ui.viewDate;
