@@ -39,3 +39,7 @@ Single-user fitness tracker: workouts, generated daily menu, weight, digestion, 
 - `settings.page.ts` and `supplements.page.ts` still call `store.mutate()` directly — do not copy that pattern; move the mutation into a service when you touch those files.
 
 <!-- /bmad:context -->
+
+## Backend migration (kept outside the managed block)
+
+When the user starts the Supabase migration, follow `_bmad-output/planning-artifacts/backend-migration-rules.md` (Supabase first, adapter-only SDK use, plain Postgres, so a later NestJS + Postgres move is an adapter swap). Do not start it before the user says so.
