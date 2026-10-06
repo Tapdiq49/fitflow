@@ -1,6 +1,7 @@
 import { FOODS } from './data/foods';
 import { Macros, Meal, MealItem } from './models';
 import { rnd, toMin } from './utils';
+import { td } from './i18n/translate';
 
 const ZERO: Macros = { k: 0, p: 0, c: 0, f: 0 };
 
@@ -22,11 +23,11 @@ export const mealMacros = (m: Meal): Macros => sumMacros(m.items.map(itemMacros)
 export const menuTotals = (menu: Meal[] | null | undefined, onlyDone = false): Macros =>
   sumMacros((menu ?? []).filter((m) => !onlyDone || m.done).map(mealMacros));
 
-export const itemName = (it: MealItem): string => (it.food ? (FOODS[it.food]?.name ?? it.food) : (it.name ?? ''));
+export const itemName = (it: MealItem): string => td(it.food ? (FOODS[it.food]?.name ?? it.food) : (it.name ?? ''));
 
 export const itemAmount = (it: MealItem): string => {
-  if (!it.food) return it.amtLabel ?? '1 porsiya';
-  return `${rnd(it.amt, 1)} ${FOODS[it.food]?.unit ?? ''}`;
+  if (!it.food) return td(it.amtLabel ?? '1 porsiya');
+  return `${rnd(it.amt, 1)} ${td(FOODS[it.food]?.unit ?? '')}`;
 };
 
 /** Sleep duration in minutes (handles crossing midnight). */

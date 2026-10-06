@@ -42,6 +42,42 @@
   --radius-sm: 10px;
   --shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
   --font: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --chart-grid: rgba(255, 255, 255, 0.06);
+  --chart-accent-dim: rgba(182, 242, 63, 0.45);
+  color-scheme: dark;
+}
+
+/* Light theme: set by ThemeService (data-theme) from the setting or the OS preference. */
+:root[data-theme='light'] {
+  --bg: #f3f5f8;
+  --surface: #ffffff;
+  --surface-2: #f0f3f7;
+  --surface-3: #e3e8ef;
+  --border: #d3dbe5;
+  --border-soft: #e2e8f0;
+  --border-strong: #b7c3d2;
+  --border-hover: #a0afc2;
+  --text: #121a23;
+  --text-2: #465467;
+  --muted: #66758a;
+  --accent: #4a8a07;
+  --accent-hover: #3d7305;
+  --accent-ink: #ffffff;
+  --accent-soft: rgba(74, 138, 7, 0.12);
+  --kcal: #d97706;
+  --protein: #9333ea;
+  --water: #0284c7;
+  --sleep: #4f46e5;
+  --good: #16a34a;
+  --warn: #b45309;
+  --bad: #dc2626;
+  --sidebar-top: #ffffff;
+  --backdrop: #0f172a;
+  --shade: #000;
+  --shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
+  --chart-grid: rgba(15, 23, 42, 0.08);
+  --chart-accent-dim: rgba(74, 138, 7, 0.4);
+  color-scheme: light;
 }
 
 /* Only these tokens exist as Tailwind colors/radii, so every color resolves to a variable above. */

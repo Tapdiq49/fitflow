@@ -31,7 +31,7 @@ Single-user fitness tracker: workouts, generated daily menu, weight, digestion, 
 - A new `AppState`, `Settings` or `DayRecord` field needs a default in `StoreService.normalize()` / `DEFAULT_SETTINGS` / `newDay()`; keep the `fitflow.v1` key — existing data and JSON backups load through it.
 - Business rules (progression, menu scaling, score, bloat triggers, body advice) live in `core/services/` or the pure helpers in `core/nutrition.ts` / `core/utils.ts`, not in components; a change to one gets a test in the co-located `*.spec.ts`.
 - Dates are local `YYYY-MM-DD` keys built with `DateU` (`core/utils.ts`), weekday 1 = Monday; never derive them from `toISOString()` (UTC shifts the day).
-- User-facing text is Azerbaijani, hard-coded in templates and toasts (no i18n); identifiers and comments stay English.
+- User-facing text goes through `t('area.englishName')` / `| t` (`core/i18n/translate.ts`); every text is a named key in the flat maps `core/i18n/{az,en,ru}.json`, Azerbaijani being the source language. Built-in content (foods, meals, tips, exercise notes, phases) keeps its Azerbaijani text in code and saved menus; it has keys with a content prefix (`food.`, `meal.`, `tip.`, …) and is translated at display with `td()` / `| td`. A new text needs its key in all three JSON files (`translate.spec.ts` checks this). Identifiers and comments stay English.
 - Components are standalone, `OnPush`, with inline templates and `inject()`; a new page is a lazy `loadComponent` route plus a `NAV` entry in `app.routes.ts`.
 
 ## Known pitfalls

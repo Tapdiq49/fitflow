@@ -7,13 +7,13 @@ export interface NavItem {
 }
 
 export const NAV: NavItem[] = [
-  { path: '/', icon: 'home', label: 'Bugün' },
-  { path: '/workout', icon: 'dumbbell', label: 'Məşq' },
-  { path: '/plan', icon: 'utensils', label: 'Həftə planı' },
-  { path: '/body', icon: 'scale', label: 'Bədən' },
-  { path: '/supplements', icon: 'pill', label: 'Supplements' },
-  { path: '/calendar', icon: 'calendar', label: 'Təqvim' },
-  { path: '/settings', icon: 'settings', label: 'Ayarlar' },
+  { path: '/', icon: 'home', label: 'nav.today' },
+  { path: '/workout', icon: 'dumbbell', label: 'nav.workout' },
+  { path: '/plan', icon: 'utensils', label: 'nav.weeklyPlan' },
+  { path: '/body', icon: 'scale', label: 'nav.body' },
+  { path: '/supplements', icon: 'pill', label: 'nav.supplements' },
+  { path: '/calendar', icon: 'calendar', label: 'nav.calendar' },
+  { path: '/settings', icon: 'settings', label: 'nav.settings' },
 ];
 
 export const routes: Routes = [

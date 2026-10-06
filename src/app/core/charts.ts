@@ -1,13 +1,10 @@
 import { Chart, ChartConfiguration, ChartDataset, registerables } from 'chart.js';
 import { WeekDay, WeightEntry } from './models';
-import { AZ_DAYS_SHORT, DateU, rnd } from './utils';
+import { DateU, rnd, weekdaysShort } from './utils';
+import { t } from './i18n/translate';
 
 Chart.register(...registerables);
-Chart.defaults.color = '#8b98a8';
 Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
-Chart.defaults.borderColor = 'rgba(255,255,255,0.06)';
-Chart.defaults.plugins.tooltip.backgroundColor = '#212c39';
-Chart.defaults.plugins.tooltip.borderColor = '#33465c';
 Chart.defaults.plugins.tooltip.borderWidth = 1;
 Chart.defaults.plugins.tooltip.padding = 10;
 Chart.defaults.plugins.legend.labels.boxWidth = 10;
@@ -15,9 +12,32 @@ Chart.defaults.plugins.legend.labels.boxHeight = 10;
 
 export type AnyChartConfig = ChartConfiguration<'line'> | ChartConfiguration<'bar'>;
 
-export const ACCENT = '#b6f23f';
-export const MUTED = '#8b98a8';
-export const WATER = '#38bdf8';
+/** Series colors are CSS variables; ChartComponent resolves them for the active theme (canvas can't read var()). */
+export const ACCENT = 'var(--accent)';
+export const MUTED = 'var(--muted)';
+export const WATER = 'var(--water)';
+
+const cssVar = (name: string): string => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
+/** Points Chart.js defaults at the active theme's colors; call before creating a chart. */
+export function applyChartTheme(): void {
+  Chart.defaults.color = cssVar('--muted');
+  Chart.defaults.borderColor = cssVar('--chart-grid');
+  Chart.defaults.plugins.tooltip.backgroundColor = cssVar('--surface-3');
+  Chart.defaults.plugins.tooltip.borderColor = cssVar('--border-strong');
+  Chart.defaults.plugins.tooltip.titleColor = cssVar('--text');
+  Chart.defaults.plugins.tooltip.bodyColor = cssVar('--text-2');
+}
+
+/** Deep copy of a chart config with every "var(--x)" string replaced by its current value. */
+export function resolveChartColors<T>(value: T): T {
+  if (typeof value === 'string') return (/^var\((--[\w-]+)\)$/.exec(value) ? cssVar(value.slice(4, -1)) : value) as T;
+  if (Array.isArray(value)) return value.map((v) => resolveChartColors(v)) as T;
+  if (value && typeof value === 'object' && Object.getPrototypeOf(value) === Object.prototype) {
+    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, resolveChartColors(v)])) as T;
+  }
+  return value;
+}
 
 export function lineSeries(label: string, data: (number | null)[], color: string, dashed = false): ChartDataset<'line'> {
   return {
@@ -44,7 +64,7 @@ export function lineChart(labels: string[], datasets: ChartDataset<'line'>[], un
       plugins: { legend: { display: datasets.length > 1, position: 'top', align: 'end' } },
       scales: {
         x: { grid: { display: false } },
-        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { callback: (v) => `${v}${unit}` } },
+        y: { grid: { color: 'var(--chart-grid)' }, ticks: { callback: (v) => `${v}${unit}` } },
       },
     },
   };
@@ -62,7 +82,7 @@ export function weightChart(ws: WeightEntry[]): ChartConfiguration<'line'> | nul
   });
   return lineChart(
     ws.map((w) => DateU.short(w.date)),
-    [lineSeries('Çəki', ws.map((w) => w.kg), ACCENT), lineSeries('7 günlük orta', avg, MUTED, true)],
+    [lineSeries(t('common.weight'), ws.map((w) => w.kg), ACCENT), lineSeries(t('chart.7DayAverage'), avg, MUTED, true)],
     ' kq',
   );
 }
@@ -71,12 +91,12 @@ export function weekScoreChart(week: WeekDay[], selected: string): ChartConfigur
   return {
     type: 'bar',
     data: {
-      labels: AZ_DAYS_SHORT,
+      labels: weekdaysShort(),
       datasets: [
         {
-          label: 'Günün skoru',
+          label: t('chart.dailyScore'),
           data: week.map((x) => x.score),
-          backgroundColor: week.map((x) => (x.k === selected ? ACCENT : 'rgba(182,242,63,.45)')),
+          backgroundColor: week.map((x) => (x.k === selected ? ACCENT : 'var(--chart-accent-dim)')),
           borderRadius: 4,
           maxBarThickness: 28,
         },
@@ -87,10 +107,10 @@ export function weekScoreChart(week: WeekDay[], selected: string): ChartConfigur
       maintainAspectRatio: false,
       plugins: {
         legend: { display: false },
-        tooltip: { callbacks: { label: (c) => (c.raw == null ? 'Məlumat yoxdur' : `Skor: ${c.raw}%`) } },
+        tooltip: { callbacks: { label: (c) => (c.raw == null ? t('common.noData') : t('chart.scoreN', { v: c.raw as number })) } },
       },
       scales: {
-        y: { min: 0, max: 100, ticks: { callback: (v) => `${v}%` }, grid: { color: 'rgba(255,255,255,0.05)' } },
+        y: { min: 0, max: 100, ticks: { callback: (v) => `${v}%` }, grid: { color: 'var(--chart-grid)' } },
         x: { grid: { display: false } },
       },
     },

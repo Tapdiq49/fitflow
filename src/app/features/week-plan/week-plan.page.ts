@@ -6,9 +6,11 @@ import { DayService } from '../../core/services/day.service';
 import { StoreService } from '../../core/services/store.service';
 import { ToastService } from '../../core/services/toast.service';
 import { TrainerPlanService } from '../../core/services/trainer-plan.service';
-import { AZ_DAYS, DateU, clamp, inputValue, parseNum } from '../../core/utils';
+import { DateU, clamp, dayName, inputValue, parseNum } from '../../core/utils';
 import { IconComponent } from '../../shared/icon.component';
 import { TimePickerComponent } from '../../shared/time-picker.component';
+import { TPipe } from '../../shared/t.pipe';
+import { t, td } from '../../core/i18n/translate';
 
 interface ExRow {
   name: string;
@@ -28,33 +30,33 @@ interface Row {
 
 @Component({
   selector: 'app-week-plan-page',
-  imports: [IconComponent, TimePickerComponent],
+  imports: [IconComponent, TimePickerComponent, TPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="flex flex-col gap-[18px]">
       <div class="flex gap-2">
-        <button class="btn" [class.btn-primary]="tab() === 'meal'" (click)="tab.set('meal')"><app-icon name="utensils" size="sm" />Yemək planı</button>
-        <button class="btn" [class.btn-primary]="tab() === 'workout'" (click)="tab.set('workout')"><app-icon name="dumbbell" size="sm" />Məşq planı</button>
+        <button class="btn" [class.btn-primary]="tab() === 'meal'" (click)="tab.set('meal')"><app-icon name="utensils" size="sm" />{{ 'plan.mealPlan' | t }}</button>
+        <button class="btn" [class.btn-primary]="tab() === 'workout'" (click)="tab.set('workout')"><app-icon name="dumbbell" size="sm" />{{ 'plan.workoutPlan' | t }}</button>
       </div>
       <div class="card">
         <div class="flex flex-wrap items-center justify-between gap-3">
           <div class="flex items-center gap-1.5 rounded-[12px] border border-border-soft bg-surface p-1">
-            <button class="btn btn-ghost btn-icon" (click)="shift(-1)" aria-label="Əvvəlki həftə"><app-icon name="left" /></button>
+            <button class="btn btn-ghost btn-icon" (click)="shift(-1)" [attr.aria-label]="'plan.previousWeek' | t"><app-icon name="left" /></button>
             <span class="px-2.5 font-semibold whitespace-nowrap">{{ label() }}</span>
-            <button class="btn btn-ghost btn-icon" (click)="shift(1)" aria-label="Növbəti həftə"><app-icon name="right" /></button>
+            <button class="btn btn-ghost btn-icon" (click)="shift(1)" [attr.aria-label]="'plan.nextWeek' | t"><app-icon name="right" /></button>
           </div>
-          <span class="badge" [class.badge-training]="currentOwn()">{{ currentOwn() ? 'Bu həftə üçün yazılmış plan' : 'Əvvəlki həftənin planı istifadə olunur' }}</span>
+          <span class="badge" [class.badge-training]="currentOwn()">{{ currentOwn() ? ('plan.planWrittenForThis' | t) : ('plan.previousWeeksPlanIn' | t) }}</span>
         </div>
         @if (tab() === 'meal') {
         <p class="text-muted" style="font-size: 12px; margin: 10px 0 0">
-          Yemək xanasını boş qoysan, o yemək planda olmur. Mətnini dəyişmədiyin yeməklərin kalori və proteini saxlanılır; yeni yazdığın yeməklər 0 kcal sayılır.
+          {{ 'plan.leaveMealFieldEmpty' | t }}
         </p>
         } @else {
           <p class="text-muted" style="font-size: 12px; margin: 10px 0 0">
-            Trenerin verdiyi hərəkətləri yaz. Plan yazmadığın həftədə əvvəlki həftənin məşqi təkrarlanır. Çəki məşq zamanı yazılır.
+            {{ 'plan.enterExercisesTrainerGave' | t }}
           </p>
           @if (store.settings().workoutMode !== 'trainer') {
-            <p class="mt-2 mb-0 text-[12px] text-warn">Məşq rejimi hazırda "Hazır proqram"dır. Bu planın işləməsi üçün Ayarlarda "Trener məşqi" seç.</p>
+            <p class="mt-2 mb-0 text-[12px] text-warn">{{ 'plan.workoutModeCurrentlyBuilt' | t }}</p>
           }
         }
       </div>
@@ -66,17 +68,17 @@ interface Row {
           @for (r of draft()[day]; track r.slot; let i = $index) {
             <div class="mb-2 grid grid-cols-[110px_112px_1fr] items-center gap-2 phone:grid-cols-[90px_1fr]">
               <span class="text-[13px] text-text-2">{{ slotLabel(r.slot) }}</span>
-              <app-time-picker label="Saat" [value]="r.time" (valueChange)="setTime(day, i, $event)" />
-              <input type="text" [value]="r.text" (input)="setText(day, i, $event)" placeholder="məs. Qreçka (4 X/Q) + 2 xiyar" class="phone:col-span-2" />
+              <app-time-picker [label]="'common.time' | t" [value]="r.time" (valueChange)="setTime(day, i, $event)" />
+              <input type="text" [value]="r.text" (input)="setText(day, i, $event)" [placeholder]="'plan.eGBuckwheat4' | t" class="phone:col-span-2" />
             </div>
           }
         </div>
       }
 
       <div class="flex flex-wrap items-center gap-2">
-        <button class="btn btn-primary" (click)="save()"><app-icon name="save" size="sm" />Planı yadda saxla</button>
+        <button class="btn btn-primary" (click)="save()"><app-icon name="save" size="sm" />{{ 'plan.savePlan' | t }}</button>
         @if (own()) {
-          <button class="btn btn-danger" (click)="clear()"><app-icon name="trash" size="sm" />Əvvəlki həftənin planına qaytar</button>
+          <button class="btn btn-danger" (click)="clear()"><app-icon name="trash" size="sm" />{{ 'plan.revertToPreviousWeeksPlan' | t }}</button>
         }
       </div>
       } @else {
@@ -85,20 +87,20 @@ interface Row {
             <div class="card-head"><h3>{{ dayLabel(day) }}</h3></div>
             @for (r of wDraft()[day]; track $index; let i = $index) {
               <div class="mb-2 grid grid-cols-[1fr_64px_64px_64px_36px] items-center gap-2 phone:grid-cols-[1fr_56px_56px_56px_36px]">
-                <input type="text" [value]="r.name" (input)="setEx(day, i, 'name', $event)" placeholder="Hərəkətin adı (məs. Bench Press)" aria-label="Hərəkət" />
-                <input type="text" inputmode="numeric" class="text-center" [value]="r.sets" (input)="setEx(day, i, 'sets', $event)" placeholder="set" aria-label="Set sayı" />
-                <input type="text" inputmode="numeric" class="text-center" [value]="r.min" (input)="setEx(day, i, 'min', $event)" placeholder="min" aria-label="Min təkrar" />
-                <input type="text" inputmode="numeric" class="text-center" [value]="r.max" (input)="setEx(day, i, 'max', $event)" placeholder="maks" aria-label="Maks təkrar" />
-                <button class="btn btn-ghost btn-icon btn-sm" (click)="removeEx(day, i)" aria-label="Hərəkəti sil"><app-icon name="x" size="sm" /></button>
+                <input type="text" [value]="r.name" (input)="setEx(day, i, 'name', $event)" [placeholder]="'plan.exerciseNameEG' | t" [attr.aria-label]="'common.exercise' | t" />
+                <input type="text" inputmode="numeric" class="text-center" [value]="r.sets" (input)="setEx(day, i, 'sets', $event)" [placeholder]="'plan.sets' | t" [attr.aria-label]="'plan.numberOfSets' | t" />
+                <input type="text" inputmode="numeric" class="text-center" [value]="r.min" (input)="setEx(day, i, 'min', $event)" [placeholder]="'plan.min' | t" [attr.aria-label]="'plan.minReps' | t" />
+                <input type="text" inputmode="numeric" class="text-center" [value]="r.max" (input)="setEx(day, i, 'max', $event)" [placeholder]="'plan.max' | t" [attr.aria-label]="'plan.maxReps' | t" />
+                <button class="btn btn-ghost btn-icon btn-sm" (click)="removeEx(day, i)" [attr.aria-label]="'plan.deleteExercise' | t"><app-icon name="x" size="sm" /></button>
               </div>
             }
-            <button class="btn btn-ghost btn-sm" (click)="addEx(day)"><app-icon name="plus" size="sm" />Hərəkət əlavə et</button>
+            <button class="btn btn-ghost btn-sm" (click)="addEx(day)"><app-icon name="plus" size="sm" />{{ 'plan.addExercise' | t }}</button>
           </div>
         }
         <div class="flex flex-wrap items-center gap-2">
-          <button class="btn btn-primary" (click)="saveWorkout()"><app-icon name="save" size="sm" />Məşq planını yadda saxla</button>
+          <button class="btn btn-primary" (click)="saveWorkout()"><app-icon name="save" size="sm" />{{ 'plan.saveWorkoutPlan' | t }}</button>
           @if (wOwn()) {
-            <button class="btn btn-danger" (click)="clearWorkout()"><app-icon name="trash" size="sm" />Əvvəlki həftənin məşqinə qaytar</button>
+            <button class="btn btn-danger" (click)="clearWorkout()"><app-icon name="trash" size="sm" />{{ 'plan.revertToPreviousWeeks' | t }}</button>
           }
         </div>
       }
@@ -128,11 +130,11 @@ export class WeekPlanPage {
   protected readonly draft = linkedSignal<Record<number, Row[]>>(() => this.toRows(this.plans.planFor(this.week())));
 
   protected dayLabel(d: number): string {
-    return `${d}-ci gün · ${AZ_DAYS[d - 1]} · ${DateU.short(DateU.add(this.week(), d - 1))}`;
+    return `${t('plan.dayN', { d })} · ${dayName(d - 1)} · ${DateU.short(DateU.add(this.week(), d - 1))}`;
   }
 
   protected slotLabel(s: SlotId): string {
-    return SLOTS[s].label;
+    return td(SLOTS[s].label);
   }
 
   protected shift(n: number): void {
@@ -160,7 +162,7 @@ export class WeekPlanPage {
         .sort((a, b) => a.time.localeCompare(b.time));
     }
     this.day.setWeekPlan(this.week(), plan);
-    this.toast.show('Həftə planı saxlanıldı ✓');
+    this.toast.show(t('plan.weeklyPlanSaved'));
   }
 
   protected setEx(day: number, i: number, field: keyof ExRow, e: Event): void {
@@ -191,17 +193,17 @@ export class WeekPlanPage {
       }
     }
     this.plans.saveWorkout(this.week(), plan);
-    this.toast.show('Məşq planı saxlanıldı ✓');
+    this.toast.show(t('plan.workoutPlanSaved'));
   }
 
   protected clearWorkout(): void {
     this.plans.clearWorkout(this.week());
-    this.toast.show('Əvvəlki həftənin məşqi bərpa edildi');
+    this.toast.show(t('plan.previousWeeksWorkoutRestored'));
   }
 
   protected clear(): void {
     this.day.setWeekPlan(this.week(), null);
-    this.toast.show('Əvvəlki həftənin planı bərpa edildi');
+    this.toast.show(t('plan.previousWeeksPlanRestored'));
   }
 
   private patch(day: number, i: number, change: Partial<Row>): void {

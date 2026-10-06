@@ -1,6 +1,57 @@
-export const AZ_DAYS = ['Bazar ertəsi', 'Çərşənbə axşamı', 'Çərşənbə', 'Cümə axşamı', 'Cümə', 'Şənbə', 'Bazar'];
-export const AZ_DAYS_SHORT = ['B.e', 'Ç.a', 'Ç', 'C.a', 'C', 'Ş', 'B'];
-export const AZ_MONTHS = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'İyun', 'İyul', 'Avqust', 'Sentyabr', 'Oktyabr', 'Noyabr', 'Dekabr'];
+import { signal } from '@angular/core';
+import { Lang } from './models';
+
+/** Active UI language. I18nService keeps it in sync with the settings; read it inside templates/computeds to stay reactive. */
+export const activeLang = signal<Lang>('az');
+
+interface Names {
+  days: string[];
+  short: string[];
+  months: string[];
+  /** Month names as used inside a full date ("6 октября 2026"). */
+  monthsOf: string[];
+  monthsShort: string[];
+  /** Hour / minute unit letters for durations. */
+  h: string;
+  m: string;
+}
+
+const NAMES: Record<Lang, Names> = {
+  az: {
+    days: ['Bazar ertəsi', 'Çərşənbə axşamı', 'Çərşənbə', 'Cümə axşamı', 'Cümə', 'Şənbə', 'Bazar'],
+    short: ['B.e', 'Ç.a', 'Ç', 'C.a', 'C', 'Ş', 'B'],
+    months: ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'İyun', 'İyul', 'Avqust', 'Sentyabr', 'Oktyabr', 'Noyabr', 'Dekabr'],
+    monthsOf: ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'İyun', 'İyul', 'Avqust', 'Sentyabr', 'Oktyabr', 'Noyabr', 'Dekabr'],
+    monthsShort: ['Yan', 'Fev', 'Mar', 'Apr', 'May', 'İyn', 'İyl', 'Avq', 'Sen', 'Okt', 'Noy', 'Dek'],
+    h: 's',
+    m: 'd',
+  },
+  en: {
+    days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+    short: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+    months: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+    monthsOf: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+    monthsShort: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+    h: 'h',
+    m: 'm',
+  },
+  ru: {
+    days: ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'],
+    short: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
+    months: ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'],
+    monthsOf: ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'],
+    monthsShort: ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'],
+    h: 'ч',
+    m: 'м',
+  },
+};
+
+/** Weekday name for index 0 = Monday. */
+export const dayName = (i: number): string => NAMES[activeLang()].days[i];
+export const dayShort = (i: number): string => NAMES[activeLang()].short[i];
+/** Month name for index 0 = January (standalone form, e.g. a calendar title). */
+export const monthName = (i: number): string => NAMES[activeLang()].months[i];
+export const weekdaysShort = (): string[] => NAMES[activeLang()].short;
 
 const pad = (n: number): string => String(n).padStart(2, '0');
 
@@ -25,11 +76,11 @@ export const DateU = {
   diffDays: (a: string, b: string): number => Math.round((DateU.parse(b).getTime() - DateU.parse(a).getTime()) / 86_400_000),
   long: (k: string): string => {
     const d = DateU.parse(k);
-    return `${d.getDate()} ${AZ_MONTHS[d.getMonth()]} ${d.getFullYear()}, ${AZ_DAYS[DateU.dow(k) - 1]}`;
+    return `${d.getDate()} ${NAMES[activeLang()].monthsOf[d.getMonth()]} ${d.getFullYear()}, ${dayName(DateU.dow(k) - 1)}`;
   },
   short: (k: string): string => {
     const d = DateU.parse(k);
-    return `${d.getDate()} ${AZ_MONTHS[d.getMonth()].slice(0, 3)}`;
+    return `${d.getDate()} ${NAMES[activeLang()].monthsShort[d.getMonth()]}`;
   },
 };
 
@@ -73,7 +124,7 @@ export const F = {
   signed: (n: number, d = 1): string => (n > 0 ? '+' : '') + rnd(n, d),
   pct,
   liters: (ml: number): number => rnd(ml / 1000, 2),
-  dur: (m: number | null): string => (m == null ? '—' : `${Math.floor(m / 60)}s ${pad(m % 60)}d`),
+  dur: (m: number | null): string => (m == null ? '—' : `${Math.floor(m / 60)}${NAMES[activeLang()].h} ${pad(m % 60)}${NAMES[activeLang()].m}`),
   long: DateU.long,
   short: DateU.short,
 };

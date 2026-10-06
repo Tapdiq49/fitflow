@@ -1,5 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { ToastService } from './toast.service';
+import { t } from '../i18n/translate';
 
 @Injectable({ providedIn: 'root' })
 export class RestTimerService {
@@ -16,7 +17,7 @@ export class RestTimerService {
       const next = this.left() - 1;
       if (next <= 0) {
         this.stop();
-        this.toast.show('İstirahət bitdi — növbəti set!');
+        this.toast.show(t('core.restOverNextSet'));
         navigator.vibrate?.(200);
       } else this.left.set(next);
     }, 1000);

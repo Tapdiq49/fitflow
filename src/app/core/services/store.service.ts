@@ -2,6 +2,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { AppState, DayRecord, Settings, newDay } from '../models';
 import { DateU, clamp } from '../utils';
 import { ToastService } from './toast.service';
+import { t } from '../i18n/translate';
 
 const STORAGE_KEY = 'fitflow.v1';
 
@@ -14,6 +15,8 @@ export const DEFAULT_SETTINGS: Omit<Settings, 'programStart'> = {
   useWhey: true,
   menuMode: 'trainer',
   workoutMode: 'program',
+  theme: 'system',
+  lang: 'az',
   showCreatine: true,
   workoutTime: '18:00',
   wakeTime: '07:00',
@@ -110,7 +113,7 @@ export class StoreService {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(this._state()));
     } catch {
-      this.toast.show('Yadda saxlamaq alınmadı (LocalStorage dolu ola bilər)');
+      this.toast.show(t('core.couldNotSaveLocalstorage'));
     }
   }
 }

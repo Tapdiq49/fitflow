@@ -5,26 +5,26 @@ import { UiService } from '../../core/services/ui.service';
 import { F } from '../../core/utils';
 import { ChartComponent } from '../../shared/chart.component';
 import { IconComponent } from '../../shared/icon.component';
+import { TPipe } from '../../shared/t.pipe';
 
 @Component({
   selector: 'app-weekly-card',
-  imports: [IconComponent, ChartComponent],
+  imports: [IconComponent, ChartComponent, TPipe],
   host: { class: 'card' },
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="card-head">
-      <h3><app-icon name="trend" /> Weekly Progress</h3>
+      <h3><app-icon name="trend" /> {{ 'dash.weeklyProgress' | t }}</h3>
       <span class="text-muted">{{ F.short(week()[0].k) }} – {{ F.short(week()[6].k) }}</span>
     </div>
     <div class="mb-3.5 grid grid-cols-3 gap-2.5 phone:grid-cols-2">
-      <div class="sum-box"><span class="eyebrow">Zal</span><b>{{ summary().workouts }} / 3</b><small>məşq</small></div>
-      <div class="sum-box"><span class="eyebrow">Kardio</span><b>{{ summary().cardio }} / 2</b><small>sessiya</small></div>
+      <div class="sum-box"><span class="eyebrow">{{ 'common.gym' | t }}</span><b>{{ summary().workouts }} / 3</b><small>{{ 'dash.workout' | t }}</small></div>
+      <div class="sum-box"><span class="eyebrow">{{ 'common.cardio' | t }}</span><b>{{ summary().cardio }} / 2</b><small>{{ 'dash.session' | t }}</small></div>
       <div class="sum-box">
-        <span class="eyebrow">Ort. protein</span>
+        <span class="eyebrow">{{ 'dash.avgProtein' | t }}</span>
         <b>{{ summary().protein != null ? F.round(summary().protein!) + ' q' : '—' }}</b>
         <small>
-          su {{ summary().water != null ? F.r1(summary().water! / 1000) + ' L' : '—' }} · yuxu
-          {{ summary().sleep != null ? F.dur(F.round(summary().sleep!)) : '—' }}
+          {{ 'dash.waterNSleepN' | t: { a: summary().water != null ? F.r1(summary().water! / 1000) + ' L' : '—', b: summary().sleep != null ? F.dur(F.round(summary().sleep!)) : '—' } }}
         </small>
       </div>
     </div>

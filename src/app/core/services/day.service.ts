@@ -10,6 +10,7 @@ import { StoreService } from './store.service';
 import { TrainerPlanService } from './trainer-plan.service';
 import { ToastService } from './toast.service';
 import { WorkoutService } from './workout.service';
+import { t, td } from '../i18n/translate';
 
 /** Daily water target in ml (trainer: minimum 1.5 L). */
 const WATER_TARGET_ML = 1500;
@@ -66,42 +67,42 @@ export class DayService {
       return {
         id: `meal:${m.id}`,
         time: m.time,
-        label: SLOTS[m.slot]?.label ?? 'Yemək',
-        sub: `${m.name} · ${Math.round(mm.k)} kcal · ${Math.round(mm.p)} q protein`,
+        label: td(SLOTS[m.slot]?.label ?? 'Yemək'),
+        sub: t('day.nNKcalN', { name: td(m.name), k: Math.round(mm.k), p: Math.round(mm.p) }),
         done: m.done,
       };
     });
     const breakfast = menu.find((m) => m.slot === 'breakfast')?.time ?? fromMin(toMin(s.wakeTime) + 30);
-    if (s.showCreatine) items.push({ id: 'creatine', time: breakfast, label: 'Kreatin 3–5 q', sub: 'Səhər yeməyi ilə, su ilə', done: d.creatine });
+    if (s.showCreatine) items.push({ id: 'creatine', time: breakfast, label: t('day.creatine35G'), sub: t('day.withBreakfastWithWater'), done: d.creatine });
     if (type === 'training') {
       const count = this.workout.exercises(k).length;
       items.push({
         id: 'workout',
         time: s.workoutTime,
         label: this.workout.title(k),
-        sub: this.workout.isTrainer() ? `${count} hərəkət · ~60 dəq` : `${count} hərəkət · ~60 dəq · RIR ${this.program.phase(k).rir}`,
+        sub: this.workout.isTrainer() ? t('day.nExercises60Min', { n: count }) : t('day.nExercises60MinRir', { n: count, r: this.program.phase(k).rir }),
         done: !!(this.workout.get(k).savedAt || d.checks['workout']),
       });
     } else if (type === 'cardio') {
       items.push({
         id: 'cardio',
         time: s.workoutTime,
-        label: 'Kardio',
-        sub: d.cardio.type === 'jog' ? 'Yüngül qaçış 20–25 dəq' : 'Sürətli yerimə 20–30 dəq',
+        label: t('common.cardio'),
+        sub: d.cardio.type === 'jog' ? t('day.easyJog2025') : t('day.briskWalk2030'),
         done: d.cardio.done,
       });
     } else {
-      items.push({ id: 'walk', time: '17:00', label: 'Yüngül gəzinti', sub: '6–8 min addım, rahat tempdə', done: !!d.checks['walk'] });
-      items.push({ id: 'mobility', time: '20:30', label: 'Stretching / mobility', sub: '10 dəqiqə — omba, kürək, çiyin', done: !!d.checks['mobility'] });
+      items.push({ id: 'walk', time: '17:00', label: t('day.easyWalk'), sub: t('day.68ThousandSteps'), done: !!d.checks['walk'] });
+      items.push({ id: 'mobility', time: '20:30', label: t('day.stretchingPerMobility'), sub: t('day.10MinutesHipsBack'), done: !!d.checks['mobility'] });
     }
-    items.push({ id: 'sleep', time: s.sleepTime, label: 'Yuxu', sub: 'Hədəf 7–9 saat · ekranı 30 dəq əvvəl söndür', done: !!d.checks['sleep'] });
+    items.push({ id: 'sleep', time: s.sleepTime, label: t('common.sleep'), sub: t('day.target79Hours'), done: !!d.checks['sleep'] });
     items.sort((a, b) => a.time.localeCompare(b.time));
     const wt = this.waterTarget(k);
     items.push({
       id: 'water',
       time: '💧',
-      label: `Su: ${F.liters(wt)} L`,
-      sub: `${F.liters(d.water)} L içilib`,
+      label: t('day.waterNL', { v: F.liters(wt) }),
+      sub: t('day.nLDrunk', { v: F.liters(d.water) }),
       done: d.water >= wt,
       auto: true,
       frac: Math.min(1, d.water / wt),
@@ -132,7 +133,7 @@ export class DayService {
 
   tip(k: string): string {
     const pool = [...TIPS[this.program.dayType(k)], ...TIPS.general];
-    return pool[hashStr(k) % pool.length];
+    return td(pool[hashStr(k) % pool.length]);
   }
 
   weekData(k: string): WeekDay[] {
@@ -162,7 +163,7 @@ export class DayService {
   swapMeal(k: string, id: string): void {
     let ok = false;
     this.store.mutateDay(k, (d) => (ok = !!d.menu && this.menu.swap(d.menu, id, k)));
-    this.toast.show(ok ? 'Alternativ yemək seçildi' : 'Bu yemək üçün alternativ yoxdur');
+    this.toast.show(ok ? t('day.alternativeMealSelected') : t('day.noAlternativeForThis'));
   }
 
   removeMeal(k: string, id: string): void {
@@ -175,13 +176,13 @@ export class DayService {
     const keep = current.filter((m) => m.done || m.custom);
     const menu = this.menu.generate(k, { keep, avoid: current.map((m) => m.templateId ?? '') });
     this.store.mutateDay(k, (d) => (d.menu = menu));
-    this.toast.show(keep.length ? 'Yeni menyu yaradıldı (tamamlanmış yeməklər saxlanıldı)' : 'Yeni menyu yaradıldı ✓');
+    this.toast.show(keep.length ? t('day.newMenuCreatedEaten') : t('day.newMenuCreated'));
   }
 
   resetDay(k: string): void {
     this.store.mutate((s) => delete s.days[k]);
     this.ensureDay(k);
-    this.toast.show('Yeni gün planı yaradıldı');
+    this.toast.show(t('day.newDayPlanCreated'));
   }
 
   addMeal(k: string, meal: Omit<Meal, 'id' | 'slot' | 'custom'>): void {
@@ -189,7 +190,7 @@ export class DayService {
       const added: Meal = { ...meal, id: uid(), slot: 'custom', custom: true };
       d.menu = [...(d.menu ?? []), added].sort((a, b) => a.time.localeCompare(b.time));
     });
-    this.toast.show('Yemək əlavə edildi ✓');
+    this.toast.show(t('day.mealAdded'));
   }
 
   addWhey(k: string): void {
@@ -205,7 +206,7 @@ export class DayService {
       if (it) it.amt += 1;
       else m.items.push({ food: 'whey', amt: 1, base: 1 });
     });
-    this.toast.show('Whey əlavə edildi: +24 q protein');
+    this.toast.show(t('day.wheyAdded24G'));
   }
 
   // ---------- water / sleep / cardio ----------
@@ -216,7 +217,7 @@ export class DayService {
       d.water += ml;
       d.waterLog.push(ml);
     });
-    if (before < target && before + ml >= target) this.toast.show('💧 Su hədəfi tamamlandı!');
+    if (before < target && before + ml >= target) this.toast.show(t('day.waterTargetReached'));
   }
 
   undoWater(k: string): void {
@@ -244,12 +245,12 @@ export class DayService {
       if (d.cardio.done && !d.cardio.minutes) d.cardio.minutes = d.cardio.type === 'jog' ? '20' : '25';
       done = d.cardio.done;
     });
-    if (done) this.toast.show('Kardio qeyd edildi ✓');
+    if (done) this.toast.show(t('day.cardioRecorded'));
   }
 
   adjustKcal(delta: number): void {
     let v = 0;
     this.store.mutate((s) => (v = s.settings.kcalTarget = clamp(s.settings.kcalTarget + delta, 2000, 3400)));
-    this.toast.show(`Kalori hədəfi: ${v} kcal. Yeni menyu yaradanda tətbiq olunacaq.`);
+    this.toast.show(t('day.calorieTargetNKcal', { v }));
   }
 }

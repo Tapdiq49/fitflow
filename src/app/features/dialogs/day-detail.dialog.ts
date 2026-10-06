@@ -11,61 +11,63 @@ import { WorkoutService } from '../../core/services/workout.service';
 import { F } from '../../core/utils';
 import { ModalComponent } from '../../shared/modal.component';
 import { TypeBadgeComponent } from '../../shared/type-badge.component';
+import { TPipe, TdPipe } from '../../shared/t.pipe';
+import { t, td } from '../../core/i18n/translate';
 
 /** Calendar day details: meals, workout, cardio, water, weight, sleep. */
 @Component({
   selector: 'app-day-detail-dialog',
-  imports: [ModalComponent, TypeBadgeComponent],
+  imports: [ModalComponent, TypeBadgeComponent, TPipe, TdPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-modal [heading]="F.long(date())" (closed)="close()">
       <div class="flex flex-wrap items-center gap-2" style="margin-bottom: 12px">
         <app-type-badge [date]="date()" />
         @if (score() != null) {
-          <span class="badge">Skor: {{ score() }}%</span>
+          <span class="badge">{{ 'dayDetail.scoreN' | t: { a: score() } }}</span>
         }
       </div>
 
-      <div class="section-title">Yeməklər</div>
+      <div class="section-title">{{ 'dayDetail.meals' | t }}</div>
       @if (record()?.menu; as menu) {
         @for (m of menu; track m.id) {
           @let mm = macros(m);
           <div class="kv">
-            <span>{{ m.done ? '✅' : '⬜' }} {{ m.time }} · {{ slotLabel(m) }} — {{ m.name }}</span>
-            <b>{{ F.round(mm.k) }} kcal · {{ F.round(mm.p) }} q</b>
+            <span>{{ m.done ? '✅' : '⬜' }} {{ m.time }} · {{ slotLabel(m) }} — {{ m.name | td }}</span>
+            <b>{{ 'dayDetail.nKcalNG' | t: { a: F.round(mm.k), b: F.round(mm.p) } }}</b>
           </div>
         }
         <div class="kv">
-          <span>Yeyilib / plan</span>
-          <b>{{ F.round(eaten().k) }} / {{ F.round(plan().k) }} kcal · {{ F.round(eaten().p) }} / {{ F.round(plan().p) }} q P</b>
+          <span>{{ 'dayDetail.eatenPerPlan' | t }}</span>
+          <b>{{ 'dayDetail.nPerNKcal' | t: { a: F.round(eaten().k), b: F.round(plan().k), c: F.round(eaten().p), d: F.round(plan().p) } }}</b>
         </div>
       } @else {
-        <div class="kv"><span>Yeməklər</span><b>{{ date() >= ui.today() ? 'Gün açılanda menyu yaradılacaq' : 'Məlumat yoxdur' }}</b></div>
+        <div class="kv"><span>{{ 'dayDetail.meals' | t }}</span><b>{{ date() >= ui.today() ? ('dayDetail.menuWillCreatedWhen' | t) : ('common.noData' | t) }}</b></div>
       }
 
-      <div class="section-title" style="margin-top: 14px">Məşq</div>
+      <div class="section-title" style="margin-top: 14px">{{ 'dayDetail.workout' | t }}</div>
       @if (type() === 'training') {
         @for (x of logged(); track x.id) {
           <div class="kv"><span>{{ x.name }}</span><b>{{ x.sets }}</b></div>
         } @empty {
-          <div class="kv"><span>Plan</span><b>{{ workout.title(date()) }} — qeyd yoxdur</b></div>
+          <div class="kv"><span>{{ 'dayDetail.plan' | t }}</span><b>{{ 'dayDetail.nNoEntry' | t: { a: workout.title(date()) } }}</b></div>
         }
       } @else {
-        <div class="kv"><span>Zal</span><b>Yoxdur</b></div>
+        <div class="kv"><span>{{ 'common.gym' | t }}</span><b>{{ 'dayDetail.none' | t }}</b></div>
       }
-      <div class="kv"><span>Kardio</span><b>{{ cardioText() }}</b></div>
+      <div class="kv"><span>{{ 'common.cardio' | t }}</span><b>{{ cardioText() }}</b></div>
 
-      <div class="section-title" style="margin-top: 14px">Göstəricilər</div>
-      <div class="kv"><span>Su</span><b>{{ F.liters(record()?.water ?? 0) }} / {{ F.liters(waterTarget()) }} L</b></div>
-      <div class="kv"><span>Çəki</span><b>{{ weightText() }}</b></div>
-      <div class="kv"><span>Yuxu</span><b>{{ F.dur(sleep()) }}</b></div>
+      <div class="section-title" style="margin-top: 14px">{{ 'dayDetail.metrics' | t }}</div>
+      <div class="kv"><span>{{ 'dayDetail.water' | t }}</span><b>{{ 'dayDetail.nPerNL' | t: { a: F.liters(record()?.water ?? 0), b: F.liters(waterTarget()) } }}</b></div>
+      <div class="kv"><span>{{ 'common.weight' | t }}</span><b>{{ weightText() }}</b></div>
+      <div class="kv"><span>{{ 'common.sleep' | t }}</span><b>{{ F.dur(sleep()) }}</b></div>
       @if (store.settings().showCreatine) {
-        <div class="kv"><span>Kreatin</span><b>{{ record()?.creatine ? '✓' : '—' }}</b></div>
+        <div class="kv"><span>{{ 'dayDetail.creatine' | t }}</span><b>{{ record()?.creatine ? '✓' : '—' }}</b></div>
       }
 
       <div class="mt-[18px] flex justify-end gap-2">
-        <button class="btn" (click)="close()">Bağla</button>
-        <button class="btn btn-primary" (click)="open()">Bu günü aç</button>
+        <button class="btn" (click)="close()">{{ 'common.close' | t }}</button>
+        <button class="btn btn-primary" (click)="open()">{{ 'dayDetail.openThisDay' | t }}</button>
       </div>
     </app-modal>
   `,
@@ -101,8 +103,8 @@ export class DayDetailDialog {
   protected readonly cardioText = computed(() => {
     if (this.type() !== 'cardio') return '—';
     const c = this.record()?.cardio;
-    if (!c?.done) return 'Plan: 20–30 dəq';
-    return `✓ ${c.type === 'jog' ? 'Yüngül qaçış' : 'Sürətli yerimə'}${c.minutes ? ` · ${c.minutes} dəq` : ''}`;
+    if (!c?.done) return t('dayDetail.plan2030Min');
+    return `✓ ${c.type === 'jog' ? t('dayDetail.easyJog') : t('dayDetail.briskWalk')}${c.minutes ? ` · ${c.minutes} ${t('dayDetail.min')}` : ''}`;
   });
 
   protected readonly weightText = computed(() => {
@@ -111,7 +113,7 @@ export class DayDetailDialog {
   });
 
   protected slotLabel(m: Meal): string {
-    return SLOTS[m.slot]?.label ?? '';
+    return td(SLOTS[m.slot]?.label ?? '');
   }
 
   protected close(): void {

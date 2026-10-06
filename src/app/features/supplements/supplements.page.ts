@@ -6,10 +6,12 @@ import { ToastService } from '../../core/services/toast.service';
 import { UiService } from '../../core/services/ui.service';
 import { DateU, F } from '../../core/utils';
 import { IconComponent } from '../../shared/icon.component';
+import { TPipe } from '../../shared/t.pipe';
+import { t } from '../../core/i18n/translate';
 
 @Component({
   selector: 'app-supplements-page',
-  imports: [IconComponent],
+  imports: [IconComponent, TPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="flex flex-col gap-[18px]">
@@ -17,41 +19,41 @@ import { IconComponent } from '../../shared/icon.component';
         @if (store.settings().showCreatine) {
         <div class="card">
           <div class="card-head">
-            <h3><app-icon name="pill" /> Creatine Monohydrate</h3>
-            <span class="badge badge-training">Tövsiyə olunur</span>
+            <h3><app-icon name="pill" /> {{ 'supp.creatineMonohydrate' | t }}</h3>
+            <span class="badge badge-training">{{ 'supp.recommended' | t }}</span>
           </div>
-          <div class="kv"><span>Doza</span><b>3–5 q / gün</b></div>
-          <div class="kv"><span>Nə vaxt</span><b>Hər gün — məşq və istirahət günü</b></div>
-          <div class="kv"><span>Necə</span><b>Su və ya yeməklə; "loading" lazım deyil</b></div>
-          <div class="kv"><span>Son 7 gün</span><b>{{ streak() }} / 7</b></div>
+          <div class="kv"><span>{{ 'supp.dose' | t }}</span><b>{{ 'supp.35GPer' | t }}</b></div>
+          <div class="kv"><span>{{ 'supp.when' | t }}</span><b>{{ 'supp.everyDayTrainingAnd' | t }}</b></div>
+          <div class="kv"><span>{{ 'supp.how' | t }}</span><b>{{ 'supp.withWaterOrFood' | t }}</b></div>
+          <div class="kv"><span>{{ 'supp.last7Days' | t }}</span><b>{{ streak() }} / 7</b></div>
           <div class="flex flex-wrap items-center gap-2" style="gap: 4px; margin: 10px 0">
             @for (d of last7(); track d.k) {
               <span [title]="F.short(d.k)" style="flex: 1; height: 8px; border-radius: 4px" [style.background]="d.on ? 'var(--accent)' : 'var(--surface-3)'"></span>
             }
           </div>
           <button class="btn" style="width: 100%" [class.btn-done]="creatine()" [class.btn-primary]="!creatine()" (click)="day.toggle(k(), 'creatine')">
-            <app-icon name="check" size="sm" />{{ creatine() ? 'Bu gün qəbul edildi' : 'Bu gün qəbul etdim' }}
+            <app-icon name="check" size="sm" />{{ creatine() ? ('supp.takenToday' | t) : ('supp.iTookToday' | t) }}
           </button>
           <p class="text-muted" style="font-size: 12px; margin: 10px 0 0">
-            Kreatin əzələdə su saxladığı üçün ilk həftələrdə tərəzidə +0.5–1.5 kq görünə bilər — bu yağ deyil.
+            {{ 'supp.creatineHoldsWaterIn' | t }}
           </p>
         </div>
         }
 
         <div class="card">
           <div class="card-head">
-            <h3><app-icon name="zap" /> Whey Protein</h3>
-            <span class="badge">İstəyə bağlı</span>
+            <h3><app-icon name="zap" /> {{ 'supp.wheyProtein' | t }}</h3>
+            <span class="badge">{{ 'supp.optional' | t }}</span>
           </div>
-          <p class="text-text-2" style="margin-top: 0">Whey əsas qida deyil — yalnız yeməklə protein hədəfi tamamlanmadıqda çatışmazlığı doldurmaq üçündür.</p>
-          <div class="kv"><span>Bugünkü plan proteini</span><b>{{ F.round(planProtein()) }} / {{ store.settings().proteinTarget }} q</b></div>
-          <div class="kv"><span>1 ölçü</span><b>~120 kcal · 24 q protein</b></div>
+          <p class="text-text-2" style="margin-top: 0">{{ 'supp.wheyNotMainFood' | t }}</p>
+          <div class="kv"><span>{{ 'supp.todaysPlannedProtein' | t }}</span><b>{{ 'supp.nPerNG' | t: { a: F.round(planProtein()), b: store.settings().proteinTarget } }}</b></div>
+          <div class="kv"><span>{{ 'supp.1Scoop' | t }}</span><b>{{ 'supp.120Kcal24G' | t }}</b></div>
           <label class="flex cursor-pointer items-center gap-2" style="margin: 12px 0">
             <input type="checkbox" [checked]="store.settings().useWhey" (change)="toggleWhey($event)" />
-            Menyu yaradarkən protein çatmasa whey əlavə et
+            {{ 'supp.addWheyWhenCreating' | t }}
           </label>
           <button class="btn btn-primary" style="width: 100%" (click)="day.addWhey(k())">
-            <app-icon name="plus" size="sm" />1 ölçü whey içdim (günlük hesaba əlavə et)
+            <app-icon name="plus" size="sm" />{{ 'supp.iDrank1Scoop' | t }}
           </button>
         </div>
       </div>
@@ -59,8 +61,7 @@ import { IconComponent } from '../../shared/icon.component';
       <div class="alert alert-bad">
         <app-icon name="shield" />
         <div>
-          <b>Proqramdan çıxarılıb:</b> steroidlər, testosteron, SARM-lar, prohormonlar və digər anabolik preparatlar. Məqsəd natural nəticədir —
-          xüsusən varikosel əməliyyatından sonra hormonal balansı qorumaq vacibdir. Hər hansı əlavə preparat üçün əvvəlcə həkimlə məsləhətləş.
+          <b>{{ 'supp.excludedFromProgram' | t }}</b> {{ 'supp.steroidsTestosteroneSarmsProhormones' | t }}
         </div>
       </div>
     </div>
@@ -87,6 +88,6 @@ export class SupplementsPage {
   protected toggleWhey(e: Event): void {
     const on = (e.target as HTMLInputElement).checked;
     this.store.setUseWhey(on);
-    this.toast.show(on ? 'Whey aktiv' : 'Whey deaktiv');
+    this.toast.show(on ? t('supp.wheyOn') : t('supp.wheyOff'));
   }
 }

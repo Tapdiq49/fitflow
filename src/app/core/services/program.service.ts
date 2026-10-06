@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { DayType, Phase, Variant } from '../models';
 import { DateU } from '../utils';
 import { StoreService } from './store.service';
+import { td } from '../i18n/translate';
 
 const TYPE_LABELS: Record<DayType, string> = { training: 'Məşq günü', cardio: 'Kardio günü', rest: 'Bərpa günü' };
 
@@ -17,8 +18,8 @@ export class ProgramService {
     return 'rest';
   }
 
-  typeLabel(t: DayType): string {
-    return TYPE_LABELS[t];
+  typeLabel(type: DayType): string {
+    return td(TYPE_LABELS[type]);
   }
 
   weekIndex(k: string): number {

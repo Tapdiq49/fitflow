@@ -8,37 +8,38 @@ import { UiService } from '../../core/services/ui.service';
 import { F, parseNum } from '../../core/utils';
 import { ChartComponent } from '../../shared/chart.component';
 import { IconComponent } from '../../shared/icon.component';
+import { TPipe } from '../../shared/t.pipe';
 
 @Component({
   selector: 'app-body-card',
-  imports: [IconComponent, ChartComponent, RouterLink],
+  imports: [IconComponent, ChartComponent, RouterLink, TPipe],
   host: { class: 'card' },
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="card-head">
-      <h3><app-icon name="scale" /> Body Progress</h3>
-      <a class="btn btn-sm btn-ghost" routerLink="/body">Ətraflı <app-icon name="right" size="sm" /></a>
+      <h3><app-icon name="scale" /> {{ 'dash.bodyProgress' | t }}</h3>
+      <a class="btn btn-sm btn-ghost" routerLink="/body">{{ 'dash.details' | t }} <app-icon name="right" size="sm" /></a>
     </div>
     @let st = stats();
     <div class="mb-3.5 grid grid-cols-3 gap-2.5 phone:grid-cols-2">
       <div class="sum-box">
-        <span class="eyebrow">Cari çəki</span><b>{{ F.kg(st?.cur?.kg) }} kq</b>
-        <small>ilk: {{ F.kg(st ? st.first.kg : startWeight()) }} kq</small>
+        <span class="eyebrow">{{ 'common.currentWeight' | t }}</span><b>{{ 'common.nKg' | t: { a: F.kg(st?.cur?.kg) } }}</b>
+        <small>{{ 'dash.firstNKg' | t: { a: F.kg(st ? st.first.kg : startWeight()) } }}</small>
       </div>
       <div class="sum-box">
-        <span class="eyebrow">Dəyişim</span><b>{{ st ? F.signed(st.change) : '—' }} kq</b>
-        <small>7 gün orta: {{ F.kg(st?.avg7) }}</small>
+        <span class="eyebrow">{{ 'dash.change' | t }}</span><b>{{ 'common.nKg' | t: { a: st ? F.signed(st.change) : '—' } }}</b>
+        <small>{{ 'dash.7DayAvgN' | t: { a: F.kg(st?.avg7) } }}</small>
       </div>
       <div class="sum-box">
-        <span class="eyebrow">Bel</span><b>{{ st?.waistCur ? F.kg(st?.waistCur) + ' sm' : '—' }}</b>
-        <small>{{ st?.waistFirst && st?.waistCur ? F.signed(st!.waistCur! - st!.waistFirst!) + ' sm' : 'ölçü daxil et' }}</small>
+        <span class="eyebrow">{{ 'common.waist' | t }}</span><b>{{ st?.waistCur ? F.kg(st?.waistCur) + ' sm' : '—' }}</b>
+        <small>{{ st?.waistFirst && st?.waistCur ? F.signed(st!.waistCur! - st!.waistFirst!) + ' sm' : ('dash.enterMeasurement' | t) }}</small>
       </div>
     </div>
-    <app-chart [config]="chart()" [small]="true" empty="Çəki qeydi yoxdur" />
+    <app-chart [config]="chart()" [small]="true" [empty]="'common.noWeightEntries' | t" />
     <div class="flex flex-wrap items-center gap-2" style="margin-top: 12px">
-      <input #kg type="text" inputmode="decimal" placeholder="Bugünkü çəki (kq)" style="flex: 1" />
-      <input #waist type="text" inputmode="decimal" placeholder="Bel (sm)" style="width: 110px" />
-      <button class="btn btn-primary" (click)="add(kg, waist)"><app-icon name="plus" size="sm" />Add weight</button>
+      <input #kg type="text" inputmode="decimal" [placeholder]="'dash.todaysWeightKg' | t" style="flex: 1" />
+      <input #waist type="text" inputmode="decimal" [placeholder]="'dash.waistCm' | t" style="width: 110px" />
+      <button class="btn btn-primary" (click)="add(kg, waist)"><app-icon name="plus" size="sm" />{{ 'common.addWeight' | t }}</button>
     </div>
     @let adv = advice();
     <div class="alert" [class]="alertClass[adv.level]" style="margin-top: 12px">
@@ -46,7 +47,7 @@ import { IconComponent } from '../../shared/icon.component';
       <div>
         {{ adv.text }}
         @if (adv.delta) {
-          <button class="btn btn-sm" style="margin-left: 6px" (click)="day.adjustKcal(adv.delta)">Hədəfi {{ F.signed(adv.delta, 0) }} kcal et</button>
+          <button class="btn btn-sm" style="margin-left: 6px" (click)="day.adjustKcal(adv.delta)">{{ 'common.setTargetNKcal' | t: { a: F.signed(adv.delta, 0) } }}</button>
         }
       </div>
     </div>

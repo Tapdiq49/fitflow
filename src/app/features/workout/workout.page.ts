@@ -10,14 +10,16 @@ import { RestTimerService } from '../../core/services/rest-timer.service';
 import { StoreService } from '../../core/services/store.service';
 import { UiService } from '../../core/services/ui.service';
 import { WorkoutService } from '../../core/services/workout.service';
-import { AZ_DAYS, DateU, F, inputValue } from '../../core/utils';
+import { DateU, F, dayName, inputValue } from '../../core/utils';
 import { CardioCardComponent } from '../dashboard/cardio-card.component';
 import { ChartComponent } from '../../shared/chart.component';
 import { IconComponent } from '../../shared/icon.component';
+import { TPipe, TdPipe } from '../../shared/t.pipe';
+import { t } from '../../core/i18n/translate';
 
 @Component({
   selector: 'app-workout-page',
-  imports: [IconComponent, ChartComponent, CardioCardComponent, NgTemplateOutlet, RouterLink],
+  imports: [IconComponent, ChartComponent, CardioCardComponent, NgTemplateOutlet, RouterLink, TPipe, TdPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="flex flex-col gap-[18px]">
@@ -28,18 +30,18 @@ import { IconComponent } from '../../shared/icon.component';
           <div>
             <div class="eyebrow">{{ F.long(k()) }}</div>
             <h3 style="font-size: 20px">{{ workout.title(k()) }}</h3>
-            <span class="text-muted">{{ doneCount() }}/{{ cards().length }} hərəkət tamamlandı</span>
+            <span class="text-muted">{{ 'workout.nPerNExercises' | t: { a: doneCount(), b: cards().length } }}</span>
           </div>
           <div class="flex flex-wrap items-center gap-2">
             @if (log().savedAt) {
-              <span class="badge badge-training"><app-icon name="check" size="sm" />Saxlanılıb</span>
+              <span class="badge badge-training"><app-icon name="check" size="sm" />{{ 'workout.saved' | t }}</span>
             } @else if (log().startedAt) {
               <span class="text-[22px] font-extrabold text-accent tabular-nums">{{ elapsed() }}</span>
             } @else {
-              <button class="btn btn-primary" (click)="workout.start(k())"><app-icon name="play" size="sm" />Start workout</button>
+              <button class="btn btn-primary" (click)="workout.start(k())"><app-icon name="play" size="sm" />{{ 'common.startWorkout' | t }}</button>
             }
             <button class="btn" [class.btn-primary]="!log().savedAt" (click)="workout.save(k())">
-              <app-icon name="save" size="sm" />{{ log().savedAt ? 'Yenidən saxla' : 'Save workout' }}
+              <app-icon name="save" size="sm" />{{ log().savedAt ? ('workout.saveAgain' | t) : ('workout.saveWorkout' | t) }}
             </button>
           </div>
         </div>
@@ -49,8 +51,8 @@ import { IconComponent } from '../../shared/icon.component';
         @if (!cards().length) {
           <div class="card">
             <div class="empty">
-              <app-icon name="info" /><br />Bu gün üçün trener məşqi yazılmayıb.<br /><br />
-              <a class="btn btn-sm" routerLink="/plan">Həftə planına keç</a>
+              <app-icon name="info" /><br />{{ 'workout.noTrainerWorkoutWritten' | t }}<br /><br />
+              <a class="btn btn-sm" routerLink="/plan">{{ 'workout.goToWeeklyPlan' | t }}</a>
             </div>
           </div>
         }
@@ -62,19 +64,19 @@ import { IconComponent } from '../../shared/icon.component';
                 <div>
                   <span class="eyebrow">{{ idx + 1 }} / {{ cards().length }}</span>
                   <h4 class="text-[16px] font-bold">{{ c.ex.name }}</h4>
-                  <div class="mt-1 text-[12px] text-muted">{{ c.ex.note }}</div>
+                  <div class="mt-1 text-[12px] text-muted">{{ c.ex.note | td }}</div>
                 </div>
                 <button class="btn btn-sm" [class.btn-done]="c.done" (click)="workout.toggleExercise(k(), c.id)">
-                  <app-icon name="check" size="sm" />{{ c.done ? 'Tamamlandı' : 'Complete exercise' }}
+                  <app-icon name="check" size="sm" />{{ c.done ? ('common.completed' | t) : ('workout.completeExercise' | t) }}
                 </button>
               </div>
               <div class="my-3 grid grid-cols-3 gap-2 phone:grid-cols-[1fr]">
-                <div class="rounded-[10px] bg-surface-2 px-2.5 py-2 text-[12.5px]"><span class="text-muted">Hədəf</span><b class="block text-[14px]">{{ c.ex.sets }} set × {{ c.ex.min }}–{{ c.ex.max }}{{ c.timed ? ' san' : '' }}</b></div>
+                <div class="rounded-[10px] bg-surface-2 px-2.5 py-2 text-[12.5px]"><span class="text-muted">{{ 'workout.target' | t }}</span><b class="block text-[14px]">{{ 'workout.nSetsNN' | t: { a: c.ex.sets, b: c.ex.min, c: c.ex.max, d: c.timed ? ' san' : '' } }}</b></div>
                 <div class="rounded-[10px] bg-surface-2 px-2.5 py-2 text-[12.5px]">
-                  <span class="text-muted">Son məşq{{ c.rec.last ? ' (' + F.short(c.rec.last.date) + ')' : '' }}</span>
+                  <span class="text-muted">{{ 'workout.lastWorkoutN' | t: { a: c.rec.last ? ' (' + F.short(c.rec.last.date) + ')' : '' } }}</span>
                   <b class="block text-[14px]">{{ workout.lastStr(c.rec.last, c.ex) }}</b>
                 </div>
-                <div class="rounded-[10px] bg-surface-2 px-2.5 py-2 text-[12.5px]"><span class="text-muted">Növbəti tövsiyə</span><b class="block text-[14px] text-accent">{{ c.recLabel }}</b></div>
+                <div class="rounded-[10px] bg-surface-2 px-2.5 py-2 text-[12.5px]"><span class="text-muted">{{ 'workout.nextSuggestion' | t }}</span><b class="block text-[14px] text-accent">{{ c.recLabel }}</b></div>
               </div>
               <div class="mt-1 text-[12px] text-muted" style="margin-bottom: 8px">{{ c.rec.text }}</div>
               <table
@@ -82,11 +84,11 @@ import { IconComponent } from '../../shared/icon.component';
               >
                 <thead>
                   <tr>
-                    <th>Set</th>
+                    <th>{{ 'workout.set' | t }}</th>
                     @if (!c.timed) {
-                      <th>Çəki (kq)</th>
+                      <th>{{ 'common.weightKg' | t }}</th>
                     }
-                    <th>{{ c.timed ? 'Saniyə' : 'Təkrar' }}</th>
+                    <th>{{ c.timed ? ('workout.seconds' | t) : ('workout.reps' | t) }}</th>
                     <th></th>
                     <th></th>
                   </tr>
@@ -104,18 +106,18 @@ import { IconComponent } from '../../shared/icon.component';
                         <input class="w-full text-center font-semibold" type="text" inputmode="numeric" [value]="s.r" [placeholder]="c.ex.min + '–' + c.ex.max" (input)="workout.setValue(k(), c.id, i, 'r', val($event))" />
                       </td>
                       <td class="w-10">
-                        <button class="check" [class.check-on]="s.done" (click)="toggleSet(c.id, i)" aria-label="Set tamamlandı"><app-icon name="check" /></button>
+                        <button class="check" [class.check-on]="s.done" (click)="toggleSet(c.id, i)" [attr.aria-label]="'workout.setCompleted' | t"><app-icon name="check" /></button>
                       </td>
                       <td class="w-10">
                         @if (i >= c.ex.sets) {
-                          <button class="btn btn-ghost btn-icon btn-sm" (click)="workout.removeSet(k(), c.id, i)" aria-label="Seti sil"><app-icon name="x" size="sm" /></button>
+                          <button class="btn btn-ghost btn-icon btn-sm" (click)="workout.removeSet(k(), c.id, i)" [attr.aria-label]="'workout.deleteSet' | t"><app-icon name="x" size="sm" /></button>
                         }
                       </td>
                     </tr>
                   }
                 </tbody>
               </table>
-              <button class="btn btn-ghost btn-sm" (click)="workout.addSet(k(), c.id)"><app-icon name="plus" size="sm" />Add set</button>
+              <button class="btn btn-ghost btn-sm" (click)="workout.addSet(k(), c.id)"><app-icon name="plus" size="sm" />{{ 'workout.addSet' | t }}</button>
             </div>
           }
         </div>
@@ -123,9 +125,9 @@ import { IconComponent } from '../../shared/icon.component';
         <div class="card">
           <div class="empty">
             <app-icon name="info" /><br />{{ F.long(k()) }} — <b>{{ program.typeLabel(type()) }}</b>.<br />
-            Növbəti zal günü: <b>{{ next() ? F.long(next()!) + ' — ' + workout.title(next()!) : '—' }}</b>
+            {{ 'workout.nextGymDay' | t }} <b>{{ next() ? F.long(next()!) + ' — ' + workout.title(next()!) : '—' }}</b>
             @if (next(); as n) {
-              <br /><br /><button class="btn btn-sm" (click)="ui.viewDate.set(n)">O günə keç</button>
+              <br /><br /><button class="btn btn-sm" (click)="ui.viewDate.set(n)">{{ 'workout.goToThatDay' | t }}</button>
             }
           </div>
         </div>
@@ -137,7 +139,7 @@ import { IconComponent } from '../../shared/icon.component';
 
       <div class="card">
         <div class="card-head">
-          <h3><app-icon name="trend" /> Progress chart</h3>
+          <h3><app-icon name="trend" /> {{ 'workout.progressChart' | t }}</h3>
           @if (historyIds().length) {
             <select [value]="chartId()" (change)="selectedChart.set(val($event))">
               @for (id of historyIds(); track id) {
@@ -149,7 +151,7 @@ import { IconComponent } from '../../shared/icon.component';
         @if (historyIds().length) {
           <app-chart [config]="progressChart()" />
         } @else {
-          <div class="empty">Məşq saxladıqdan sonra burada hər hərəkətin irəliləyişi görünəcək.</div>
+          <div class="empty">{{ 'workout.afterYouSaveWorkout' | t }}</div>
         }
       </div>
 
@@ -164,7 +166,7 @@ import { IconComponent } from '../../shared/icon.component';
                     <span>{{ e.ex.name }}</span><span>{{ e.ex.sets }}×{{ e.ex.min }}–{{ e.ex.max }}</span>
                   </div>
                 } @empty {
-                  <div class="text-muted">Yazılmayıb</div>
+                  <div class="text-muted">{{ 'workout.notWritten' | t }}</div>
                 }
               </div>
             </div>
@@ -172,7 +174,7 @@ import { IconComponent } from '../../shared/icon.component';
         } @else {
         @for (v of variants; track v) {
           <div class="card">
-            <div class="card-head"><h3>FULL BODY {{ v }}</h3></div>
+            <div class="card-head"><h3>{{ 'workout.fullBodyN' | t: { a: v } }}</h3></div>
             <div class="flex flex-col gap-2">
               @for (id of program_[v]; track id) {
                 <div class="flex justify-between gap-2.5 rounded-[10px] bg-surface-2 px-3 py-[9px] text-[13px] [&_span:last-child]:text-right [&_span:last-child]:text-text-2">
@@ -191,11 +193,11 @@ import { IconComponent } from '../../shared/icon.component';
         <app-icon name="shield" />
         <div>
           @if (!workout.isTrainer()) {
-            <b>{{ phase().name }} (həftə {{ phase().wk }}) — RIR {{ phase().rir }}.</b> {{ phase().text }}
+            <b>{{ 'workout.nWeekNRir' | t: { a: (phase().name | td), b: phase().wk, c: phase().rir } }}</b> {{ phase().text | td }}
           }
           <ul>
             @for (s of safety; track s) {
-              <li>{{ s }}</li>
+              <li>{{ s | td }}</li>
             }
           </ul>
         </div>
@@ -241,7 +243,7 @@ export class WorkoutPage {
         timed,
         done: log.ex[id]?.done ?? false,
         sets: log.ex[id]?.sets ?? [],
-        recLabel: timed ? 'Saniyə' : rec.w != null ? `${arrow}${F.kg(rec.w)} kq` : this.workout.isTrainer() ? '—' : 'Yeni',
+        recLabel: timed ? t('workout.seconds') : rec.w != null ? `${arrow}${F.kg(rec.w)} ${t('workout.kg')}` : this.workout.isTrainer() ? '—' : t('workout.new'),
       };
     });
   });
@@ -250,7 +252,7 @@ export class WorkoutPage {
     const mon = DateU.monday(this.k());
     return Array.from({ length: 7 }, (_, i) => DateU.add(mon, i))
       .filter((date) => this.program.dayType(date) === 'training')
-      .map((date) => ({ date, label: `${AZ_DAYS[DateU.dow(date) - 1]} · ${DateU.short(date)}`, exercises: this.workout.exercises(date) }));
+      .map((date) => ({ date, label: `${dayName(DateU.dow(date) - 1)} · ${DateU.short(date)}`, exercises: this.workout.exercises(date) }));
   });
   protected readonly doneCount = computed(() => this.cards().filter((c) => c.done).length);
 
@@ -278,7 +280,7 @@ export class WorkoutPage {
     const timed = ex.kind === 'time';
     return lineChart(
       h.map((e) => DateU.short(e.date)),
-      [lineSeries(timed ? 'Ən uzun set (san)' : 'Ən ağır set (kq)', h.map((e) => Math.max(...e.sets.map((s) => (timed ? s.r : s.w)))), ACCENT)],
+      [lineSeries(timed ? t('workout.longestSetSec') : t('workout.heaviestSetKg'), h.map((e) => Math.max(...e.sets.map((s) => (timed ? s.r : s.w)))), ACCENT)],
       timed ? ' s' : ' kq',
     );
   });
@@ -289,7 +291,7 @@ export class WorkoutPage {
 
   protected targetOf(id: string): string {
     const e = this.workout.defOf(id);
-    return `${e.sets}×${e.min}–${e.max}${e.kind === 'time' ? ' san' : ''}`;
+    return `${e.sets}×${e.min}–${e.max}${e.kind === 'time' ? ` ${t('common.sec')}` : ''}`;
   }
 
   protected toggleSet(id: string, i: number): void {

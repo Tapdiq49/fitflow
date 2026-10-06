@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, ElementRef, computed, effect, inject, input, model, signal, viewChild } from '@angular/core';
 import { fromMin, toMin } from '../core/utils';
 import { IconComponent } from './icon.component';
+import { TPipe } from './t.pipe';
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 const POPOVER_W = 264;
@@ -15,7 +16,7 @@ const CELL_ON = `${CELL} border-accent bg-accent text-accent-ink`;
 /** Click-to-open time picker ("HH:MM", 24 h): pick the hour, then the minute (5-minute steps). */
 @Component({
   selector: 'app-time-picker',
-  imports: [IconComponent],
+  imports: [IconComponent, TPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'block',
@@ -49,13 +50,13 @@ const CELL_ON = `${CELL} border-accent bg-accent text-accent-ink`;
         [style.width.px]="popoverW"
         [style.max-height.px]="pos().maxH"
       >
-        <div class="eyebrow mb-1.5">Saat</div>
+        <div class="eyebrow mb-1.5">{{ 'common.time' | t }}</div>
         <div class="grid grid-cols-6 gap-1">
           @for (h of hours; track h) {
             <button type="button" [class]="h === hour() ? cellOn : cellOff" (click)="pickHour(h)">{{ pad(h) }}</button>
           }
         </div>
-        <div class="eyebrow mt-3 mb-1.5">Dəqiqə</div>
+        <div class="eyebrow mt-3 mb-1.5">{{ 'common.minutes' | t }}</div>
         <div class="grid grid-cols-6 gap-1">
           @for (m of minutes(); track m) {
             <button type="button" [class]="m === minute() ? cellOn : cellOff" (click)="pickMinute(m)">{{ pad(m) }}</button>

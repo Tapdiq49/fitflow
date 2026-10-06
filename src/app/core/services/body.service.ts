@@ -3,6 +3,7 @@ import { Advice, BodyStats, WeightEntry } from '../models';
 import { DateU, F, rnd } from '../utils';
 import { StoreService } from './store.service';
 import { ToastService } from './toast.service';
+import { t } from '../i18n/translate';
 
 @Injectable({ providedIn: 'root' })
 export class BodyService {
@@ -48,34 +49,34 @@ export class BodyService {
 
   advice(st: BodyStats | null): Advice {
     if (!st || st.rate == null) {
-      return { level: 'info', text: 'Trend üçün ən azı 1 həftəlik çəki qeydi lazımdır. Hər səhər, tualetdən sonra, ac qarına çəkil.' };
+      return { level: 'info', text: t('bodySvc.atLeastOneWeek') };
     }
     if (st.rate > 0.5) {
-      return { level: 'warn', text: `Çəki çox sürətlə artır (${F.signed(st.rate)} kq/həftə). Kalorini bir qədər azaltmaq lazım ola bilər.`, delta: -150 };
+      return { level: 'warn', text: t('bodySvc.weightRisingTooFast', { r: F.signed(st.rate) }), delta: -150 };
     }
     if (st.rate < -0.5) {
-      return { level: 'warn', text: `Çəki çox sürətlə azalır (${F.signed(st.rate)} kq/həftə). Kalorini bir qədər artırmaq lazım ola bilər.`, delta: 150 };
+      return { level: 'warn', text: t('bodySvc.weightDroppingTooFast', { r: F.signed(st.rate) }), delta: 150 };
     }
     if (st.waistCur && st.waistFirst && st.waistCur - st.waistFirst >= 2 && st.change > 0) {
       return {
         level: 'warn',
-        text: `Bel ölçüsü ${F.signed(st.waistCur - st.waistFirst)} sm artıb — yağ yığımı ola bilər. Kalorini bir qədər azaltmaq lazım ola bilər.`,
+        text: t('bodySvc.waistIncreasedByN', { d: F.signed(st.waistCur - st.waistFirst) }),
         delta: -100,
       };
     }
-    return { level: 'good', text: `Temp qaydasındadır (${F.signed(st.rate)} kq/həftə). İdeal: 0 … +0.4 kq/həftə və sabit bel ölçüsü.` };
+    return { level: 'good', text: t('bodySvc.paceFineNKg', { r: F.signed(st.rate) }) };
   }
 
   save(date: string, kg: number, waist: number): boolean {
     if (!(kg > 30 && kg < 300)) {
-      this.toast.show('Düzgün çəki daxil et');
+      this.toast.show(t('bodySvc.enterValidWeight'));
       return false;
     }
     this.store.mutate((s) => {
       s.weights = s.weights.filter((w) => w.date !== date);
       s.weights.push({ date, kg: rnd(kg, 1), waist: waist > 40 && waist < 200 ? rnd(waist, 1) : null });
     });
-    this.toast.show('Çəki qeyd edildi ✓');
+    this.toast.show(t('bodySvc.weightSaved'));
     return true;
   }
 

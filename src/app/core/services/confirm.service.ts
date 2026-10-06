@@ -1,4 +1,5 @@
 import { Injectable, signal } from '@angular/core';
+import { t } from '../i18n/translate';
 
 export interface ConfirmRequest {
   message: string;
@@ -14,7 +15,7 @@ export class ConfirmService {
 
   ask(message: string, opts: { confirmLabel?: string; danger?: boolean } = {}): Promise<boolean> {
     this.request()?.resolve(false);
-    return new Promise((resolve) => this.request.set({ message, confirmLabel: opts.confirmLabel ?? 'Bəli', danger: opts.danger ?? false, resolve }));
+    return new Promise((resolve) => this.request.set({ message, confirmLabel: opts.confirmLabel ?? t('common.yes'), danger: opts.danger ?? false, resolve }));
   }
 
   answer(ok: boolean): void {

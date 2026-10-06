@@ -4,23 +4,25 @@ import { ProgramService } from '../../core/services/program.service';
 import { StoreService } from '../../core/services/store.service';
 import { UiService } from '../../core/services/ui.service';
 import { WorkoutService } from '../../core/services/workout.service';
-import { AZ_DAYS, DateU, F } from '../../core/utils';
+import { DateU, F, dayName } from '../../core/utils';
 import { IconComponent } from '../../shared/icon.component';
+import { TPipe } from '../../shared/t.pipe';
+import { t } from '../../core/i18n/translate';
 
 @Component({
   selector: 'app-workout-summary',
-  imports: [IconComponent],
+  imports: [IconComponent, TPipe],
   host: { class: 'card' },
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (variant()) {
       <div class="card-head">
-        <h3><app-icon name="dumbbell" /> Today's Workout — {{ workout.title(ui.viewDate()) }}</h3>
+        <h3><app-icon name="dumbbell" /> {{ 'dash.todaysWorkoutN' | t: { a: workout.title(ui.viewDate()) } }}</h3>
         @if (log().savedAt) {
-          <span class="badge badge-training"><app-icon name="check" size="sm" />Tamamlandı</span>
+          <span class="badge badge-training"><app-icon name="check" size="sm" />{{ 'common.completed' | t }}</span>
         } @else {
           <button class="btn btn-primary btn-sm" (click)="start()">
-            <app-icon name="play" size="sm" />{{ log().startedAt ? 'Davam et' : 'Start workout' }}
+            <app-icon name="play" size="sm" />{{ log().startedAt ? ('dash.continue' | t) : ('common.startWorkout' | t) }}
           </button>
         }
       </div>
@@ -33,12 +35,12 @@ import { IconComponent } from '../../shared/icon.component';
         }
       </div>
       <p class="text-muted" style="margin: 12px 0 0; font-size: 12px">
-        {{ workout.isTrainer() ? 'Sağdakı rəqəm — keçən məşqdəki çəki və təkrar.' : 'Sağdakı rəqəm — progressive overload-a görə tövsiyə olunan çəki.' }}
+        {{ workout.isTrainer() ? ('dash.numberOnRightLast' | t) : ('dash.numberOnRightWeight' | t) }}
       </p>
     } @else {
-      <div class="card-head"><h3><app-icon name="dumbbell" /> Today's Workout</h3></div>
+      <div class="card-head"><h3><app-icon name="dumbbell" /> {{ 'dash.todaysWorkout' | t }}</h3></div>
       <div class="empty">
-        Bu gün zal günü deyil.<br />Növbəti məşq: <b>{{ nextLabel() }}</b>
+        {{ 'dash.todayIsntGymDay' | t }}<br />{{ 'dash.nextWorkout' | t }} <b>{{ nextLabel() }}</b>
       </div>
     }
   `,
@@ -66,14 +68,14 @@ export class WorkoutSummaryComponent {
         id,
         name: ex.name,
         done: this.log().ex[id]?.done ?? false,
-        target: `${ex.sets}×${ex.min}–${ex.max}${ex.kind === 'time' ? 's' : ''}`,
+        target: `${ex.sets}×${ex.min}–${ex.max}${ex.kind === 'time' ? t('common.s') : ''}`,
         rec: trainer ? this.workout.lastStr(rec.last, ex) : rec.w != null ? `${F.kg(rec.w)} kq` : ex.kind === 'time' ? '—' : 'yeni',
       };
     });
   });
   protected readonly nextLabel = computed(() => {
     const nt = this.program.nextTraining(this.ui.viewDate());
-    return nt ? `${AZ_DAYS[DateU.dow(nt) - 1]} — ${this.workout.title(nt)}` : '—';
+    return nt ? `${dayName(DateU.dow(nt) - 1)} — ${this.workout.title(nt)}` : '—';
   });
 
   protected start(): void {

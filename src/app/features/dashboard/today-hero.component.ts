@@ -8,11 +8,13 @@ import { WorkoutService } from '../../core/services/workout.service';
 import { F, fromMin, toMin } from '../../core/utils';
 import { IconComponent } from '../../shared/icon.component';
 import { TypeBadgeComponent } from '../../shared/type-badge.component';
+import { TPipe, TdPipe } from '../../shared/t.pipe';
+import { t } from '../../core/i18n/translate';
 
 /** "BU GÜN NƏ ETMƏLİSƏN?" — the time-ordered checklist, score and tip of the day. */
 @Component({
   selector: 'app-today-hero',
-  imports: [IconComponent, TypeBadgeComponent],
+  imports: [IconComponent, TypeBadgeComponent, TPipe, TdPipe],
   host: {
     class:
       'card [background:radial-gradient(1200px_300px_at_0%_0%,color-mix(in_oklab,var(--color-accent)_10%,transparent),transparent_60%),var(--color-surface)] p-[26px]! tablet:p-[18px]! phone:p-[14px]!',
@@ -25,7 +27,7 @@ import { TypeBadgeComponent } from '../../shared/type-badge.component';
         <h1 class="mt-1.5 mb-2.5 text-[length:clamp(24px,3.4vw,36px)] font-extrabold tracking-[-.03em]">{{ heading() }}</h1>
         <div class="flex flex-wrap items-center gap-2">
           <app-type-badge [date]="k()" />
-          <span class="badge"><app-icon name="target" size="sm" />Həftə {{ phase().wk }} · {{ phase().name }}</span>
+          <span class="badge"><app-icon name="target" size="sm" />{{ 'dash.weekNN' | t: { a: phase().wk, b: (phase().name | td) } }}</span>
         </div>
       </div>
       <div class="flex items-center gap-3.5 rounded-[16px] border border-border bg-surface-2 py-3 pr-[18px] pl-3">
@@ -34,7 +36,7 @@ import { TypeBadgeComponent } from '../../shared/type-badge.component';
           [style.--v]="score()"
         ></div>
         <div>
-          <div class="eyebrow">Today's Score</div>
+          <div class="eyebrow">{{ 'dash.todaysScore' | t }}</div>
           <b class="text-[22px] font-extrabold">{{ score() }}%</b>
         </div>
       </div>
@@ -58,9 +60,9 @@ import { TypeBadgeComponent } from '../../shared/type-badge.component';
               class="check"
               [class.check-on]="it.done"
               [disabled]="it.auto"
-              [title]="it.auto ? 'Su əlavə etdikcə avtomatik işarələnir' : ''"
+              [title]="it.auto ? ('dash.markedAutomaticallyAsYou' | t) : ''"
               (click)="toggle(it.id)"
-              aria-label="Tamamlandı"
+              [attr.aria-label]="'common.completed' | t"
             >
               <app-icon name="check" />
             </button>
@@ -71,21 +73,20 @@ import { TypeBadgeComponent } from '../../shared/type-badge.component';
         }
       </ol>
       <aside class="flex flex-col gap-3 rounded-[14px] border border-border bg-surface-2 p-4">
-        <h3 class="flex items-center gap-2 text-[14px] text-accent"><app-icon name="zap" size="sm" /> Günün əsas tövsiyəsi</h3>
+        <h3 class="flex items-center gap-2 text-[14px] text-accent"><app-icon name="zap" size="sm" /> {{ 'dash.tipOfDay' | t }}</h3>
         <p class="m-0 text-text-2">{{ tip() }}</p>
         @if (type() === 'training') {
           <div class="alert alert-warn">
             <app-icon name="shield" />
             <div>
-              <b>Təhlükəsizlik (varikosel əməliyyatı sonrası):</b> {{ phase().text }} Nəfəsi saxlama; ağrı/şişkinlik olarsa
-              dayandır.
+              <b>{{ 'dash.safetyAfterVaricoceleSurgery' | t }}</b> {{ 'dash.nDontHoldBreath' | t: { a: (phase().text | td) } }}
             </div>
           </div>
         }
-        <div class="kv"><span>Kalori hədəfi</span><b>{{ s().kcalTarget - 100 }}–{{ s().kcalTarget + 100 }} kcal</b></div>
-        <div class="kv"><span>Protein hədəfi</span><b>{{ s().proteinTarget - 10 }}–{{ s().proteinTarget + 10 }} q</b></div>
-        <div class="kv"><span>Su hədəfi</span><b>{{ F.liters(water()) }} L</b></div>
-        <div class="kv"><span>Yuxu hədəfi</span><b>7–9 saat ({{ s().sleepTime }} → {{ s().wakeTime }})</b></div>
+        <div class="kv"><span>{{ 'dash.calorieTarget' | t }}</span><b>{{ 'dash.nNKcal' | t: { a: s().kcalTarget - 100, b: s().kcalTarget + 100 } }}</b></div>
+        <div class="kv"><span>{{ 'dash.proteinTarget' | t }}</span><b>{{ 'dash.nNG' | t: { a: s().proteinTarget - 10, b: s().proteinTarget + 10 } }}</b></div>
+        <div class="kv"><span>{{ 'common.waterTarget' | t }}</span><b>{{ 'dash.nL' | t: { a: F.liters(water()) } }}</b></div>
+        <div class="kv"><span>{{ 'dash.sleepTarget' | t }}</span><b>{{ 'dash.79HoursN' | t: { a: s().sleepTime, b: s().wakeTime } }}</b></div>
       </aside>
     </div>
   `,
@@ -102,8 +103,8 @@ export class TodayHeroComponent {
   protected readonly k = this.ui.viewDate;
   /** Past, today or future relative to the selected day. */
   private readonly when = computed(() => (this.k() < this.ui.today() ? 'past' : this.k() > this.ui.today() ? 'future' : 'today'));
-  protected readonly eyebrow = computed(() => ({ past: 'KEÇMİŞ GÜN', today: 'BUGÜN', future: 'GƏLƏCƏK GÜN' })[this.when()]);
-  protected readonly heading = computed(() => ({ past: 'O GÜN NƏ ETMİŞDİN?', today: 'BU GÜN NƏ ETMƏLİSƏN?', future: 'O GÜN NƏ ETMƏLİSƏN?' })[this.when()]);
+  protected readonly eyebrow = computed(() => ({ past: t('dash.pastDay'), today: t('dash.today'), future: t('dash.upcomingDay') })[this.when()]);
+  protected readonly heading = computed(() => ({ past: t('dash.whatDidYouDo'), today: t('dash.whatShouldYouDo'), future: t('dash.whatShouldYouDoThat') })[this.when()]);
   protected readonly s = this.store.settings;
   protected readonly items = computed(() => this.day.timeline(this.k()));
   protected readonly score = computed(() => this.day.score(this.k()) ?? 0);
@@ -123,7 +124,7 @@ export class TodayHeroComponent {
   protected async toggle(id: string): Promise<void> {
     const k = this.k();
     if (id === 'workout' && !this.items().find((i) => i.id === id)?.done && !this.workout.get(k).savedAt) {
-      const ok = await this.confirm.ask('Məşq qeydlərini saxlamadan tamamlandı kimi işarələnsin? (Tarixçə üçün "Məşq" bölməsində Save workout istifadə et)');
+      const ok = await this.confirm.ask(t('dash.markWorkoutAsDone'));
       if (!ok) return;
     }
     this.day.toggle(k, id);

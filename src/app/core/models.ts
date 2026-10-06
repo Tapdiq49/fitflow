@@ -119,6 +119,11 @@ export interface WeightEntry {
 /** 'auto' = generated menu hitting the kcal/protein targets; 'trainer' = fixed 7-day plan from the trainer. */
 export type MenuMode = 'auto' | 'trainer';
 
+export type Lang = 'az' | 'en' | 'ru';
+
+/** 'system' follows the OS light/dark preference. */
+export type ThemeMode = 'system' | 'light' | 'dark';
+
 /** 'program' = built-in Full Body A/B with progression; 'trainer' = exercises the trainer gives, entered per week. */
 export type WorkoutMode = 'program' | 'trainer';
 
@@ -131,6 +136,8 @@ export interface Settings {
   useWhey: boolean;
   menuMode: MenuMode;
   workoutMode: WorkoutMode;
+  theme: ThemeMode;
+  lang: Lang;
   showCreatine: boolean;
   workoutTime: string;
   wakeTime: string;

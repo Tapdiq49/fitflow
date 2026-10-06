@@ -7,6 +7,7 @@ import { ProgramService } from './program.service';
 import { StoreService } from './store.service';
 import { ToastService } from './toast.service';
 import { TrainerPlanService } from './trainer-plan.service';
+import { t } from '../i18n/translate';
 
 export interface PlannedExercise {
   id: string;
@@ -23,7 +24,7 @@ export class WorkoutService {
 
   /** Short calendar tag for a gym day. */
   tag(k: string): string {
-    return this.isTrainer() ? 'Zal' : `FB ${this.program.variantOf(k)}`;
+    return this.isTrainer() ? t('common.gym') : `FB ${this.program.variantOf(k)}`;
   }
 
   isTrainer(): boolean {
@@ -31,7 +32,7 @@ export class WorkoutService {
   }
 
   title(k: string): string {
-    return this.isTrainer() ? 'TRENER MƏŞQİ' : `FULL BODY ${this.program.variantOf(k)}`;
+    return this.isTrainer() ? t('workoutSvc.trainerWorkout') : `FULL BODY ${this.program.variantOf(k)}`;
   }
 
   /** Exercises of the day: the built-in A/B program, or what the trainer gave for that weekday (empty on non-gym days). */
@@ -130,7 +131,7 @@ export class WorkoutService {
       }))
       .filter((e) => e.sets.length);
     if (!entries.length) {
-      this.toast.show('Heç bir set qeyd olunmayıb — təkrar sayını daxil et');
+      this.toast.show(t('workoutSvc.noSetWasRecorded'));
       return 0;
     }
     this.store.mutate((s) => {
@@ -147,7 +148,7 @@ export class WorkoutService {
         d.checks['workout'] = true;
       }
     });
-    this.toast.show(`Məşq yadda saxlandı ✓ (${entries.length} hərəkət)`);
+    this.toast.show(t('workoutSvc.workoutSavedNExercises', { n: entries.length }));
     return entries.length;
   }
 
@@ -165,44 +166,44 @@ export class WorkoutService {
     if (id.startsWith(TRAINER_EX_PREFIX)) {
       // Trainer exercises: no automatic suggestion, just show what was lifted last time.
       const last = hist.at(-1) ?? null;
-      return { w: null, last, kind: last ? 'same' : 'new', text: last ? 'Çəkini trenerin tapşırığına görə seç.' : 'İlk dəfə: trenerin dediyi çəki ilə başla.' };
+      return { w: null, last, kind: last ? 'same' : 'new', text: last ? t('workoutSvc.chooseWeightAccordingTo') : t('workoutSvc.firstTimeStartWith') };
     }
-    if (!hist.length) return { w: null, last: null, kind: 'new', text: 'İlk dəfə: rahat çəki seç, 3–4 təkrar ehtiyatda saxla.' };
+    if (!hist.length) return { w: null, last: null, kind: 'new', text: t('workoutSvc.firstTimeChooseComfortable') };
     const last = hist[hist.length - 1];
     const sets = last.sets.filter((s) => s.r > 0);
-    if (!sets.length) return { w: null, last, kind: 'new', text: 'Son məşqdə set qeyd olunmayıb.' };
+    if (!sets.length) return { w: null, last, kind: 'new', text: t('workoutSvc.noSetsWereRecorded') };
 
     if (ex.kind === 'time') {
       const best = Math.max(...sets.map((s) => s.r));
       const allMax = sets.length >= ex.sets && sets.every((s) => s.r >= ex.max);
       return allMax
-        ? { w: null, last, kind: 'up', text: `Bütün setlər ${ex.max} san ✓ — növbəti dəfə 60–75 saniyə hədəflə.` }
-        : { w: null, last, kind: 'same', text: `Hədəf: hər set ~${Math.min(best + 5, ex.max)} saniyə.` };
+        ? { w: null, last, kind: 'up', text: t('workoutSvc.allSetsReachedN', { max: ex.max }) }
+        : { w: null, last, kind: 'same', text: t('workoutSvc.targetNSecondsPer', { n: Math.min(best + 5, ex.max) }) };
     }
 
     const w = Math.max(...sets.map((s) => s.w || 0));
     const top = sets.filter((s) => (s.w || 0) === w);
     if (top.length >= ex.sets && top.every((s) => s.r >= ex.max)) {
       const nw = rnd(w + this.increment(ex, this.program.phase(k).n, w), 1);
-      return { w: nw, last, kind: 'up', text: `Bütün setlərdə ${ex.max}+ təkrar ✓ → ${nw} kq ilə ${ex.min} təkrardan başla.` };
+      return { w: nw, last, kind: 'up', text: t('workoutSvc.allSetsHitN', { max: ex.max, w: nw, min: ex.min }) };
     }
     if (top.some((s) => s.r < ex.min)) {
       const prev = hist[hist.length - 2];
       const prevBelow = prev?.sets.some((s) => (s.w || 0) === w && s.r > 0 && s.r < ex.min);
       if (prevBelow) {
         const nw = rnd(Math.round((w * 0.9) / ex.inc) * ex.inc, 1);
-        return { w: nw, last, kind: 'down', text: `2 məşq ardıcıl hədəfdən aşağı — çəkini ~10% azalt (${nw} kq), texnikanı bərpa et.` };
+        return { w: nw, last, kind: 'down', text: t('workoutSvc.2WorkoutsInRow', { w: nw }) };
       }
-      return { w, last, kind: 'same', text: `Təkrarlar ${ex.min}-dən aşağıdır — eyni çəkidə qal.` };
+      return { w, last, kind: 'same', text: t('workoutSvc.repsBelowNStay', { min: ex.min }) };
     }
-    return { w, last, kind: 'same', text: `Eyni çəki — hər setdə +1 təkrar hədəflə (${ex.max}-ə çatanda artır).` };
+    return { w, last, kind: 'same', text: t('workoutSvc.sameWeightAimFor', { max: ex.max }) };
   }
 
   lastStr(last: HistoryEntry | null, ex: Exercise): string {
     if (!last) return '—';
     return last.sets
       .filter((s) => s.r > 0)
-      .map((s) => (ex.kind === 'time' ? `${s.r}s` : `${F.kg(s.w)}×${s.r}`))
+      .map((s) => (ex.kind === 'time' ? `${s.r}${t('common.s')}` : `${F.kg(s.w)}×${s.r}`))
       .join(', ');
   }
 

@@ -8,20 +8,22 @@ import { StoreService } from '../../core/services/store.service';
 import { UiService } from '../../core/services/ui.service';
 import { F } from '../../core/utils';
 import { IconComponent } from '../../shared/icon.component';
+import { TPipe, TdPipe } from '../../shared/t.pipe';
+import { t, td } from '../../core/i18n/translate';
 
 /** Today's meals as macro tables, with daily totals. */
 @Component({
   selector: 'app-meals-card',
-  imports: [IconComponent],
+  imports: [IconComponent, TPipe, TdPipe],
   host: { class: 'card' },
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="card-head">
-      <h3><app-icon name="utensils" /> Today's Meals</h3>
+      <h3><app-icon name="utensils" /> {{ 'dash.todaysMeals' | t }}</h3>
       <div class="flex flex-wrap items-center gap-2">
-        <button class="btn btn-primary btn-sm" (click)="day.regenerateMenu(k())"><app-icon name="refresh" size="sm" />Yeni Günlük Menyu Yarat</button>
-        <button class="btn btn-sm" (click)="ui.addMealOpen.set(true)"><app-icon name="plus" size="sm" />Add meal</button>
-        <button class="btn btn-sm btn-ghost" (click)="newDay()">Yeni gün yarat</button>
+        <button class="btn btn-primary btn-sm" (click)="day.regenerateMenu(k())"><app-icon name="refresh" size="sm" />{{ 'dash.createNewDailyMenu' | t }}</button>
+        <button class="btn btn-sm" (click)="ui.addMealOpen.set(true)"><app-icon name="plus" size="sm" />{{ 'dash.addMeal' | t }}</button>
+        <button class="btn btn-sm btn-ghost" (click)="newDay()">{{ 'dash.newDay' | t }}</button>
       </div>
     </div>
 
@@ -29,8 +31,7 @@ import { IconComponent } from '../../shared/icon.component';
       <div class="alert alert-warn" style="margin-bottom: 12px">
         <app-icon name="alert" />
         <div>
-          Plan hədəfdən bir qədər kənardadır ({{ F.round(plan().k) }} kcal, {{ F.round(plan().p) }} q protein). Porsiyalar
-          məhdudlaşdırılıb. Yeni menyu yaratmağı və ya Ayarlarda yemək sayını dəyişməyi yoxla.
+          {{ 'dash.planLittleOffTarget' | t: { a: F.round(plan().k), b: F.round(plan().p) } }}
         </div>
       </div>
     }
@@ -44,18 +45,18 @@ import { IconComponent } from '../../shared/icon.component';
         <div class="flex flex-wrap items-center gap-3.5 px-3.5 py-3">
           <span class="rounded-[8px] border border-border bg-bg px-2 py-1 text-[13px] font-extrabold tabular-nums">{{ m.time }}</span>
           <div class="min-w-[160px] flex-1">
-            <span class="eyebrow">{{ slotLabel(m) }}</span><b class="block text-[15px]">{{ m.name }}</b>
+            <span class="eyebrow">{{ slotLabel(m) }}</span><b class="block text-[15px]">{{ m.name | td }}</b>
           </div>
-          <span class="text-[13px] text-text-2 tabular-nums">{{ F.round(mm.k) }} kcal · {{ F.round(mm.p) }} q P</span>
+          <span class="text-[13px] text-text-2 tabular-nums">{{ 'dash.nKcalNG' | t: { a: F.round(mm.k), b: F.round(mm.p) } }}</span>
           <div class="flex gap-1.5">
             @if (!m.custom && !m.done) {
-              <button class="btn btn-sm btn-icon" title="Alternativ yemək" (click)="day.swapMeal(k(), m.id)"><app-icon name="shuffle" size="sm" /></button>
+              <button class="btn btn-sm btn-icon" [title]="'dash.alternativeMeal' | t" (click)="day.swapMeal(k(), m.id)"><app-icon name="shuffle" size="sm" /></button>
             }
             @if (m.custom) {
-              <button class="btn btn-sm btn-icon btn-danger" title="Sil" (click)="day.removeMeal(k(), m.id)"><app-icon name="trash" size="sm" /></button>
+              <button class="btn btn-sm btn-icon btn-danger" [title]="'common.delete' | t" (click)="day.removeMeal(k(), m.id)"><app-icon name="trash" size="sm" /></button>
             }
             <button class="btn btn-sm" [class.btn-done]="m.done" (click)="day.toggleMeal(k(), m.id)">
-              <app-icon name="check" size="sm" />{{ m.done ? 'Yeyildi' : 'Complete' }}
+              <app-icon name="check" size="sm" />{{ m.done ? ('dash.eaten' | t) : ('dash.complete' | t) }}
             </button>
           </div>
         </div>
@@ -63,8 +64,8 @@ import { IconComponent } from '../../shared/icon.component';
           <table class="tbl">
             <thead>
               <tr>
-                <th>Yemək</th><th>Qida</th><th class="tbl-num">Miqdar</th><th class="tbl-num">Kalori</th>
-                <th class="tbl-num">Protein</th><th class="tbl-num">Karbohidrat</th><th class="tbl-num">Yağ</th>
+                <th>{{ 'dash.meal' | t }}</th><th>{{ 'common.food' | t }}</th><th class="tbl-num">{{ 'common.amount' | t }}</th><th class="tbl-num">{{ 'dash.calories2' | t }}</th>
+                <th class="tbl-num">{{ 'dash.protein' | t }}</th><th class="tbl-num">{{ 'dash.carbs' | t }}</th><th class="tbl-num">{{ 'dash.fat' | t }}</th>
               </tr>
             </thead>
             <tbody>
@@ -77,7 +78,7 @@ import { IconComponent } from '../../shared/icon.component';
                   <td class="tbl-text">
                     {{ itemName(it) }}
                     @if (it.note) {
-                      <div class="text-muted" style="font-size: 11px">{{ it.note }}</div>
+                      <div class="text-muted" style="font-size: 11px">{{ it.note | td }}</div>
                     }
                   </td>
                   <td class="tbl-num">{{ itemAmount(it) }}</td>
@@ -90,7 +91,7 @@ import { IconComponent } from '../../shared/icon.component';
             </tbody>
             <tfoot>
               <tr>
-                <td colspan="3">Cəmi</td>
+                <td colspan="3">{{ 'common.total' | t }}</td>
                 <td class="tbl-num">{{ F.round(mm.k) }}</td>
                 <td class="tbl-num">{{ F.r1(mm.p) }}</td>
                 <td class="tbl-num">{{ F.r1(mm.c) }}</td>
@@ -103,13 +104,13 @@ import { IconComponent } from '../../shared/icon.component';
     }
 
     <div class="mt-4 grid grid-cols-6 gap-2.5 laptop:grid-cols-3 phone:grid-cols-2">
-      <div class="sum-box"><span class="eyebrow">Total Calories</span><b>{{ F.round(eaten().k) }}</b><small>plan {{ F.round(plan().k) }} kcal</small></div>
-      <div class="sum-box"><span class="eyebrow">Total Protein</span><b>{{ F.round(eaten().p) }} q</b><small>plan {{ F.round(plan().p) }} q</small></div>
-      <div class="sum-box"><span class="eyebrow">Total Carbs</span><b>{{ F.round(eaten().c) }} q</b><small>plan {{ F.round(plan().c) }} q</small></div>
-      <div class="sum-box"><span class="eyebrow">Total Fat</span><b>{{ F.round(eaten().f) }} q</b><small>plan {{ F.round(plan().f) }} q</small></div>
-      <div class="sum-box"><span class="eyebrow">Water</span><b>{{ F.liters(water()) }} L</b><small>hədəf {{ F.liters(waterTarget()) }} L</small></div>
+      <div class="sum-box"><span class="eyebrow">{{ 'dash.totalCalories' | t }}</span><b>{{ F.round(eaten().k) }}</b><small>{{ 'dash.planNKcal' | t: { a: F.round(plan().k) } }}</small></div>
+      <div class="sum-box"><span class="eyebrow">{{ 'dash.totalProtein' | t }}</span><b>{{ 'dash.nG' | t: { a: F.round(eaten().p) } }}</b><small>{{ 'dash.planNG' | t: { a: F.round(plan().p) } }}</small></div>
+      <div class="sum-box"><span class="eyebrow">{{ 'dash.totalCarbs' | t }}</span><b>{{ 'dash.nG' | t: { a: F.round(eaten().c) } }}</b><small>{{ 'dash.planNG' | t: { a: F.round(plan().c) } }}</small></div>
+      <div class="sum-box"><span class="eyebrow">{{ 'dash.totalFat' | t }}</span><b>{{ 'dash.nG' | t: { a: F.round(eaten().f) } }}</b><small>{{ 'dash.planNG' | t: { a: F.round(plan().f) } }}</small></div>
+      <div class="sum-box"><span class="eyebrow">{{ 'dash.water' | t }}</span><b>{{ 'dash.nL' | t: { a: F.liters(water()) } }}</b><small>{{ 'dash.targetNL' | t: { a: F.liters(waterTarget()) } }}</small></div>
       <div class="sum-box">
-        <span class="eyebrow">Meals completed</span><b>{{ doneCount() }} / {{ meals().length }}</b><small>{{ F.pct(doneCount(), meals().length) }}%</small>
+        <span class="eyebrow">{{ 'dash.mealsCompleted' | t }}</span><b>{{ doneCount() }} / {{ meals().length }}</b><small>{{ F.pct(doneCount(), meals().length) }}%</small>
       </div>
     </div>
   `,
@@ -141,11 +142,11 @@ export class MealsCardComponent {
   });
 
   protected slotLabel(m: Meal): string {
-    return SLOTS[m.slot]?.label ?? 'Yemək';
+    return td(SLOTS[m.slot]?.label ?? 'Yemək');
   }
 
   protected async newDay(): Promise<void> {
-    if (await this.confirm.ask('Bu günün bütün qeydləri (yeməklər, su, checklist, məşq qaralaması) sıfırlansın və yeni plan yaradılsın?', { confirmLabel: 'Sıfırla', danger: true })) {
+    if (await this.confirm.ask(t('dash.resetAllOfTodays'), { confirmLabel: t('dash.reset'), danger: true })) {
       this.day.resetDay(this.k());
     }
   }

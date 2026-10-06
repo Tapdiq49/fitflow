@@ -3,11 +3,12 @@ import { RestTimerService } from '../core/services/rest-timer.service';
 import { ToastService } from '../core/services/toast.service';
 import { ConfirmDialogComponent } from './confirm-dialog.component';
 import { IconComponent } from './icon.component';
+import { TPipe } from './t.pipe';
 
 /** Toast message and the floating rest-timer pill. */
 @Component({
   selector: 'app-overlays',
-  imports: [IconComponent, ConfirmDialogComponent],
+  imports: [IconComponent, ConfirmDialogComponent, TPipe],
   template: `
     <div
       class="fixed right-5 bottom-5 z-60 items-center gap-2.5 rounded-full bg-accent px-3.5 py-2.5 font-extrabold text-accent-ink shadow-card"
@@ -15,9 +16,9 @@ import { IconComponent } from './icon.component';
       aria-live="polite"
     >
       <app-icon name="clock" />
-      <span>İstirahət <b>{{ rest.left() }}</b> san</span>
+      <span>{{ 'common.rest' | t }} <b>{{ rest.left() }}</b> {{ 'common.sec' | t }}</span>
       <button class="cursor-pointer rounded-full border-0 bg-shade/15 px-2 py-1 font-bold text-inherit" (click)="rest.add(30)">+30</button>
-      <button class="cursor-pointer rounded-full border-0 bg-shade/15 px-2 py-1 font-bold text-inherit" (click)="rest.stop()" aria-label="Taymeri dayandır">✕</button>
+      <button class="cursor-pointer rounded-full border-0 bg-shade/15 px-2 py-1 font-bold text-inherit" (click)="rest.stop()" [attr.aria-label]="'common.stopTimer' | t">✕</button>
     </div>
     <div
       class="pointer-events-none fixed bottom-6 left-1/2 z-200 max-w-[calc(100%-32px)] rounded-[12px] border border-border bg-surface-3 px-4 py-2.5 font-semibold -translate-x-1/2 shadow-card [transition:all_.3s]"

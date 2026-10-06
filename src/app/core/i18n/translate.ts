@@ -1,0 +1,36 @@
+import { activeLang } from '../utils';
+import az from './az.json';
+import en from './en.json';
+import ru from './ru.json';
+
+/**
+ * Translation files (az/en/ru.json): one flat map of named keys ("settings.profileAndTargets") to texts.
+ * Azerbaijani is the source language. Keys with a content prefix (food., meal., tip., …) hold the built-in content
+ * texts that the code and saved menus keep as plain Azerbaijani; `td` finds their key from that text.
+ */
+type Dict = Record<string, string>;
+const DICT: Record<string, Dict> = { az, en, ru };
+
+const CONTENT_PREFIXES = ['food.', 'meal.', 'slot.', 'unit.', 'trainer.', 'exercise.', 'safety.', 'tip.', 'phase.', 'dayType.', 'menu.'];
+
+/** Azerbaijani content text -> its key. */
+const CONTENT_KEY = new Map<string, string>(
+  Object.entries(az as Dict)
+    .filter(([key]) => CONTENT_PREFIXES.some((p) => key.startsWith(p)))
+    .map(([key, text]) => [text, key]),
+);
+
+const fill = (text: string, params?: Record<string, string | number | null | undefined>): string =>
+  params ? text.replace(/\{(\w+)\}/g, (_, k: string) => String(params[k] ?? '')) : text;
+
+/** Text for a key in the active language ("{name}" placeholders come from params). Falls back to Azerbaijani, then to the key. */
+export function t(key: string, params?: Record<string, string | number | null | undefined>): string {
+  const lang = activeLang();
+  return fill(DICT[lang]?.[key] ?? DICT['az'][key] ?? key, params);
+}
+
+/** Translation of built-in content text given in Azerbaijani (food, meal, tip …); unknown text (e.g. typed by the user) is returned unchanged. */
+export function td(text: string): string {
+  const key = CONTENT_KEY.get(text);
+  return key ? t(key) : text;
+}

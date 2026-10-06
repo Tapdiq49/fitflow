@@ -9,38 +9,40 @@ import { F, inputValue, nowHM, parseNum } from '../../core/utils';
 import { IconComponent } from '../../shared/icon.component';
 import { ModalComponent } from '../../shared/modal.component';
 import { TimePickerComponent } from '../../shared/time-picker.component';
+import { TPipe, TdPipe } from '../../shared/t.pipe';
+import { t } from '../../core/i18n/translate';
 
 @Component({
   selector: 'app-add-meal-dialog',
-  imports: [ModalComponent, IconComponent, TimePickerComponent],
+  imports: [ModalComponent, IconComponent, TimePickerComponent, TPipe, TdPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <app-modal heading="Yemək əlavə et" (closed)="close()">
+    <app-modal [heading]="'addMeal.addMeal' | t" (closed)="close()">
       <div class="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-3">
-        <label class="field">Yeməyin adı<input #name type="text" value="Əlavə yemək" /></label>
-        <div class="field">Vaxt<app-time-picker label="Vaxt" [(value)]="time" /></div>
+        <label class="field">{{ 'addMeal.mealName' | t }}<input #name type="text" value="Əlavə yemək" /></label>
+        <div class="field">{{ 'addMeal.time' | t }}<app-time-picker [label]="'addMeal.time' | t" [(value)]="time" /></div>
       </div>
 
-      <div class="section-title" style="margin-top: 16px">Bazadan qida əlavə et</div>
+      <div class="section-title" style="margin-top: 16px">{{ 'addMeal.addFoodFromDatabase' | t }}</div>
       <div class="flex flex-wrap items-center gap-2">
         <select style="flex: 1; min-width: 180px" (change)="foodId.set(val($event))">
           @for (id of foodIds; track id) {
-            <option [value]="id" [selected]="id === foodId()">{{ foods[id].name }} ({{ foods[id].unit }})</option>
+            <option [value]="id" [selected]="id === foodId()">{{ foods[id].name | td }} ({{ foods[id].unit | td }})</option>
           }
         </select>
         <input #amt type="text" inputmode="decimal" style="width: 90px" [value]="defaultAmount()" />
-        <span class="text-muted">{{ foods[foodId()].unit }}</span>
-        <button class="btn btn-sm" (click)="addFood(amt.value)" aria-label="Əlavə et"><app-icon name="plus" size="sm" /></button>
+        <span class="text-muted">{{ foods[foodId()].unit | td }}</span>
+        <button class="btn btn-sm" (click)="addFood(amt.value)" [attr.aria-label]="'addMeal.add' | t"><app-icon name="plus" size="sm" /></button>
       </div>
 
-      <div class="section-title" style="margin-top: 16px">və ya xüsusi qida (makroları özün yaz)</div>
+      <div class="section-title" style="margin-top: 16px">{{ 'addMeal.orCustomFoodEnter' | t }}</div>
       <div class="flex flex-wrap items-center gap-2">
-        <input #cname type="text" placeholder="Ad" style="flex: 1; min-width: 120px" />
-        <input #ck type="text" inputmode="numeric" placeholder="kcal" style="width: 70px" />
-        <input #cp type="text" inputmode="decimal" placeholder="P" style="width: 60px" />
-        <input #cc type="text" inputmode="decimal" placeholder="K" style="width: 60px" />
-        <input #cf type="text" inputmode="decimal" placeholder="Y" style="width: 60px" />
-        <button class="btn btn-sm" (click)="addCustom(cname, ck, cp, cc, cf)" aria-label="Əlavə et"><app-icon name="plus" size="sm" /></button>
+        <input #cname type="text" [placeholder]="'addMeal.name' | t" style="flex: 1; min-width: 120px" />
+        <input #ck type="text" inputmode="numeric" [placeholder]="'addMeal.kcal' | t" style="width: 70px" />
+        <input #cp type="text" inputmode="decimal" [placeholder]="'addMeal.p' | t" style="width: 60px" />
+        <input #cc type="text" inputmode="decimal" [placeholder]="'addMeal.c' | t" style="width: 60px" />
+        <input #cf type="text" inputmode="decimal" [placeholder]="'addMeal.f' | t" style="width: 60px" />
+        <button class="btn btn-sm" (click)="addCustom(cname, ck, cp, cc, cf)" [attr.aria-label]="'addMeal.add' | t"><app-icon name="plus" size="sm" /></button>
       </div>
 
       <div style="margin-top: 14px">
@@ -48,7 +50,7 @@ import { TimePickerComponent } from '../../shared/time-picker.component';
           <div class="overflow-x-auto" style="border: 0">
             <table class="tbl">
               <thead>
-                <tr><th>Qida</th><th class="tbl-num">Miqdar</th><th class="tbl-num">kcal</th><th class="tbl-num">P</th><th class="tbl-num">K</th><th class="tbl-num">Y</th><th></th></tr>
+                <tr><th>{{ 'common.food' | t }}</th><th class="tbl-num">{{ 'common.amount' | t }}</th><th class="tbl-num">{{ 'addMeal.kcal' | t }}</th><th class="tbl-num">{{ 'addMeal.p' | t }}</th><th class="tbl-num">{{ 'addMeal.c' | t }}</th><th class="tbl-num">{{ 'addMeal.f' | t }}</th><th></th></tr>
               </thead>
               <tbody>
                 @for (it of items(); track $index; let i = $index) {
@@ -60,13 +62,13 @@ import { TimePickerComponent } from '../../shared/time-picker.component';
                     <td class="tbl-num">{{ F.r1(x.p) }}</td>
                     <td class="tbl-num">{{ F.r1(x.c) }}</td>
                     <td class="tbl-num">{{ F.r1(x.f) }}</td>
-                    <td><button class="btn btn-ghost btn-icon btn-sm" (click)="remove(i)" aria-label="Sil"><app-icon name="x" size="sm" /></button></td>
+                    <td><button class="btn btn-ghost btn-icon btn-sm" (click)="remove(i)" [attr.aria-label]="'common.delete' | t"><app-icon name="x" size="sm" /></button></td>
                   </tr>
                 }
               </tbody>
               <tfoot>
                 <tr>
-                  <td colspan="2">Cəmi</td>
+                  <td colspan="2">{{ 'common.total' | t }}</td>
                   <td class="tbl-num">{{ F.round(total().k) }}</td>
                   <td class="tbl-num">{{ F.r1(total().p) }}</td>
                   <td class="tbl-num">{{ F.r1(total().c) }}</td>
@@ -77,14 +79,14 @@ import { TimePickerComponent } from '../../shared/time-picker.component';
             </table>
           </div>
         } @else {
-          <div class="empty" style="padding: 14px">Hələ qida əlavə edilməyib</div>
+          <div class="empty" style="padding: 14px">{{ 'addMeal.noFoodAddedYet' | t }}</div>
         }
       </div>
 
-      <label class="flex cursor-pointer items-center gap-2" style="margin-top: 12px"><input #done type="checkbox" checked /> Yeyilib kimi qeyd et</label>
+      <label class="flex cursor-pointer items-center gap-2" style="margin-top: 12px"><input #done type="checkbox" checked /> {{ 'addMeal.markAsEaten' | t }}</label>
       <div class="mt-[18px] flex justify-end gap-2">
-        <button class="btn" (click)="close()">Ləğv et</button>
-        <button class="btn btn-primary" (click)="save(name.value, time(), done.checked)"><app-icon name="save" size="sm" />Yadda saxla</button>
+        <button class="btn" (click)="close()">{{ 'common.cancel' | t }}</button>
+        <button class="btn btn-primary" (click)="save(name.value, time(), done.checked)"><app-icon name="save" size="sm" />{{ 'common.save' | t }}</button>
       </div>
     </app-modal>
   `,
@@ -111,7 +113,7 @@ export class AddMealDialog {
   protected addFood(raw: string): void {
     const amt = parseNum(raw);
     if (!(amt > 0)) {
-      this.toast.show('Miqdarı daxil et');
+      this.toast.show(t('addMeal.enterAmount'));
       return;
     }
     this.items.update((l) => [...l, { food: this.foodId(), amt, base: amt }]);
@@ -121,7 +123,7 @@ export class AddMealDialog {
     const [n, k, p, c, f] = inputs;
     const name = n.value.trim();
     if (!name) {
-      this.toast.show('Qidanın adını yaz');
+      this.toast.show(t('addMeal.enterFoodName'));
       return;
     }
     const num = (el: HTMLInputElement): number => parseNum(el.value) || 0;
@@ -135,10 +137,10 @@ export class AddMealDialog {
 
   protected save(name: string, time: string, done: boolean): void {
     if (!this.items().length) {
-      this.toast.show('Ən azı bir qida əlavə et');
+      this.toast.show(t('addMeal.addAtLeastOne'));
       return;
     }
-    this.day.addMeal(this.ui.viewDate(), { name: name.trim() || 'Əlavə yemək', time: time || nowHM(), done, items: this.items() });
+    this.day.addMeal(this.ui.viewDate(), { name: name.trim() || t('addMeal.extraMeal'), time: time || nowHM(), done, items: this.items() });
     this.close();
   }
 

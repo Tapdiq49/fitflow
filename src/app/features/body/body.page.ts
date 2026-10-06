@@ -8,40 +8,42 @@ import { UiService } from '../../core/services/ui.service';
 import { DateU, F, parseNum } from '../../core/utils';
 import { ChartComponent } from '../../shared/chart.component';
 import { IconComponent } from '../../shared/icon.component';
+import { TPipe } from '../../shared/t.pipe';
+import { t } from '../../core/i18n/translate';
 
 @Component({
   selector: 'app-body-page',
-  imports: [IconComponent, ChartComponent],
+  imports: [IconComponent, ChartComponent, TPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @let st = stats();
     @let adv = advice();
     <div class="flex flex-col gap-[18px]">
       <div class="card">
-        <div class="card-head"><h3><app-icon name="plus" /> Çəki və bel ölçüsü əlavə et</h3></div>
+        <div class="card-head"><h3><app-icon name="plus" /> {{ 'body.addWeightAndWaist' | t }}</h3></div>
         <div class="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-3">
-          <label class="field">Tarix<input #date type="date" [value]="ui.viewDate()" /></label>
-          <label class="field">Çəki (kq)<input #kg type="text" inputmode="decimal" placeholder="99.0" /></label>
-          <label class="field">Bel ölçüsü (sm, göbək səviyyəsi)<input #waist type="text" inputmode="decimal" placeholder="istəyə bağlı" /></label>
-          <button class="btn btn-primary" style="align-self: end" (click)="add(date.value, kg, waist)"><app-icon name="save" size="sm" />Add weight</button>
+          <label class="field">{{ 'body.date' | t }}<input #date type="date" [value]="ui.viewDate()" /></label>
+          <label class="field">{{ 'common.weightKg' | t }}<input #kg type="text" inputmode="decimal" placeholder="99.0" /></label>
+          <label class="field">{{ 'body.waistCmAtNavel' | t }}<input #waist type="text" inputmode="decimal" [placeholder]="'body.optional' | t" /></label>
+          <button class="btn btn-primary" style="align-self: end" (click)="add(date.value, kg, waist)"><app-icon name="save" size="sm" />{{ 'common.addWeight' | t }}</button>
         </div>
       </div>
 
       <div class="mb-3.5 grid grid-cols-6 gap-2.5 laptop:grid-cols-3 phone:grid-cols-2">
-        <div class="sum-box"><span class="eyebrow">Bugünkü çəki</span><b>{{ st?.today ? F.kg(st?.today?.kg) + ' kq' : '—' }}</b><small>{{ F.short(ui.viewDate()) }}</small></div>
+        <div class="sum-box"><span class="eyebrow">{{ 'body.todaysWeight' | t }}</span><b>{{ st?.today ? F.kg(st?.today?.kg) + ' kq' : '—' }}</b><small>{{ F.short(ui.viewDate()) }}</small></div>
         <div class="sum-box">
-          <span class="eyebrow">İlk çəki</span><b>{{ F.kg(st ? st.first.kg : startWeight()) }} kq</b>
+          <span class="eyebrow">{{ 'body.firstWeight' | t }}</span><b>{{ 'common.nKg' | t: { a: F.kg(st ? st.first.kg : startWeight()) } }}</b>
           <small>{{ st ? F.short(st.first.date) : 'ayarlardan' }}</small>
         </div>
-        <div class="sum-box"><span class="eyebrow">Cari çəki</span><b>{{ st ? F.kg(st.cur.kg) + ' kq' : '—' }}</b><small>BMI {{ bmi() ?? '—' }}</small></div>
-        <div class="sum-box"><span class="eyebrow">Həftəlik orta</span><b>{{ st?.avg7 ? F.kg(st?.avg7) + ' kq' : '—' }}</b><small>son 7 gün</small></div>
+        <div class="sum-box"><span class="eyebrow">{{ 'common.currentWeight' | t }}</span><b>{{ st ? F.kg(st.cur.kg) + ' kq' : '—' }}</b><small>{{ 'body.bmiN' | t: { a: bmi() ?? '—' } }}</small></div>
+        <div class="sum-box"><span class="eyebrow">{{ 'body.weeklyAverage' | t }}</span><b>{{ st?.avg7 ? F.kg(st?.avg7) + ' kq' : '—' }}</b><small>{{ 'body.last7Days' | t }}</small></div>
         <div class="sum-box">
-          <span class="eyebrow">Çəki dəyişimi</span><b>{{ st ? F.signed(st.change) + ' kq' : '—' }}</b>
-          <small>{{ st?.rate != null ? F.signed(st!.rate!, 2) + ' kq/həftə' : 'trend yoxdur' }}</small>
+          <span class="eyebrow">{{ 'body.weightChange' | t }}</span><b>{{ st ? F.signed(st.change) + ' kq' : '—' }}</b>
+          <small>{{ st?.rate != null ? F.signed(st!.rate!, 2) + ('body.kgPerWeek' | t) : ('body.noTrend' | t) }}</small>
         </div>
         <div class="sum-box">
-          <span class="eyebrow">Bel ölçüsü</span><b>{{ st?.waistCur ? F.kg(st?.waistCur) + ' sm' : '—' }}</b>
-          <small>{{ st?.waistFirst && st?.waistCur ? F.signed(st!.waistCur! - st!.waistFirst!) + ' sm başlanğıcdan' : '' }}</small>
+          <span class="eyebrow">{{ 'body.waist' | t }}</span><b>{{ st?.waistCur ? F.kg(st?.waistCur) + ' sm' : '—' }}</b>
+          <small>{{ st?.waistFirst && st?.waistCur ? F.signed(st!.waistCur! - st!.waistFirst!) + ('body.cmSinceStart' | t) : '' }}</small>
         </div>
       </div>
 
@@ -50,41 +52,41 @@ import { IconComponent } from '../../shared/icon.component';
         <div>
           {{ adv.text }}
           @if (adv.delta) {
-            <button class="btn btn-sm" style="margin-left: 6px" (click)="day.adjustKcal(adv.delta)">Hədəfi {{ F.signed(adv.delta, 0) }} kcal et</button>
+            <button class="btn btn-sm" style="margin-left: 6px" (click)="day.adjustKcal(adv.delta)">{{ 'common.setTargetNKcal' | t: { a: F.signed(adv.delta, 0) } }}</button>
           }
           <div class="text-muted" style="margin-top: 4px">
-            Məqsəd tərəzidə rəqəm deyil: əzələ artımı + bel ölçüsünün sabit qalması. Hər həftə eyni şəraitdə ölç.
+            {{ 'body.goalNotNumberOn' | t }}
           </div>
         </div>
       </div>
 
       <div class="grid grid-cols-2 gap-4 tablet:grid-cols-1">
         <div class="card">
-          <div class="card-head"><h3>Çəki trendi</h3></div>
-          <app-chart [config]="weightCfg()" empty="Çəki qeydi yoxdur" />
+          <div class="card-head"><h3>{{ 'body.weightTrend' | t }}</h3></div>
+          <app-chart [config]="weightCfg()" [empty]="'common.noWeightEntries' | t" />
         </div>
         <div class="card">
-          <div class="card-head"><h3>Bel ölçüsü</h3></div>
-          <app-chart [config]="waistCfg()" empty="Bel ölçüsü qeydi yoxdur" />
+          <div class="card-head"><h3>{{ 'body.waist' | t }}</h3></div>
+          <app-chart [config]="waistCfg()" [empty]="'body.noWaistMeasurements' | t" />
         </div>
       </div>
 
       <div class="card">
-        <div class="card-head"><h3>Tarixçə</h3></div>
+        <div class="card-head"><h3>{{ 'body.history' | t }}</h3></div>
         @if (history().length) {
           <div class="overflow-x-auto" style="border: 0">
             <table class="tbl">
               <thead>
-                <tr><th>Tarix</th><th class="tbl-num">Çəki</th><th class="tbl-num">Bel</th><th></th></tr>
+                <tr><th>{{ 'body.date' | t }}</th><th class="tbl-num">{{ 'common.weight' | t }}</th><th class="tbl-num">{{ 'common.waist' | t }}</th><th></th></tr>
               </thead>
               <tbody>
                 @for (w of history(); track w.date) {
                   <tr>
                     <td>{{ F.long(w.date) }}</td>
-                    <td class="tbl-num">{{ F.kg(w.kg) }} kq</td>
+                    <td class="tbl-num">{{ 'common.nKg' | t: { a: F.kg(w.kg) } }}</td>
                     <td class="tbl-num">{{ w.waist ? F.kg(w.waist) + ' sm' : '—' }}</td>
                     <td class="tbl-num">
-                      <button class="btn btn-ghost btn-icon btn-sm btn-danger" (click)="remove(w.date)" aria-label="Sil"><app-icon name="trash" size="sm" /></button>
+                      <button class="btn btn-ghost btn-icon btn-sm btn-danger" (click)="remove(w.date)" [attr.aria-label]="'common.delete' | t"><app-icon name="trash" size="sm" /></button>
                     </td>
                   </tr>
                 }
@@ -92,7 +94,7 @@ import { IconComponent } from '../../shared/icon.component';
             </table>
           </div>
         } @else {
-          <div class="empty">Hələ qeyd yoxdur.</div>
+          <div class="empty">{{ 'body.noEntriesYet' | t }}</div>
         }
       </div>
     </div>
@@ -135,6 +137,6 @@ export class BodyPage {
   }
 
   protected async remove(date: string): Promise<void> {
-    if (await this.confirm.ask('Bu çəki qeydi silinsin?', { confirmLabel: 'Sil', danger: true })) this.body.remove(date);
+    if (await this.confirm.ask(t('body.deleteThisWeightEntry'), { confirmLabel: t('common.delete'), danger: true })) this.body.remove(date);
   }
 }
