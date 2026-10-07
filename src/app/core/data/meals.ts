@@ -8,7 +8,7 @@ export const SLOTS: Record<SlotId, { label: string; pool?: TemplateKey }> = {
   pre: { label: 'Məşqdən əvvəl' },
   post: { label: 'Məşqdən sonra' },
   dinner: { label: 'Axşam yeməyi' },
-  supp: { label: 'Supplement' },
+  supp: { label: 'Qida əlavəsi' },
   custom: { label: 'Əlavə yemək' },
 };
 

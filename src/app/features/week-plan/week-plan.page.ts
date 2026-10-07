@@ -82,7 +82,16 @@ interface Row {
         }
       </div>
       } @else {
-        @for (day of gymDays; track day) {
+        <div class="card">
+          <div class="card-head"><h3><app-icon name="calendar" /> {{ 'plan.gymDays' | t }}</h3></div>
+          <div class="flex flex-wrap gap-2">
+            @for (d of days; track d) {
+              <button class="btn btn-sm" [class.btn-primary]="wDays().includes(d)" [attr.aria-pressed]="wDays().includes(d)" (click)="toggleGymDay(d)">{{ dayName(d - 1) }}</button>
+            }
+          </div>
+          <p class="text-muted" style="font-size: 12px; margin: 10px 0 0">{{ 'plan.gymDaysHint' | t }}</p>
+        </div>
+        @for (day of wDays(); track day) {
           <div class="card">
             <div class="card-head"><h3>{{ dayLabel(day) }}</h3></div>
             @for (r of wDraft()[day]; track $index; let i = $index) {
@@ -115,8 +124,7 @@ export class WeekPlanPage {
   protected readonly store = inject(StoreService);
   protected readonly tab = signal<'meal' | 'workout'>('meal');
   protected readonly days = [1, 2, 3, 4, 5, 6, 7];
-  /** Gym days (Mon/Wed/Fri) — the only days the trainer workout is entered for. */
-  protected readonly gymDays = [1, 3, 5];
+  protected readonly dayName = dayName;
   protected readonly week = signal(DateU.monday(DateU.today()));
   protected readonly own = computed(() => this.plans.hasOwn(this.week()));
   protected readonly label = computed(() => `${DateU.short(this.week())} – ${DateU.short(DateU.add(this.week(), 6))}`);
@@ -125,6 +133,8 @@ export class WeekPlanPage {
   protected readonly currentOwn = computed(() => (this.tab() === 'meal' ? this.own() : this.wOwn()));
   /** Editable copy of the trainer workout in effect for the selected week. */
   protected readonly wDraft = linkedSignal<Record<number, ExRow[]>>(() => this.toExRows(this.plans.workoutFor(this.week())));
+  /** Gym weekdays chosen for the selected week — the only days the trainer workout is entered for. */
+  protected readonly wDays = linkedSignal<number[]>(() => this.plans.gymDays(this.week()));
 
   /** Editable copy of the plan in effect for the selected week; re-synced when the week or stored plans change. */
   protected readonly draft = linkedSignal<Record<number, Row[]>>(() => this.toRows(this.plans.planFor(this.week())));
@@ -178,9 +188,17 @@ export class WeekPlanPage {
     this.wDraft.update((d) => ({ ...d, [day]: d[day].filter((_, j) => j !== i) }));
   }
 
+  protected toggleGymDay(d: number): void {
+    this.wDays.update((days) => (days.includes(d) ? days.filter((x) => x !== d) : [...days, d].sort((a, b) => a - b)));
+  }
+
   protected saveWorkout(): void {
+    if (!this.wDays().length) {
+      this.toast.show(t('plan.chooseAtLeastOneGymDay'));
+      return;
+    }
     const plan: WorkoutWeekPlan = {};
-    for (const d of this.gymDays) {
+    for (const d of this.wDays()) {
       const seen = new Set<string>();
       plan[d] = [];
       for (const r of this.wDraft()[d]) {
@@ -210,10 +228,10 @@ export class WeekPlanPage {
     this.draft.update((d) => ({ ...d, [day]: d[day].map((r, j) => (j === i ? { ...r, ...change } : r)) }));
   }
 
-  /** One editable row per saved exercise (at least one blank row per gym day). */
+  /** One editable row per saved exercise (at least one blank row per weekday, so a newly chosen gym day starts editable). */
   private toExRows(plan: WorkoutWeekPlan): Record<number, ExRow[]> {
     const rows: Record<number, ExRow[]> = {};
-    for (const d of this.gymDays) {
+    for (const d of this.days) {
       const list = (plan[d] ?? []).map((e) => ({ name: e.name, sets: String(e.sets), min: String(e.min), max: String(e.max) }));
       rows[d] = list.length ? list : [{ name: '', sets: '3', min: '8', max: '12' }];
     }

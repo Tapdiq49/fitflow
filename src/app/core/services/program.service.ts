@@ -2,20 +2,29 @@ import { Injectable, inject } from '@angular/core';
 import { DayType, Phase, Variant } from '../models';
 import { DateU } from '../utils';
 import { StoreService } from './store.service';
+import { DEFAULT_GYM_DAYS, TrainerPlanService } from './trainer-plan.service';
 import { td } from '../i18n/translate';
 
 const TYPE_LABELS: Record<DayType, string> = { training: 'Məşq günü', cardio: 'Kardio günü', rest: 'Bərpa günü' };
 
-/** Weekly schedule: Mon/Wed/Fri gym (A/B alternating by week), Tue/Thu cardio, weekend recovery. */
+/**
+ * Weekly schedule: Mon/Wed/Fri gym (A/B alternating by week), Tue/Thu cardio, weekend recovery.
+ * In trainer mode the gym days are the ones chosen in that week's workout plan; other weekdays are cardio, weekends recovery.
+ */
 @Injectable({ providedIn: 'root' })
 export class ProgramService {
   private readonly store = inject(StoreService);
+  private readonly plans = inject(TrainerPlanService);
+
+  private isTrainer(): boolean {
+    return this.store.settings().workoutMode === 'trainer';
+  }
 
   dayType(k: string): DayType {
     const d = DateU.dow(k);
-    if (d === 1 || d === 3 || d === 5) return 'training';
-    if (d === 2 || d === 4) return 'cardio';
-    return 'rest';
+    const gym = this.isTrainer() ? this.plans.gymDays(DateU.monday(k)) : DEFAULT_GYM_DAYS;
+    if (gym.includes(d)) return 'training';
+    return d <= 5 ? 'cardio' : 'rest';
   }
 
   typeLabel(type: DayType): string {
@@ -28,6 +37,7 @@ export class ProgramService {
 
   /** Week 1: A-B-A, week 2: B-A-B, and so on. Null on non-gym days. */
   variant(k: string): Variant | null {
+    if (this.isTrainer()) return this.dayType(k) === 'training' ? 'A' : null;
     const pos = ({ 1: 0, 3: 1, 5: 2 } as Record<number, number>)[DateU.dow(k)];
     if (pos === undefined) return null;
     const even = ((this.weekIndex(k) % 2) + 2) % 2 === 0;

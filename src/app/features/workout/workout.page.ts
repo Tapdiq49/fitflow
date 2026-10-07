@@ -14,12 +14,13 @@ import { DateU, F, dayName, inputValue } from '../../core/utils';
 import { CardioCardComponent } from '../dashboard/cardio-card.component';
 import { ChartComponent } from '../../shared/chart.component';
 import { IconComponent } from '../../shared/icon.component';
+import { TimePickerComponent } from '../../shared/time-picker.component';
 import { TPipe, TdPipe } from '../../shared/t.pipe';
 import { t } from '../../core/i18n/translate';
 
 @Component({
   selector: 'app-workout-page',
-  imports: [IconComponent, ChartComponent, CardioCardComponent, NgTemplateOutlet, RouterLink, TPipe, TdPipe],
+  imports: [IconComponent, TimePickerComponent, ChartComponent, CardioCardComponent, NgTemplateOutlet, RouterLink, TPipe, TdPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="flex flex-col gap-[18px]">
@@ -33,11 +34,20 @@ import { t } from '../../core/i18n/translate';
             <span class="text-muted">{{ 'workout.nPerNExercises' | t: { a: doneCount(), b: cards().length } }}</span>
           </div>
           <div class="flex flex-wrap items-center gap-2">
+            @if (workout.isTrainer()) {
+              <div class="flex flex-wrap items-end gap-2">
+                <div class="field w-[120px]">{{ 'workout.started' | t }}<app-time-picker [label]="'workout.started' | t" [value]="log().startTime ?? ''" (valueChange)="workout.setTime(k(), 'startTime', $event)" /></div>
+                <div class="field w-[120px]">{{ 'workout.finished' | t }}<app-time-picker [label]="'workout.finished' | t" [value]="log().endTime ?? ''" (valueChange)="workout.setTime(k(), 'endTime', $event)" /></div>
+                @if (duration() != null) {
+                  <span class="pb-2 text-[15px] font-bold text-accent tabular-nums">{{ 'workout.nMin' | t: { n: duration()! } }}</span>
+                }
+              </div>
+            }
             @if (log().savedAt) {
               <span class="badge badge-training"><app-icon name="check" size="sm" />{{ 'workout.saved' | t }}</span>
             } @else if (log().startedAt) {
               <span class="text-[22px] font-extrabold text-accent tabular-nums">{{ elapsed() }}</span>
-            } @else {
+            } @else if (!workout.isTrainer()) {
               <button class="btn btn-primary" (click)="workout.start(k())"><app-icon name="play" size="sm" />{{ 'common.startWorkout' | t }}</button>
             }
             <button class="btn" [class.btn-primary]="!log().savedAt" (click)="workout.save(k())">
@@ -71,7 +81,7 @@ import { t } from '../../core/i18n/translate';
                 </button>
               </div>
               <div class="my-3 grid grid-cols-3 gap-2 phone:grid-cols-[1fr]">
-                <div class="rounded-[10px] bg-surface-2 px-2.5 py-2 text-[12.5px]"><span class="text-muted">{{ 'workout.target' | t }}</span><b class="block text-[14px]">{{ 'workout.nSetsNN' | t: { a: c.ex.sets, b: c.ex.min, c: c.ex.max, d: c.timed ? ' san' : '' } }}</b></div>
+                <div class="rounded-[10px] bg-surface-2 px-2.5 py-2 text-[12.5px]"><span class="text-muted">{{ 'workout.target' | t }}</span><b class="block text-[14px]">{{ 'workout.nSetsNN' | t: { a: c.ex.sets, b: c.ex.min, c: c.ex.max, d: c.timed ? ' ' + ('common.sec' | t) : '' } }}</b></div>
                 <div class="rounded-[10px] bg-surface-2 px-2.5 py-2 text-[12.5px]">
                   <span class="text-muted">{{ 'workout.lastWorkoutN' | t: { a: c.rec.last ? ' (' + F.short(c.rec.last.date) + ')' : '' } }}</span>
                   <b class="block text-[14px]">{{ workout.lastStr(c.rec.last, c.ex) }}</b>
@@ -99,7 +109,7 @@ import { t } from '../../core/i18n/translate';
                       <td class="w-[34px] font-bold text-muted">{{ i + 1 }}</td>
                       @if (!c.timed) {
                         <td>
-                          <input class="w-full text-center font-semibold" type="text" inputmode="decimal" [value]="s.w" [placeholder]="c.rec.w != null ? F.kg(c.rec.w) : 'kq'" (input)="workout.setValue(k(), c.id, i, 'w', val($event))" />
+                          <input class="w-full text-center font-semibold" type="text" inputmode="decimal" [value]="s.w" [placeholder]="c.rec.w != null ? F.kg(c.rec.w) : ('common.kg' | t)" (input)="workout.setValue(k(), c.id, i, 'w', val($event))" />
                         </td>
                       }
                       <td>
@@ -243,7 +253,7 @@ export class WorkoutPage {
         timed,
         done: log.ex[id]?.done ?? false,
         sets: log.ex[id]?.sets ?? [],
-        recLabel: timed ? t('workout.seconds') : rec.w != null ? `${arrow}${F.kg(rec.w)} ${t('workout.kg')}` : this.workout.isTrainer() ? '—' : t('workout.new'),
+        recLabel: timed ? t('workout.seconds') : rec.w != null ? `${arrow}${F.kg(rec.w)} ${t('common.kg')}` : this.workout.isTrainer() ? '—' : t('workout.new'),
       };
     });
   });
@@ -255,6 +265,8 @@ export class WorkoutPage {
       .map((date) => ({ date, label: `${dayName(DateU.dow(date) - 1)} · ${DateU.short(date)}`, exercises: this.workout.exercises(date) }));
   });
   protected readonly doneCount = computed(() => this.cards().filter((c) => c.done).length);
+
+  protected readonly duration = computed(() => this.workout.duration(this.log()));
 
   protected readonly elapsed = computed(() => {
     const started = this.log().startedAt;
@@ -281,7 +293,7 @@ export class WorkoutPage {
     return lineChart(
       h.map((e) => DateU.short(e.date)),
       [lineSeries(timed ? t('workout.longestSetSec') : t('workout.heaviestSetKg'), h.map((e) => Math.max(...e.sets.map((s) => (timed ? s.r : s.w)))), ACCENT)],
-      timed ? ' s' : ' kq',
+      ` ${timed ? t('common.s') : t('common.kg')}`,
     );
   });
 

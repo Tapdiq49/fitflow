@@ -83,7 +83,7 @@ export function weightChart(ws: WeightEntry[]): ChartConfiguration<'line'> | nul
   return lineChart(
     ws.map((w) => DateU.short(w.date)),
     [lineSeries(t('common.weight'), ws.map((w) => w.kg), ACCENT), lineSeries(t('chart.7DayAverage'), avg, MUTED, true)],
-    ' kq',
+    ` ${t('common.kg')}`,
   );
 }
 

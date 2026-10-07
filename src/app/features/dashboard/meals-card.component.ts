@@ -21,9 +21,12 @@ import { t, td } from '../../core/i18n/translate';
     <div class="card-head">
       <h3><app-icon name="utensils" /> {{ 'dash.todaysMeals' | t }}</h3>
       <div class="flex flex-wrap items-center gap-2">
-        <button class="btn btn-primary btn-sm" (click)="day.regenerateMenu(k())"><app-icon name="refresh" size="sm" />{{ 'dash.createNewDailyMenu' | t }}</button>
+        <!-- The trainer's menu is fixed by the week plan, so a new one would be identical. -->
+        @if (store.settings().menuMode !== 'trainer') {
+          <button class="btn btn-primary btn-sm" (click)="day.regenerateMenu(k())"><app-icon name="refresh" size="sm" />{{ 'dash.createNewDailyMenu' | t }}</button>
+        }
         <button class="btn btn-sm" (click)="ui.addMealOpen.set(true)"><app-icon name="plus" size="sm" />{{ 'dash.addMeal' | t }}</button>
-        <button class="btn btn-sm btn-ghost" (click)="newDay()">{{ 'dash.newDay' | t }}</button>
+        <button class="btn btn-sm btn-ghost" (click)="newDay()">{{ 'dash.resetDay' | t }}</button>
       </div>
     </div>
 
@@ -124,7 +127,7 @@ export class MealsCardComponent {
 
   protected readonly day = inject(DayService);
   protected readonly ui = inject(UiService);
-  private readonly store = inject(StoreService);
+  protected readonly store = inject(StoreService);
   private readonly confirm = inject(ConfirmService);
 
   protected readonly k = this.ui.viewDate;
@@ -142,7 +145,7 @@ export class MealsCardComponent {
   });
 
   protected slotLabel(m: Meal): string {
-    return td(SLOTS[m.slot]?.label ?? 'Yemək');
+    return SLOTS[m.slot] ? td(SLOTS[m.slot].label) : t('dash.meal');
   }
 
   protected async newDay(): Promise<void> {

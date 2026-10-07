@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { EXERCISES, PROGRAM } from '../data/program';
 import { TRAINER_EX_PREFIX } from '../data/trainer-plan';
 import { DayRecord, Exercise, HistoryEntry, Recommendation, WorkoutLog } from '../models';
-import { DateU, F, parseNum, rnd } from '../utils';
+import { DateU, F, parseNum, rnd, toMin } from '../utils';
 import { ProgramService } from './program.service';
 import { StoreService } from './store.service';
 import { ToastService } from './toast.service';
@@ -78,8 +78,19 @@ export class WorkoutService {
           if (s.w === '' && rec.w != null) s.w = String(rec.w);
         });
       }
-      wo.startedAt ??= Date.now();
+      if (!this.isTrainer()) wo.startedAt ??= Date.now();
     });
+  }
+
+  /** Trainer mode: sets the workout start/end time typed in afterwards. */
+  setTime(k: string, field: 'startTime' | 'endTime', value: string): void {
+    this.store.mutateDay(k, (d) => (this.ensureIn(d, k)[field] = value));
+  }
+
+  /** Minutes between the typed start and end time (past midnight counts as the next day); null until both are set. */
+  duration(wo: WorkoutLog): number | null {
+    if (!wo.startTime || !wo.endTime) return null;
+    return (toMin(wo.endTime) - toMin(wo.startTime) + 1440) % 1440;
   }
 
   setValue(k: string, id: string, i: number, field: 'w' | 'r', value: string): void {
@@ -94,7 +105,7 @@ export class WorkoutService {
       const s = wo.ex[id].sets[i];
       s.done = !s.done;
       if (s.done && s.r === '') s.r = String(this.defOf(id).min);
-      wo.startedAt ??= Date.now();
+      if (!this.isTrainer()) wo.startedAt ??= Date.now();
       done = s.done;
     });
     return done;

@@ -22,7 +22,7 @@ import { t } from '../../core/i18n/translate';
           <span class="badge badge-training"><app-icon name="check" size="sm" />{{ 'common.completed' | t }}</span>
         } @else {
           <button class="btn btn-primary btn-sm" (click)="start()">
-            <app-icon name="play" size="sm" />{{ log().startedAt ? ('dash.continue' | t) : ('common.startWorkout' | t) }}
+            <app-icon name="play" size="sm" />{{ workout.isTrainer() ? ('workout.logWorkout' | t) : log().startedAt ? ('dash.continue' | t) : ('common.startWorkout' | t) }}
           </button>
         }
       </div>
@@ -69,7 +69,7 @@ export class WorkoutSummaryComponent {
         name: ex.name,
         done: this.log().ex[id]?.done ?? false,
         target: `${ex.sets}×${ex.min}–${ex.max}${ex.kind === 'time' ? t('common.s') : ''}`,
-        rec: trainer ? this.workout.lastStr(rec.last, ex) : rec.w != null ? `${F.kg(rec.w)} kq` : ex.kind === 'time' ? '—' : 'yeni',
+        rec: trainer ? this.workout.lastStr(rec.last, ex) : rec.w != null ? `${F.kg(rec.w)} ${t('common.kg')}` : ex.kind === 'time' ? '—' : t('workout.new'),
       };
     });
   });

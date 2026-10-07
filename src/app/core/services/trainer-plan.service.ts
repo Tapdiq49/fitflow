@@ -3,6 +3,8 @@ import { TRAINER_PLAN } from '../data/trainer-plan';
 import { TrainerExercise, WeekPlan, WorkoutWeekPlan } from '../models';
 import { StoreService } from './store.service';
 
+export const DEFAULT_GYM_DAYS: readonly number[] = [1, 3, 5];
+
 /** The trainer's weekly meal plans. A week without its own plan reuses the latest earlier one (or the built-in first week). */
 @Injectable({ providedIn: 'root' })
 export class TrainerPlanService {
@@ -38,6 +40,12 @@ export class TrainerPlanService {
       .sort()
       .pop();
     return key ? plans[key] : {};
+  }
+
+  /** Gym weekdays (1 = Monday) of the trainer workout in effect for the week: the days the plan was written for, Mon/Wed/Fri until one exists. */
+  gymDays(week: string): number[] {
+    const days = Object.keys(this.workoutFor(week)).map(Number);
+    return days.length ? days.sort((a, b) => a - b) : [...DEFAULT_GYM_DAYS];
   }
 
   hasOwnWorkout(week: string): boolean {

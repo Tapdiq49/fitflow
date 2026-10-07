@@ -14,6 +14,8 @@ import { t, td } from '../i18n/translate';
 
 /** Daily water target in ml (trainer: minimum 1.5 L). */
 const WATER_TARGET_ML = 1500;
+/** Largest single drink accepted from the manual field (guards against typos like 3500 → 35000). */
+const MAX_DRINK_ML = 5000;
 
 /** Day-level orchestration: plan creation, the "what to do today" timeline, score, water, meals. */
 @Injectable({ providedIn: 'root' })
@@ -67,7 +69,7 @@ export class DayService {
       return {
         id: `meal:${m.id}`,
         time: m.time,
-        label: td(SLOTS[m.slot]?.label ?? 'Yemək'),
+        label: SLOTS[m.slot] ? td(SLOTS[m.slot].label) : t('dash.meal'),
         sub: t('day.nNKcalN', { name: td(m.name), k: Math.round(mm.k), p: Math.round(mm.p) }),
         done: m.done,
       };
@@ -210,7 +212,10 @@ export class DayService {
   }
 
   // ---------- water / sleep / cardio ----------
-  addWater(k: string, ml: number): void {
+  /** Adds a drink; also amounts typed by hand, rounded to whole ml. Returns false (nothing added) outside 1–5000 ml. */
+  addWater(k: string, ml: number): boolean {
+    ml = Math.round(ml);
+    if (!(ml >= 1 && ml <= MAX_DRINK_ML)) return false;
     const target = this.waterTarget(k);
     const before = this.store.peek(k)?.water ?? 0;
     this.store.mutateDay(k, (d) => {
@@ -218,6 +223,7 @@ export class DayService {
       d.waterLog.push(ml);
     });
     if (before < target && before + ml >= target) this.toast.show(t('day.waterTargetReached'));
+    return true;
   }
 
   undoWater(k: string): void {

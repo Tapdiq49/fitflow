@@ -13,6 +13,9 @@ const CELL = 'cursor-pointer rounded-[8px] border py-1.5 text-center text-[13px]
 const CELL_OFF = `${CELL} border-border-soft bg-bg`;
 const CELL_ON = `${CELL} border-accent bg-accent text-accent-ink`;
 
+/** The picker whose popover was opened last; only one is open at a time. */
+let openPicker: TimePickerComponent | null = null;
+
 /** Click-to-open time picker ("HH:MM", 24 h): pick the hour, then the minute (5-minute steps). */
 @Component({
   selector: 'app-time-picker',
@@ -107,6 +110,9 @@ export class TimePickerComponent {
       left: Math.max(MARGIN, Math.min(r.left, innerWidth - POPOVER_W - MARGIN)),
       maxH,
     });
+    // The click is not propagated, so other pickers never see it: close the one that is open.
+    if (openPicker !== this) openPicker?.open.set(false);
+    openPicker = this;
     this.open.set(true);
   }
 

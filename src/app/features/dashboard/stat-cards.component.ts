@@ -1,9 +1,10 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { menuTotals, sleepMinutes } from '../../core/nutrition';
 import { DayService } from '../../core/services/day.service';
 import { StoreService } from '../../core/services/store.service';
+import { ToastService } from '../../core/services/toast.service';
 import { UiService } from '../../core/services/ui.service';
-import { F, inputValue } from '../../core/utils';
+import { F, inputValue, parseNum } from '../../core/utils';
 import { IconComponent } from '../../shared/icon.component';
 import { TimePickerComponent } from '../../shared/time-picker.component';
 import { TPipe } from '../../shared/t.pipe';
@@ -39,6 +40,19 @@ import { t } from '../../core/i18n/translate';
           <button class="btn btn-sm px-1! py-1.5! text-[12px]!" (click)="day.addWater(k(), ml)">+{{ ml }}</button>
         }
       </div>
+      <div class="grid grid-cols-[1fr_auto] gap-1.5">
+        <input
+          type="text"
+          inputmode="numeric"
+          class="min-w-0 text-center"
+          [value]="customMl()"
+          (input)="customMl.set(val($event))"
+          (keydown.enter)="addCustomWater()"
+          [placeholder]="'dash.otherAmountMl' | t"
+          [attr.aria-label]="'dash.otherAmountMl' | t"
+        />
+        <button class="btn btn-sm" [disabled]="!customMl().trim()" (click)="addCustomWater()" [attr.aria-label]="'dash.addWater' | t"><app-icon name="plus" size="sm" /></button>
+      </div>
       <button class="btn btn-ghost btn-sm" [disabled]="!canUndo()" (click)="day.undoWater(k())">{{ 'dash.undoLast' | t }}</button>
     </div>
 
@@ -61,6 +75,7 @@ export class StatCardsComponent {
   protected readonly day = inject(DayService);
   private readonly store = inject(StoreService);
   private readonly ui = inject(UiService);
+  private readonly toast = inject(ToastService);
 
   protected readonly k = this.ui.viewDate;
   protected readonly s = this.store.settings;
@@ -80,6 +95,15 @@ export class StatCardsComponent {
     if (m > 540) return t('dash.over9Hours');
     return t('dash.withinTargetRange');
   });
+
+  /** Amount typed in the water card's "other amount" field. */
+  protected readonly customMl = signal('');
+
+  protected addCustomWater(): void {
+    if (!this.customMl().trim()) return;
+    if (this.day.addWater(this.k(), parseNum(this.customMl()))) this.customMl.set('');
+    else this.toast.show(t('dash.enterAmountBetween15000'));
+  }
 
   protected max0(n: number): number {
     return Math.max(0, n);

@@ -112,11 +112,54 @@ describe('WorkoutService, trainer mode', () => {
     expect(rec.last?.sets[0].w).toBe(60);
   });
 
+  it('uses the gym days chosen in the trainer plan, per week', () => {
+    const program = TestBed.inject(ProgramService);
+    plans.saveWorkout('2026-10-05', { 2: [ex('Squat')], 4: [ex('Bench')], 6: [ex('Row')] });
+    expect(['2026-10-05', '2026-10-06', '2026-10-07', '2026-10-10', '2026-10-11'].map((k) => program.dayType(k))).toEqual([
+      'cardio',
+      'training',
+      'cardio',
+      'training',
+      'rest',
+    ]);
+    expect(program.variant('2026-10-10')).toBe('A');
+    expect(workout.exercises('2026-10-10').map((e) => e.ex.name)).toEqual(['Row']);
+    expect(plans.gymDays('2026-09-28')).toEqual([1, 3, 5]); // earlier week, no plan yet
+  });
+
   it('saves a trainer workout into history', () => {
     plans.saveWorkout('2026-10-05', { 1: [ex('Squat')] });
     workout.setValue('2026-10-05', 't:squat', 0, 'w', '60');
     workout.setValue('2026-10-05', 't:squat', 0, 'r', '10');
     expect(workout.save('2026-10-05')).toBe(1);
     expect(store.state().history['t:squat'][0].sets).toEqual([{ w: 60, r: 10 }]);
+  });
+});
+
+describe('WorkoutService trainer times', () => {
+  let store: StoreService;
+  let workout: WorkoutService;
+
+  beforeEach(() => {
+    localStorage.clear();
+    TestBed.configureTestingModule({});
+    store = TestBed.inject(StoreService);
+    workout = TestBed.inject(WorkoutService);
+  });
+
+  it('computes the duration from typed times, also across midnight', () => {
+    const wo = workout.blank('2026-10-07');
+    expect(workout.duration(wo)).toBeNull();
+    expect(workout.duration({ ...wo, startTime: '18:30', endTime: '19:45' })).toBe(75);
+    expect(workout.duration({ ...wo, startTime: '23:30', endTime: '00:20' })).toBe(50);
+  });
+
+  it('does not start the live timer in trainer mode, but keeps typed times', () => {
+    store.mutate((s) => (s.settings.workoutMode = 'trainer'));
+    workout.start('2026-10-07');
+    workout.setTime('2026-10-07', 'startTime', '18:00');
+    const wo = store.peek('2026-10-07')!.workout!;
+    expect(wo.startedAt).toBeNull();
+    expect(wo.startTime).toBe('18:00');
   });
 });

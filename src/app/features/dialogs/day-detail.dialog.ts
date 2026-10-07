@@ -109,7 +109,7 @@ export class DayDetailDialog {
 
   protected readonly weightText = computed(() => {
     const w = this.store.state().weights.find((x) => x.date === this.date());
-    return w ? `${F.kg(w.kg)} kq${w.waist ? ` · bel ${F.kg(w.waist)} sm` : ''}` : '—';
+    return w ? `${F.kg(w.kg)} ${t('common.kg')}${w.waist ? ` · ${t('common.waist').toLowerCase()} ${F.kg(w.waist)} ${t('common.cm')}` : ''}` : '—';
   });
 
   protected slotLabel(m: Meal): string {

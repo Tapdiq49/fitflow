@@ -30,15 +30,15 @@ import { t } from '../../core/i18n/translate';
       </div>
 
       <div class="mb-3.5 grid grid-cols-6 gap-2.5 laptop:grid-cols-3 phone:grid-cols-2">
-        <div class="sum-box"><span class="eyebrow">{{ 'body.todaysWeight' | t }}</span><b>{{ st?.today ? F.kg(st?.today?.kg) + ' kq' : '—' }}</b><small>{{ F.short(ui.viewDate()) }}</small></div>
+        <div class="sum-box"><span class="eyebrow">{{ 'body.todaysWeight' | t }}</span><b>{{ st?.today ? F.kg(st?.today?.kg) + ' ' + ('common.kg' | t) : '—' }}</b><small>{{ F.short(ui.viewDate()) }}</small></div>
         <div class="sum-box">
           <span class="eyebrow">{{ 'body.firstWeight' | t }}</span><b>{{ 'common.nKg' | t: { a: F.kg(st ? st.first.kg : startWeight()) } }}</b>
           <small>{{ st ? F.short(st.first.date) : 'ayarlardan' }}</small>
         </div>
-        <div class="sum-box"><span class="eyebrow">{{ 'common.currentWeight' | t }}</span><b>{{ st ? F.kg(st.cur.kg) + ' kq' : '—' }}</b><small>{{ 'body.bmiN' | t: { a: bmi() ?? '—' } }}</small></div>
-        <div class="sum-box"><span class="eyebrow">{{ 'body.weeklyAverage' | t }}</span><b>{{ st?.avg7 ? F.kg(st?.avg7) + ' kq' : '—' }}</b><small>{{ 'body.last7Days' | t }}</small></div>
+        <div class="sum-box"><span class="eyebrow">{{ 'common.currentWeight' | t }}</span><b>{{ st ? F.kg(st.cur.kg) + ' ' + ('common.kg' | t) : '—' }}</b><small>{{ 'body.bmiN' | t: { a: bmi() ?? '—' } }}</small></div>
+        <div class="sum-box"><span class="eyebrow">{{ 'body.weeklyAverage' | t }}</span><b>{{ st?.avg7 ? F.kg(st?.avg7) + ' ' + ('common.kg' | t) : '—' }}</b><small>{{ 'body.last7Days' | t }}</small></div>
         <div class="sum-box">
-          <span class="eyebrow">{{ 'body.weightChange' | t }}</span><b>{{ st ? F.signed(st.change) + ' kq' : '—' }}</b>
+          <span class="eyebrow">{{ 'body.weightChange' | t }}</span><b>{{ st ? F.signed(st.change) + ' ' + ('common.kg' | t) : '—' }}</b>
           <small>{{ st?.rate != null ? F.signed(st!.rate!, 2) + ('body.kgPerWeek' | t) : ('body.noTrend' | t) }}</small>
         </div>
         <div class="sum-box">

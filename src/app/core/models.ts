@@ -81,6 +81,9 @@ export interface WorkoutLog {
   variant: Variant;
   startedAt: number | null;
   savedAt: number | null;
+  /** Trainer mode: workout times ("HH:MM") typed in afterwards instead of a live timer; missing in older logs. */
+  startTime?: string;
+  endTime?: string;
   ex: Record<string, ExerciseLog>;
 }
 
