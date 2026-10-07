@@ -1,4 +1,6 @@
+import { HttpHeaders, HttpResourceRequest } from '@angular/common/http';
 import { FoodRole, Lang, Unit } from '../models';
+import { Page, PageParams, PageSource } from '../paging';
 
 /** One food of the reference list as the backend holds it. A system food has a `code` (the key saved menus use), a user food has none. */
 export interface FoodRow {
@@ -24,7 +26,12 @@ export type NewFoodRow = Pick<FoodRow, 'names' | 'unit' | 'k' | 'p' | 'c' | 'f'>
  * Where the food reference list lives. Supabase implements it today (`supabase-food.repository.ts`); a NestJS API replaces it
  * by changing the provider in `app.config.ts`. Methods throw `AuthError` (the app's backend error type).
  */
-export abstract class FoodRepository {
+export abstract class FoodRepository implements PageSource<FoodRow> {
+  /** The request for one page of the food list (with search); undefined when there is no backend to ask. Read with `pagedResource`. */
+  abstract request(p: PageParams): HttpResourceRequest | undefined;
+  /** Turns the response of that request into a page of rows. */
+  abstract parse(body: unknown, headers: HttpHeaders | undefined, p: PageParams): Page<FoodRow>;
+
   /** Every food the visitor may see: the system foods and, when signed in, their own. Works for guests (system foods only). */
   abstract list(): Promise<FoodRow[]>;
   /** Adds a food for the signed-in user. */

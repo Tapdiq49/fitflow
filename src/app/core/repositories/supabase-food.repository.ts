@@ -1,9 +1,12 @@
+import { HttpHeaders, HttpResourceRequest } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
+import { environment } from '../../../environments/environment';
 import { AuthError } from '../auth/auth.models';
 import { toAuthError } from '../auth/supabase-errors';
 import type { Database } from '../backend/database.types';
 import { Client, SupabaseClientProvider } from '../backend/supabase-client';
 import { Lang, Unit } from '../models';
+import { Page, PageParams } from '../paging';
 import { FoodRepository, FoodRow, NewFoodRow } from './food.repository';
 
 type DbFood = Database['public']['Tables']['foods']['Row'];
@@ -31,10 +34,41 @@ const toRow = (r: DbColumns): FoodRow => ({
   max: num(r.max_amount),
 });
 
+/** Characters that would change the meaning of a PostgREST filter or an ilike pattern are dropped from the search text. */
+const cleanTerm = (text: string): string => text.replace(/[%_*,()"\\]/g, ' ').replace(/\s+/g, ' ').trim();
+
+/** One page of foods, system foods first and then the user's own, each group by Azerbaijani name. The count comes back in the Content-Range header. */
+export function foodsPageRequest(baseUrl: string, p: PageParams): HttpResourceRequest {
+  const params: Record<string, string> = {
+    select: COLUMNS,
+    order: 'user_id.asc.nullsfirst,names->>az.asc,id.asc',
+    limit: String(p.pageSize),
+    offset: String((p.page - 1) * p.pageSize),
+  };
+  const term = cleanTerm(p.search);
+  if (term) params['or'] = `(names->>az.ilike.*${term}*,names->>en.ilike.*${term}*,names->>ru.ilike.*${term}*)`;
+  return { url: `${baseUrl}/rest/v1/foods`, params, headers: { Prefer: 'count=exact' } };
+}
+
+/** The Content-Range header "0-9/37" means 37 rows in all; the total is null when the header is missing. */
+export function foodsPageParse(body: unknown, headers: HttpHeaders | undefined): Page<FoodRow> {
+  const rows = (Array.isArray(body) ? (body as DbColumns[]) : []).map(toRow);
+  const total = /\/(\d+)$/.exec(headers?.get('content-range') ?? '')?.[1];
+  return { rows, total: total === undefined ? null : Number(total) };
+}
+
 /** The food reference list in the Supabase table `foods` (see supabase/migrations). RLS decides what each visitor sees. */
 @Injectable()
 export class SupabaseFoodRepository extends FoodRepository {
   private readonly provider = inject(SupabaseClientProvider);
+
+  request(p: PageParams): HttpResourceRequest | undefined {
+    return environment.supabaseUrl ? foodsPageRequest(environment.supabaseUrl, p) : undefined;
+  }
+
+  parse(body: unknown, headers: HttpHeaders | undefined, _p: PageParams): Page<FoodRow> {
+    return foodsPageParse(body, headers);
+  }
 
   private client(): Promise<Client> {
     return this.provider.client().catch((e: unknown) => {

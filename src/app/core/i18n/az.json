@@ -685,5 +685,11 @@
   "auth.error.invalid_image": "Şəkil oxuna bilmədi. Başqa şəkil seç (8 MB-dan kiçik).",
   "references.guestHint": "Öz qidalarını əlavə etmək üçün daxil ol. Qidaların hesabında saxlanılır və hər cihazda görünür.",
   "references.loadFailed": "Serverə qoşulmaq alınmadı. Daxili siyahı göstərilir, öz qidaların hələ görünməyə bilər.",
-  "references.saveFailed": "Dəyişiklik yadda saxlanmadı. Bağlantını yoxla və yenidən cəhd et."
+  "references.saveFailed": "Dəyişiklik yadda saxlanmadı. Bağlantını yoxla və yenidən cəhd et.",
+  "pagination.perPage": "Səhifədə",
+  "pagination.range": "{from}–{to} / {total}",
+  "pagination.page": "Səhifə {page} / {pages}",
+  "pagination.previous": "Əvvəlki səhifə",
+  "pagination.next": "Növbəti səhifə",
+  "references.searchMin": "Axtarış üçün ən azı {n} simvol yaz."
 }

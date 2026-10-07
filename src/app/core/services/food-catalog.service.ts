@@ -48,6 +48,9 @@ const bySystemOrder = (a: FoodRow, b: FoodRow): number => {
 
 const toEntry = (r: FoodRow, isSystem: boolean): FoodEntry => ({ id: isSystem ? (r.code as string) : r.id, isSystem, name: nameIn(r.names), unit: r.unit, k: r.k, p: r.p, c: r.c, f: r.f });
 
+/** A backend row as a list entry in the active language. */
+export const foodEntryOf = (r: FoodRow): FoodEntry => toEntry(r, r.code !== null);
+
 /**
  * Food reference list: the system foods plus the ones the signed-in user added, all from the backend (`FoodRepository`).
  * Guests see the system foods and cannot add their own. If the backend cannot be reached the built-in foods

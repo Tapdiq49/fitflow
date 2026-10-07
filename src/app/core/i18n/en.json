@@ -685,5 +685,11 @@
   "auth.error.invalid_image": "The image could not be read. Pick another one (under 8 MB).",
   "references.guestHint": "Sign in to add your own foods. They are saved to your account and show on every device.",
   "references.loadFailed": "Could not reach the server. The built-in list is shown; your own foods may not be visible yet.",
-  "references.saveFailed": "The change was not saved. Check your connection and try again."
+  "references.saveFailed": "The change was not saved. Check your connection and try again.",
+  "pagination.perPage": "Per page",
+  "pagination.range": "{from}–{to} of {total}",
+  "pagination.page": "Page {page} of {pages}",
+  "pagination.previous": "Previous page",
+  "pagination.next": "Next page",
+  "references.searchMin": "Type at least {n} characters to search."
 }

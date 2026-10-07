@@ -1,4 +1,6 @@
+import { HttpHeaders, HttpResourceRequest } from '@angular/common/http';
 import { AuthError } from '../auth/auth.models';
+import { Page, PageParams } from '../paging';
 import { FoodRepository, FoodRow, NewFoodRow } from './food.repository';
 
 /** In-memory FoodRepository for specs. `rows` is the table; set `failing` to simulate a backend that cannot be reached. */
@@ -8,6 +10,15 @@ export class FakeFoodRepository extends FoodRepository {
   /** Only `add` fails (list still works): a backend that reads but refuses writes. */
   failAdd = false;
   private seq = 0;
+
+  /** No HTTP backend in specs: the page falls back to the in-memory list. */
+  request(_p: PageParams): HttpResourceRequest | undefined {
+    return undefined;
+  }
+
+  parse(_body: unknown, _headers: HttpHeaders | undefined, _p: PageParams): Page<FoodRow> {
+    return { rows: [], total: null };
+  }
 
   private check(): void {
     if (this.failing) throw new AuthError('network_error');
