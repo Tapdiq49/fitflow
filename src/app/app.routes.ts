@@ -17,16 +17,16 @@ export const NAV: NavItem[] = [
 ];
 
 export const routes: Routes = [
-  { path: '', title: 'FitFlow — Bugün', loadComponent: () => import('./features/dashboard/dashboard.page').then((m) => m.DashboardPage) },
-  { path: 'workout', title: 'FitFlow — Məşq', loadComponent: () => import('./features/workout/workout.page').then((m) => m.WorkoutPage) },
-  { path: 'plan', title: 'FitFlow — Həftə planı', loadComponent: () => import('./features/week-plan/week-plan.page').then((m) => m.WeekPlanPage) },
-  { path: 'body', title: 'FitFlow — Bədən', loadComponent: () => import('./features/body/body.page').then((m) => m.BodyPage) },
+  { path: '', title: 'nav.today', loadComponent: () => import('./features/dashboard/dashboard.page').then((m) => m.DashboardPage) },
+  { path: 'workout', title: 'nav.workout', loadComponent: () => import('./features/workout/workout.page').then((m) => m.WorkoutPage) },
+  { path: 'plan', title: 'nav.weeklyPlan', loadComponent: () => import('./features/week-plan/week-plan.page').then((m) => m.WeekPlanPage) },
+  { path: 'body', title: 'nav.body', loadComponent: () => import('./features/body/body.page').then((m) => m.BodyPage) },
   {
     path: 'supplements',
-    title: 'FitFlow — Supplements',
+    title: 'nav.supplements',
     loadComponent: () => import('./features/supplements/supplements.page').then((m) => m.SupplementsPage),
   },
-  { path: 'calendar', title: 'FitFlow — Təqvim', loadComponent: () => import('./features/calendar/calendar.page').then((m) => m.CalendarPage) },
-  { path: 'settings', title: 'FitFlow — Ayarlar', loadComponent: () => import('./features/settings/settings.page').then((m) => m.SettingsPage) },
+  { path: 'calendar', title: 'nav.calendar', loadComponent: () => import('./features/calendar/calendar.page').then((m) => m.CalendarPage) },
+  { path: 'settings', title: 'nav.settings', loadComponent: () => import('./features/settings/settings.page').then((m) => m.SettingsPage) },
   { path: '**', redirectTo: '' },
 ];
