@@ -6,7 +6,7 @@ import { AuthUser } from '../auth/auth.models';
 import { BodyBasicsSyncService } from './body-basics-sync.service';
 import { StoreService } from './store.service';
 
-const USER: AuthUser = { id: 'u1', email: 'a@example.com', username: 'john', emailPreferences: false, avatar: null, height: null, startWeight: null, age: null, sex: null, hasPassword: true };
+const USER: AuthUser = { id: 'u1', email: 'a@example.com', username: 'john', emailPreferences: false, avatar: null, height: null, startWeight: null, age: null, sex: null, settings: null, hasPassword: true };
 
 describe('BodyBasicsSyncService', () => {
   let fake: FakeAuthService;

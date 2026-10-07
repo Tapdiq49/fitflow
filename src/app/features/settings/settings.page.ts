@@ -208,7 +208,7 @@ export class SettingsPage {
 
   /** Calories and protein worked out from the form's body data and goal; null while something they need is missing. */
   /** The newest weight logged on the Body page; shown as the current weight, which every check and target uses instead of the starting weight. */
-  protected readonly latestLog = computed(() => this.body.sorted().at(-1) ?? null);
+  protected readonly latestLog = computed(() => this.body.sorted().filter((w) => w.date <= DateU.today()).at(-1) ?? null);
 
   /** The weight the checks use (the newest logged one, else the starting weight in the form) and the BMI it gives. */
   protected readonly basis = computed(() => {

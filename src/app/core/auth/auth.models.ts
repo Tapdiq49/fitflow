@@ -14,6 +14,8 @@ export interface AuthUser {
   startWeight: number | null;
   age: number | null;
   sex: Sex | null;
+  /** The app settings the person changed (only those that differ from the defaults); null = nothing saved yet. */
+  settings: Record<string, unknown> | null;
   /** False for an account that only signs in with a provider (Google): it has no password to change. */
   hasPassword: boolean;
 }

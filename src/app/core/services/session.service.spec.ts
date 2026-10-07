@@ -14,12 +14,13 @@ describe('SessionService', () => {
   beforeEach(async () => {
     localStorage.clear();
     TestBed.configureTestingModule({ providers: [{ provide: AuthService, useClass: FakeAuthService }] });
-    (TestBed.inject(AuthService) as FakeAuthService).stored = { id: 'u1', email: 'a@example.com', username: 'john', emailPreferences: false, avatar: null, height: null, startWeight: null, age: null, sex: null, hasPassword: true };
+    (TestBed.inject(AuthService) as FakeAuthService).stored = { id: 'u1', email: 'a@example.com', username: 'john', emailPreferences: false, avatar: null, height: null, startWeight: null, age: null, sex: null, settings: null, hasPassword: true };
     await TestBed.inject(AuthStore).init();
     store = TestBed.inject(StoreService);
     confirm = TestBed.inject(ConfirmService);
     session = TestBed.inject(SessionService);
     store.mutate((s) => {
+      Object.assign(s.settings, { theme: 'dark', lang: 'ru' });
       s.settings.height = 180;
       s.weights.push({ date: '2026-10-07', kg: 80, waist: null });
     });
@@ -40,5 +41,6 @@ describe('SessionService', () => {
     expect(TestBed.inject(AuthStore).user()).toBeNull();
     expect(store.state().weights).toHaveLength(0);
     expect(store.settings().height).toBeNull();
+    expect(store.settings()).toMatchObject({ theme: 'dark', lang: 'ru' }); // the device keeps its look and language
   });
 });

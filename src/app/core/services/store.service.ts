@@ -70,7 +70,9 @@ export class StoreService {
   });
   /** The newest weight the user logged, else the starting weight from the settings; null while neither exists. */
   readonly currentWeight = computed<number | null>(() => {
-    const latest = this._state().weights.reduce<{ date: string; kg: number } | null>((a, w) => (a && a.date >= w.date ? a : w), null);
+    // A weight dated in the future (entered before that was refused) is not a measurement yet.
+    const today = DateU.today();
+    const latest = this._state().weights.reduce<{ date: string; kg: number } | null>((a, w) => (w.date > today || (a && a.date >= w.date) ? a : w), null);
     return latest?.kg ?? this.settings().startWeight;
   });
   /** BMI (one decimal) of the height and the current weight; null while either is missing. */

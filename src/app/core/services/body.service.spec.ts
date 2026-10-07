@@ -26,6 +26,13 @@ describe('BodyService.save', () => {
     expect(store.state().weights).toHaveLength(0);
   });
 
+  it('does not count a weight dated in the future (entered before that was refused) as the current one', () => {
+    store.mutate((s) => (s.settings.startWeight = 90));
+    store.mutate((s) => s.weights.push({ date: DateU.add(DateU.today(), 16), kg: 100, waist: null }));
+    expect(store.currentWeight()).toBe(90);
+    expect(body.latestKg()).toBe(90);
+  });
+
   it('uses the newest recorded weight as the current one, and the starting weight when there is none', () => {
     store.mutate((s) => (s.settings.startWeight = 100));
     expect(store.currentWeight()).toBe(100);

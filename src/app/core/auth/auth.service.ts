@@ -33,6 +33,8 @@ export abstract class AuthService {
   abstract setAvatar(avatar: string | null): Promise<AuthUser>;
   /** Saves the person's height (cm), starting weight (kg), age and sex in the profile. */
   abstract setBodyBasics(height: number, startWeight: number, age: number, sex: Sex): Promise<AuthUser>;
+  /** Saves the app settings that differ from the defaults in the profile. */
+  abstract setSettings(settings: Record<string, unknown>): Promise<AuthUser>;
   /** Checks the current password first (throws invalid_credentials), then sets the new one. */
   abstract changePassword(current: string, next: string): Promise<void>;
 }

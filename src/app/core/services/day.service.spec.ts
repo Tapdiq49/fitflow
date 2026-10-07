@@ -13,7 +13,7 @@ describe('DayService.offerMenuRegeneration', () => {
     localStorage.clear();
     TestBed.configureTestingModule({});
     day = TestBed.inject(DayService);
-    base = { ...TestBed.inject(StoreService).settings(), menuMode: 'auto' };
+    base = { ...TestBed.inject(StoreService).settings(), menuMode: 'auto', targetMode: 'custom' };
   });
 
   it('offers it in auto mode when a setting the generator reads changed', () => {
@@ -29,6 +29,17 @@ describe('DayService.offerMenuRegeneration', () => {
 
   it('does not offer it in trainer menu mode, even if a relevant setting changed', () => {
     expect(day.offerMenuRegeneration({ ...base, menuMode: 'trainer' }, { ...base, menuMode: 'trainer', kcalTarget: 2900 }, today)).toBe(false);
+  });
+
+  it('does not ask about the calorie and protein targets while they are automatic (they rebuild the menus themselves), but still about the rest', () => {
+    const auto = { ...base, targetMode: 'auto' as const };
+    expect(day.offerMenuRegeneration(auto, { ...auto, kcalTarget: 2900, proteinTarget: 190 }, today)).toBe(false);
+    expect(day.offerMenuRegeneration(auto, { ...auto, mealsPerDay: 6 }, today)).toBe(true);
+  });
+
+  it('does not offer it to a person who gets the trainer plan because the app must not advise them', () => {
+    TestBed.inject(StoreService).mutate((s) => Object.assign(s.settings, { height: 150, startWeight: 30, age: 15, sex: 'female' }));
+    expect(day.offerMenuRegeneration(base, { ...base, mealsPerDay: 6 }, today)).toBe(false);
   });
 
   it('does not offer it for a past day', () => {

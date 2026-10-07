@@ -10,6 +10,7 @@ import { I18nTitleStrategy } from './core/i18n/title.strategy';
 import { BodyBasicsSyncService } from './core/services/body-basics-sync.service';
 import { FoodCatalogService } from './core/services/food-catalog.service';
 import { PlanSyncService } from './core/services/plan-sync.service';
+import { SettingsSyncService } from './core/services/settings-sync.service';
 import { TargetSyncService } from './core/services/target-sync.service';
 import { FoodRepository } from './core/repositories/food.repository';
 import { PlanRepository } from './core/repositories/plan.repository';
@@ -35,6 +36,7 @@ export const appConfig: ApplicationConfig = {
       inject(FoodCatalogService);
       inject(BodyBasicsSyncService);
       inject(PlanSyncService);
+      inject(SettingsSyncService);
       inject(TargetSyncService);
     }),
   ]

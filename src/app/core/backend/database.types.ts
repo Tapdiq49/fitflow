@@ -14,6 +14,8 @@ export interface Database {
           start_weight_kg: number | null;
           age: number | null;
           sex: 'male' | 'female' | null;
+          /** The settings that differ from the app's defaults; null = nothing saved yet. */
+          settings: Record<string, unknown> | null;
           created_at: string;
           updated_at: string;
         };
@@ -27,6 +29,7 @@ export interface Database {
           start_weight_kg?: number | null;
           age?: number | null;
           sex?: 'male' | 'female' | null;
+          settings?: Record<string, unknown> | null;
         };
         Relationships: [];
       };

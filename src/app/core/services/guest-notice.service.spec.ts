@@ -18,7 +18,7 @@ describe('GuestNoticeService', () => {
   it('stays hidden while the session is unknown and for signed-in users', async () => {
     const notice = TestBed.inject(GuestNoticeService);
     expect(notice.visible()).toBe(false);
-    fake.stored = { id: 'u1', email: 'a@example.com', username: 'john', emailPreferences: false, avatar: null, height: null, startWeight: null, age: null, sex: null, hasPassword: true };
+    fake.stored = { id: 'u1', email: 'a@example.com', username: 'john', emailPreferences: false, avatar: null, height: null, startWeight: null, age: null, sex: null, settings: null, hasPassword: true };
     await TestBed.inject(AuthStore).init();
     expect(notice.visible()).toBe(false);
   });

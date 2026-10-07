@@ -208,6 +208,18 @@ export class SupabaseAuthService extends AuthService {
     return this.loadUser(client, user, true);
   }
 
+  async setSettings(settings: Record<string, unknown>): Promise<AuthUser> {
+    const client = await this.client().catch((e: unknown) => {
+      throw toAuthError(e);
+    });
+    const { data: sessionData } = await client.auth.getSession();
+    const user = sessionData.session?.user;
+    if (!user) throw new AuthError('session_expired');
+    const { error } = await client.from('profiles').update({ settings }).eq('id', user.id);
+    if (error) throw toAuthError(error);
+    return this.loadUser(client, user, true);
+  }
+
   async changePassword(current: string, next: string): Promise<void> {
     const client = await this.client().catch((e: unknown) => {
       throw toAuthError(e);
@@ -233,7 +245,7 @@ export class SupabaseAuthService extends AuthService {
   }
 
   private async readUser(client: Client, user: Pick<User, 'id' | 'email' | 'app_metadata'>): Promise<AuthUser> {
-    const { data } = await client.from('profiles').select('username, email_preferences, avatar, height_cm, start_weight_kg, age, sex').eq('id', user.id).maybeSingle();
+    const { data } = await client.from('profiles').select('username, email_preferences, avatar, height_cm, start_weight_kg, age, sex, settings').eq('id', user.id).maybeSingle();
     return {
       id: user.id,
       email: user.email ?? '',
@@ -244,6 +256,7 @@ export class SupabaseAuthService extends AuthService {
       startWeight: data?.start_weight_kg == null ? null : Number(data.start_weight_kg),
       age: data?.age == null ? null : Number(data.age),
       sex: data?.sex === 'male' || data?.sex === 'female' ? data.sex : null,
+      settings: data?.settings && typeof data.settings === 'object' && !Array.isArray(data.settings) ? data.settings : null,
       hasPassword: (user.app_metadata?.['providers'] as string[] | undefined)?.includes('email') ?? false,
     };
   }

@@ -75,6 +75,10 @@ export class AuthStore {
     this.apply(await this.auth.setBodyBasics(height, startWeight, age, sex));
   }
 
+  async setSettings(settings: Record<string, unknown>): Promise<void> {
+    this.apply(await this.auth.setSettings(settings));
+  }
+
   changePassword(current: string, next: string): Promise<void> {
     return this.auth.changePassword(current, next);
   }

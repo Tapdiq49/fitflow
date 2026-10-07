@@ -192,8 +192,11 @@ export class DayService {
    * generator reads changed.
    */
   offerMenuRegeneration(before: Settings, after: Settings, k: string): boolean {
-    if (after.menuMode !== 'auto' || k < DateU.today()) return false;
-    return AUTO_MENU_SETTINGS.some((key) => before[key] !== after[key]);
+    // The mode in force, not the chosen one: a person the app must not advise gets the trainer plan whatever the setting says.
+    if (after.menuMode !== 'auto' || this.store.effectiveMenuMode() !== 'auto' || k < DateU.today()) return false;
+    // Automatic targets follow the body data and rebuild the menus that no longer fit by themselves (TargetSyncService), so a change of them is not asked about.
+    const autoTargets = after.targetMode === 'auto';
+    return AUTO_MENU_SETTINGS.some((key) => !(autoTargets && (key === 'kcalTarget' || key === 'proteinTarget')) && before[key] !== after[key]);
   }
 
   /** New menu for the day; eaten and custom meals are kept. */

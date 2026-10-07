@@ -13,7 +13,7 @@ export class BodyService {
 
   readonly sorted = computed(() => [...this.store.state().weights].sort((a, b) => a.date.localeCompare(b.date)));
   /** Newest weight, else the starting weight; null while the user has entered neither. */
-  readonly latestKg = computed(() => this.sorted().at(-1)?.kg ?? this.store.settings().startWeight);
+  readonly latestKg = computed(() => this.store.currentWeight());
 
   stats(ref: string): BodyStats | null {
     const all = this.sorted();
