@@ -131,4 +131,43 @@ describe('reference lists', () => {
     await render(fixture);
     expect(rowsOf(root)).toHaveLength(0);
   });
+
+  it('changes one of the user\'s own foods in the form, and cancels an edit', async () => {
+    const repo = TestBed.inject(FoodRepository) as FakeFoodRepository;
+    repo.rows = [{ id: 'own-1', code: null, names: { az: 'Mənim qidam', en: 'My food' }, unit: 'q', k: 120, p: 10, c: 5, f: 2, role: null, step: null, min: null, max: null, position: 1 }];
+    await signIn();
+    const fixture = TestBed.createComponent(FoodReferencesPage);
+    await render(fixture);
+    const root: HTMLElement = fixture.nativeElement;
+    const search = (): HTMLInputElement => Array.from(root.querySelectorAll<HTMLInputElement>('input[type=text]')).at(-1)!;
+    const fields = (): HTMLInputElement[] => Array.from(root.querySelectorAll<HTMLInputElement>('input[type=text]'));
+
+    type(search(), 'qidam');
+    await render(fixture);
+    expect(rowsOf(root)).toHaveLength(1);
+    buttonWithLabel(root, 'Dəyiş: Mənim qidam').click();
+    await render(fixture);
+    expect(fields()[0].value).toBe('Mənim qidam'); // the form is filled with the food
+    expect(fields()[1].value).toBe('My food');
+    expect(fields()[3].value).toBe('120');
+    expect(root.textContent).toContain('Qidanı dəyiş');
+
+    type(fields()[0], 'Yeni qidam');
+    fixture.detectChanges();
+    Array.from(root.querySelectorAll<HTMLButtonElement>('button')).find((b) => b.textContent?.includes('Yadda saxla'))!.click();
+    await render(fixture);
+    expect(repo.rows[0].names.az).toBe('Yeni qidam');
+    expect(root.textContent).not.toContain('Qidanı dəyiş'); // back to the add form
+
+    type(search(), 'Yeni qidam');
+    await render(fixture);
+    expect(rowsOf(root)[0].textContent).toContain('Yeni qidam');
+
+    buttonWithLabel(root, 'Dəyiş: Yeni qidam').click();
+    await render(fixture);
+    Array.from(root.querySelectorAll<HTMLButtonElement>('button')).find((b) => b.textContent?.includes('Ləğv et'))!.click();
+    await render(fixture);
+    expect(root.textContent).not.toContain('Qidanı dəyiş');
+    expect(fields()[0].value).toBe('');
+  });
 });

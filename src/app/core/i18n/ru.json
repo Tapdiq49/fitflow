@@ -416,7 +416,7 @@
   "references.nameEn": "Название (EN)",
   "references.nameRu": "Название (RU)",
   "references.nothingFound": "Ничего не найдено",
-  "references.search": "Поиск…",
+  "references.search": "Поиск по продукту…",
   "references.system": "Системный",
   "references.systemLocked": "Системный продукт нельзя удалить",
   "references.unit": "Единица",
@@ -691,5 +691,10 @@
   "pagination.page": "Страница {page} из {pages}",
   "pagination.previous": "Предыдущая страница",
   "pagination.next": "Следующая страница",
-  "references.searchMin": "Для поиска введите не менее {n} символов."
+  "references.searchMin": "Для поиска введите не менее {n} символов.",
+  "references.editFood": "Изменить продукт",
+  "references.edit": "Изменить",
+  "references.foodUpdated": "Продукт обновлён",
+  "references.drag": "Переместить: перетащите или нажмите ↑ ↓",
+  "common.loading": "Загрузка"
 }

@@ -416,7 +416,7 @@
   "references.nameEn": "Name (EN)",
   "references.nameRu": "Name (RU)",
   "references.nothingFound": "Nothing found",
-  "references.search": "Search…",
+  "references.search": "Search by food…",
   "references.system": "System",
   "references.systemLocked": "A system food cannot be deleted",
   "references.unit": "Unit",
@@ -691,5 +691,10 @@
   "pagination.page": "Page {page} of {pages}",
   "pagination.previous": "Previous page",
   "pagination.next": "Next page",
-  "references.searchMin": "Type at least {n} characters to search."
+  "references.searchMin": "Type at least {n} characters to search.",
+  "references.editFood": "Edit food",
+  "references.edit": "Edit",
+  "references.foodUpdated": "Food updated",
+  "references.drag": "Move: drag, or press the ↑ ↓ keys",
+  "common.loading": "Loading"
 }

@@ -68,3 +68,54 @@ describe('DataTableComponent', () => {
     expect(root.querySelectorAll('tbody tr')).toHaveLength(1);
   });
 });
+
+@Component({
+  imports: [DataTableComponent],
+  template: `
+    <app-data-table [columns]="columns" [rows]="rows" [rowKey]="rowKey" [reorderable]="true" [canDrag]="canDrag" reorderLabel="Move" (reorder)="moves.push($event)" />
+  `,
+})
+class ReorderHost {
+  readonly moves: { from: number; to: number }[] = [];
+  readonly rows: Row[] = [
+    { id: 1, name: 'System', kcal: 1 },
+    { id: 2, name: 'Mine A', kcal: 2 },
+    { id: 3, name: 'Mine B', kcal: 3 },
+  ];
+  readonly columns: TableColumn<Row>[] = [{ id: 'name', header: 'Food', value: (r) => r.name }];
+  readonly rowKey = (r: Row): number => r.id;
+  readonly canDrag = (r: Row): boolean => r.id !== 1; // the first row is fixed
+}
+
+describe('DataTableComponent reordering', () => {
+  const render = async (): Promise<{ root: HTMLElement; host: ReorderHost }> => {
+    const fixture = TestBed.createComponent(ReorderHost);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    return { root: fixture.nativeElement as HTMLElement, host: fixture.componentInstance };
+  };
+  const key = (button: Element, name: string): void => {
+    button.dispatchEvent(new KeyboardEvent('keydown', { key: name, bubbles: true, cancelable: true }));
+  };
+
+  it('shows a grip only on the rows that can be moved', async () => {
+    const { root } = await render();
+    const rows = Array.from(root.querySelectorAll('tbody tr'));
+    expect(rows.map((r) => r.querySelector('button.drag-handle') !== null)).toEqual([false, true, true]);
+    expect(root.querySelector('button.drag-handle')!.getAttribute('aria-label')).toBe('Move');
+  });
+
+  it('moves a row with the arrow keys, but not onto a fixed row or past the ends', async () => {
+    const { root, host } = await render();
+    const grips = Array.from(root.querySelectorAll('button.drag-handle'));
+    key(grips[1], 'ArrowDown'); // Mine B (index 2) cannot go further down
+    key(grips[0], 'ArrowUp'); // Mine A (index 1) cannot go onto the fixed row at index 0
+    expect(host.moves).toEqual([]);
+
+    key(grips[0], 'ArrowDown'); // Mine A -> index 2
+    key(grips[1], 'ArrowUp'); // Mine B -> index 1
+    key(grips[0], 'Enter'); // other keys are ignored
+    expect(host.moves).toEqual([{ from: 1, to: 2 }, { from: 2, to: 1 }]);
+  });
+});

@@ -18,6 +18,8 @@ export interface FoodRow {
   step: number | null;
   min: number | null;
   max: number | null;
+  /** The signed-in user's own place of this food in the whole list (1, 2, …); null = not placed yet (and always null for guests). */
+  position: number | null;
 }
 
 export type NewFoodRow = Pick<FoodRow, 'names' | 'unit' | 'k' | 'p' | 'c' | 'f'>;
@@ -36,6 +38,10 @@ export abstract class FoodRepository implements PageSource<FoodRow> {
   abstract list(): Promise<FoodRow[]>;
   /** Adds a food for the signed-in user. */
   abstract add(food: NewFoodRow): Promise<FoodRow>;
+  /** Changes one of the signed-in user's own foods. */
+  abstract update(id: string, food: NewFoodRow): Promise<FoodRow>;
+  /** Puts a food (system or own) in the place of another one in the signed-in user's order. Ids are row ids (`FoodRow.id`). */
+  abstract move(id: string, targetId: string): Promise<void>;
   /** Deletes one of the signed-in user's own foods; system foods are refused by the backend. */
   abstract remove(id: string): Promise<void>;
 }

@@ -13,7 +13,7 @@ import { FoodCatalogService } from './food-catalog.service';
 import { StoreService } from './store.service';
 
 const USER: AuthUser = { id: 'u1', email: 'a@example.com', username: 'john', emailPreferences: false, avatar: null, hasPassword: true };
-const row = (id: string, code: string | null, az: string, extra: Partial<FoodRow> = {}): FoodRow => ({ id, code, names: { az, en: `${az} EN` }, unit: 'q', k: 100, p: 10, c: 10, f: 1, role: null, step: null, min: null, max: null, ...extra });
+const row = (id: string, code: string | null, az: string, extra: Partial<FoodRow> = {}): FoodRow => ({ id, code, names: { az, en: `${az} EN` }, unit: 'q', k: 100, p: 10, c: 10, f: 1, role: null, step: null, min: null, max: null, position: null, ...extra });
 const GEN = { role: 'protein', step: 1, min: 1, max: 4 } as const;
 
 describe('FoodCatalogService', () => {
@@ -186,6 +186,55 @@ describe('FoodCatalogService', () => {
       expect(itemName(item)).toBe('Süd kokteyli');
       await catalog.remove(own.id);
       expect(itemMacros(item).k).toBe(300);
+    });
+
+    it('changes one of the user\'s own foods, but never a system food', async () => {
+      repo.rows = [row('1', 'egg', 'Yumurta', GEN)];
+      await signIn();
+      await catalog.add(milkshake);
+      const own = catalog.entries().find((e) => !e.isSystem)!;
+
+      expect(await catalog.update(own.id, { ...milkshake, names: { az: 'Yeni ad', en: 'New name' }, k: 250 })).toBe(true);
+      expect(catalog.find(own.id)).toMatchObject({ name: 'Yeni ad', k: 250 });
+      expect(repo.rows.find((r) => r.id === own.id)?.names).toEqual({ az: 'Yeni ad', en: 'New name' });
+      expect(catalog.own(own.id)?.names.en).toBe('New name');
+
+      expect(await catalog.update('egg', milkshake)).toBe(false); // system food
+      expect(await catalog.update('nope', milkshake)).toBe(false);
+      expect(await catalog.update(own.id, { ...milkshake, names: { az: '  ' } })).toBe(false); // name is required
+      expect(catalog.find(own.id)?.name).toBe('Yeni ad');
+    });
+
+    it('keeps an edit away from saved menus: an item made earlier keeps its numbers', async () => {
+      await signIn();
+      await catalog.add(milkshake);
+      const own = catalog.entries().find((e) => !e.isSystem)!;
+      const item = catalog.toMealItem(own.id, 100);
+      await catalog.update(own.id, { ...milkshake, k: 999 });
+      expect(itemMacros(item).k).toBe(200);
+    });
+
+    it('moves a food to the place of another and re-reads the list; a refused move changes nothing', async () => {
+      await signIn();
+      for (const az of ['Bir', 'İki', 'Üç']) await catalog.add({ ...milkshake, names: { az } });
+      const names = (): string[] => catalog.entries().filter((e) => !e.isSystem).map((e) => e.name);
+      expect(names()).toEqual(['Bir', 'İki', 'Üç']);
+      const [a, , c] = catalog.entries().filter((e) => !e.isSystem);
+
+      await catalog.move(c.id, a.id);
+      expect(names()).toEqual(['Üç', 'Bir', 'İki']);
+
+      repo.failAdd = true;
+      await expect(catalog.move(a.id, c.id)).rejects.toThrow();
+      expect(names()).toEqual(['Üç', 'Bir', 'İki']);
+    });
+
+    it('lets a system food be moved too (its row id is not its code)', async () => {
+      repo.rows = [row('1', 'milk', 'Süd', GEN), row('2', 'egg', 'Yumurta', GEN)];
+      await signIn();
+      await catalog.move('2', '1');
+      expect(repo.rows.find((r) => r.id === '2')?.position).toBe(1);
+      expect(repo.rows.find((r) => r.id === '1')?.position).toBe(2);
     });
 
     it('lets the caller know when the backend refuses a new food', async () => {

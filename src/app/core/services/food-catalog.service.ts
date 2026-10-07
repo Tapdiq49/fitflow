@@ -5,7 +5,7 @@ import { FOODS, FOOD_IDS } from '../data/foods';
 import { foodItem, foodOf, systemFoods } from '../food-book';
 import { td } from '../i18n/translate';
 import { Lang, MealItem, SystemFood, Unit } from '../models';
-import { FoodRepository, FoodRow } from '../repositories/food.repository';
+import { FoodRepository, FoodRow, NewFoodRow } from '../repositories/food.repository';
 import { activeLang, clamp, rnd } from '../utils';
 import { StoreService } from './store.service';
 
@@ -21,6 +21,10 @@ export interface FoodEntry {
   p: number;
   c: number;
   f: number;
+  /** The user's own place in the whole list; null = not placed (always for guests and the built-in fallback). */
+  position: number | null;
+  /** Id of the backend row (system entries are keyed by `id` = their code); undefined for the built-in fallback. */
+  rowId?: string;
 }
 
 export interface NewFood {
@@ -46,7 +50,7 @@ const bySystemOrder = (a: FoodRow, b: FoodRow): number => {
   return nameIn(a.names).localeCompare(nameIn(b.names));
 };
 
-const toEntry = (r: FoodRow, isSystem: boolean): FoodEntry => ({ id: isSystem ? (r.code as string) : r.id, isSystem, name: nameIn(r.names), unit: r.unit, k: r.k, p: r.p, c: r.c, f: r.f });
+const toEntry = (r: FoodRow, isSystem: boolean): FoodEntry => ({ id: isSystem ? (r.code as string) : r.id, isSystem, name: nameIn(r.names), unit: r.unit, k: r.k, p: r.p, c: r.c, f: r.f, position: r.position, rowId: r.id });
 
 /** A backend row as a list entry in the active language. */
 export const foodEntryOf = (r: FoodRow): FoodEntry => toEntry(r, r.code !== null);
@@ -79,14 +83,15 @@ export class FoodCatalogService {
     const system: FoodEntry[] = systemRows.length
       ? systemRows.map((r) => toEntry(r, true))
       : published.length
-        ? published.map((x): FoodEntry => ({ id: x.code, isSystem: true, name: nameIn(x.names), unit: x.unit, k: x.k, p: x.p, c: x.c, f: x.f }))
+        ? published.map((x): FoodEntry => ({ id: x.code, isSystem: true, name: nameIn(x.names), unit: x.unit, k: x.k, p: x.p, c: x.c, f: x.f, position: null }))
         : FOOD_IDS.map((id): FoodEntry => {
             const { name, unit, k, p, c, f } = FOODS[id];
-            return { id, isSystem: true, name: td(name), unit, k, p, c, f };
+            return { id, isSystem: true, name: td(name), unit, k, p, c, f, position: null };
           });
     const userId = this.auth.user()?.id ?? null;
     const remoteOwn = userId !== null && this.remote()?.userId === userId ? rows.filter((r) => r.code === null) : [];
-    return [...system, ...remoteOwn.map((r) => toEntry(r, false))];
+    const own = [...remoteOwn].sort((a, b) => (a.position ?? 1e9) - (b.position ?? 1e9));
+    return [...system, ...own.map((r) => toEntry(r, false))];
   });
 
   constructor() {
@@ -135,25 +140,51 @@ export class FoodCatalogService {
     if (JSON.stringify(list) !== JSON.stringify(this.store.state().foodCache)) this.store.mutate((s) => (s.foodCache = list));
   }
 
+  /** The user's own food with its names in every language (to edit it). */
+  own(id: string): FoodRow | undefined {
+    return this.remote()?.rows.find((r) => r.id === id && r.code === null);
+  }
+
   find(id: string): FoodEntry | undefined {
     return this.entries().find((e) => e.id === id);
   }
 
-  /** Adds a user food; returns false when no name was given. Macros are clamped to sane per-100 g values. Throws when the backend refuses it or nobody is signed in. */
-  async add(input: NewFood): Promise<boolean> {
+  /** Checks the input the way the backend will: an Azerbaijani name is required, macros are clamped to sane values. */
+  private clean(input: NewFood): NewFoodRow | null {
     const names: Partial<Record<Lang, string>> = {};
     for (const lang of ['az', 'en', 'ru'] as const) {
       const text = input.names[lang]?.trim();
       if (text) names[lang] = text;
     }
-    if (!names.az) return false;
+    if (!names.az) return null;
     const macro = (n: number, max: number): number => rnd(clamp(Number.isFinite(n) ? n : 0, 0, max), 1);
-    const food = { names, unit: input.unit, k: macro(input.k, MAX_KCAL), p: macro(input.p, MAX_MACRO), c: macro(input.c, MAX_MACRO), f: macro(input.f, MAX_MACRO) };
+    return { names, unit: input.unit, k: macro(input.k, MAX_KCAL), p: macro(input.p, MAX_MACRO), c: macro(input.c, MAX_MACRO), f: macro(input.f, MAX_MACRO) };
+  }
+
+  /** Adds a user food; returns false when no name was given. Throws when the backend refuses it or nobody is signed in. */
+  async add(input: NewFood): Promise<boolean> {
+    const food = this.clean(input);
+    if (!food) return false;
     const userId = this.auth.user()?.id ?? null;
     if (!userId) throw new AuthError('session_expired');
     const row = await this.repo.add(food);
     this.remote.update((r) => ({ userId, rows: [...(r?.rows ?? []), row] }));
     return true;
+  }
+
+  /** Changes one of the user's own foods (system foods are refused); returns false for a missing name or an unknown id. Throws when the backend refuses it. */
+  async update(id: string, input: NewFood): Promise<boolean> {
+    const food = this.clean(input);
+    if (!food || !this.remote()?.rows.some((r) => r.id === id && r.code === null)) return false;
+    const row = await this.repo.update(id, food);
+    this.remote.update((r) => (r ? { ...r, rows: r.rows.map((x) => (x.id === id ? row : x)) } : r));
+    return true;
+  }
+
+  /** Puts a food in the place of another in the user's order (row ids). Throws when the backend refuses it; the caller undoes what it showed. */
+  async move(id: string, targetId: string): Promise<void> {
+    await this.repo.move(id, targetId);
+    await this.refresh();
   }
 
   /** Deletes a user food; system foods (and unknown ids) are refused. Throws when the backend refuses it. */

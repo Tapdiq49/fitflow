@@ -62,8 +62,18 @@ export interface Database {
         Relationships: [];
       };
     };
-    Views: Record<string, never>;
+    Views: {
+      /** `foods` plus the current visitor's own place in the list (food_order); null = not placed. */
+      food_list: {
+        Row: Database['public']['Tables']['foods']['Row'] & { position: number | null };
+        Relationships: [];
+      };
+    };
     Functions: {
+      move_food: {
+        Args: { p_id: string; p_target: string };
+        Returns: undefined;
+      };
       is_username_available: {
         Args: { p_username: string };
         Returns: boolean;

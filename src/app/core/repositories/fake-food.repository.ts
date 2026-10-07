@@ -32,9 +32,30 @@ export class FakeFoodRepository extends FoodRepository {
   async add(food: NewFoodRow): Promise<FoodRow> {
     this.check();
     if (this.failAdd) throw new AuthError('network_error');
-    const row: FoodRow = { ...food, id: `row-${++this.seq}`, code: null, role: null, step: null, min: null, max: null };
+    const row: FoodRow = { ...food, id: `row-${++this.seq}`, code: null, role: null, step: null, min: null, max: null, position: null };
     this.rows.push(row);
     return { ...row };
+  }
+
+  async update(id: string, food: NewFoodRow): Promise<FoodRow> {
+    this.check();
+    if (this.failAdd) throw new AuthError('network_error');
+    const i = this.rows.findIndex((r) => r.id === id && r.code === null);
+    if (i < 0) throw new AuthError('unknown');
+    this.rows[i] = { ...this.rows[i], ...food };
+    return { ...this.rows[i] };
+  }
+
+  /** Numbers the whole list in its current order, then moves `id` to the place of `targetId` (like the backend function). */
+  async move(id: string, targetId: string): Promise<void> {
+    this.check();
+    if (this.failAdd) throw new AuthError('network_error');
+    const order = [...this.rows].sort((x, y) => (x.position ?? 1e9) - (y.position ?? 1e9));
+    const from = order.findIndex((r) => r.id === id);
+    const to = order.findIndex((r) => r.id === targetId);
+    if (from < 0 || to < 0) return;
+    order.splice(to, 0, ...order.splice(from, 1));
+    order.forEach((r, i) => (r.position = i + 1));
   }
 
   async remove(id: string): Promise<void> {

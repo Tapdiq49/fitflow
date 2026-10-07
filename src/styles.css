@@ -379,6 +379,41 @@
   }
 }
 
+/* Drag and drop of table rows (the grip in <app-data-table>; cdk drag-drop adds the cdk-* classes). */
+.drag-handle {
+  display: inline-grid;
+  place-items: center;
+  padding: 4px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  cursor: grab;
+  touch-action: none;
+  &:hover,
+  &:focus-visible {
+    background: var(--surface-2);
+    color: var(--text);
+  }
+  &:active {
+    cursor: grabbing;
+  }
+}
+.cdk-drag-preview.tbl-drag-preview {
+  display: table;
+  background: var(--surface-2);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  color: var(--text);
+}
+.cdk-drag-placeholder {
+  opacity: 0.35;
+}
+.cdk-drag-animating,
+.cdk-drop-list-dragging .cdk-drag:not(.cdk-drag-placeholder) {
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
 /* Busy indicator inside buttons: <span class="spinner"></span> */
 @keyframes ff-spin {
   to {

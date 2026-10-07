@@ -98,5 +98,7 @@ export function pagedResource<T>(query: PagedQuery, source: PageSource<T>) {
     /** Nothing is asked at all (backend not configured). */
     idle: computed(() => res.status() === 'idle'),
     reload: (): boolean => res.reload(),
+    /** Changes the page that is shown (an order the user just dragged), before the backend has confirmed it. */
+    patch: (change: (page: Page<T>) => Page<T>): void => last.update((page) => (page ? change(page) : page)),
   };
 }

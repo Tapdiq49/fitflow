@@ -416,7 +416,7 @@
   "references.nameEn": "Ad (EN)",
   "references.nameRu": "Ad (RU)",
   "references.nothingFound": "Heç nə tapılmadı",
-  "references.search": "Axtar…",
+  "references.search": "Qidaya görə axtar…",
   "references.system": "Sistem",
   "references.systemLocked": "Sistem qidası silinə bilməz",
   "references.unit": "Vahid",
@@ -691,5 +691,10 @@
   "pagination.page": "Səhifə {page} / {pages}",
   "pagination.previous": "Əvvəlki səhifə",
   "pagination.next": "Növbəti səhifə",
-  "references.searchMin": "Axtarış üçün ən azı {n} simvol yaz."
+  "references.searchMin": "Axtarış üçün ən azı {n} simvol yaz.",
+  "references.editFood": "Qidanı dəyiş",
+  "references.edit": "Dəyiş",
+  "references.foodUpdated": "Qida yeniləndi",
+  "references.drag": "Yerini dəyiş: sürüklə və ya ↑ ↓ düymələrini bas",
+  "common.loading": "Yüklənir"
 }
