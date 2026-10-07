@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, linkedSignal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal } from '@angular/core';
 import { MenuMode, Settings, ThemeMode, WorkoutMode } from '../../core/models';
 import { ConfirmService } from '../../core/services/confirm.service';
 import { DayService } from '../../core/services/day.service';
@@ -7,56 +7,44 @@ import { ToastService } from '../../core/services/toast.service';
 import { UiService } from '../../core/services/ui.service';
 import { DateU, inputValue, parseNum } from '../../core/utils';
 import { IconComponent } from '../../shared/icon.component';
-import { TimePickerComponent } from '../../shared/time-picker.component';
+import { SelectComponent, SelectOption } from '../../shared/forms/select.component';
+import { TimePickerComponent } from '../../shared/forms/time-picker.component';
 import { TPipe } from '../../shared/t.pipe';
 import { t } from '../../core/i18n/translate';
 
-type NumField = 'height' | 'startWeight' | 'kcalTarget' | 'proteinTarget' | 'mealsPerDay';
+type NumField = 'height' | 'startWeight' | 'kcalTarget' | 'proteinTarget';
+type OptionField = 'mealsPerDay' | 'menuMode' | 'workoutMode' | 'theme';
 type TextField = 'workoutTime' | 'wakeTime' | 'sleepTime' | 'programStart';
 
 @Component({
   selector: 'app-settings-page',
-  imports: [IconComponent, TimePickerComponent, TPipe],
+  imports: [IconComponent, SelectComponent, TimePickerComponent, TPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="flex flex-col gap-[18px]">
       <div class="card">
         <div class="card-head"><h3><app-icon name="settings" /> {{ 'settings.profileAndTargets' | t }}</h3></div>
-        <div class="grid grid-cols-4 items-start gap-3 tablet:grid-cols-2 phone:grid-cols-1 [&_app-time-picker_button]:h-[42px] [&_input]:h-[42px] [&_select]:h-[42px]">
+        <div class="grid grid-cols-4 items-start gap-3 tablet:grid-cols-2 phone:grid-cols-1 [&_[role=combobox]]:h-[42px] [&_input]:h-[42px]">
           <label class="field">{{ 'settings.heightCm' | t }}<input type="text" inputmode="numeric" [value]="form().height" (input)="setNum('height', $event)" /></label>
           <label class="field">{{ 'settings.startingWeightKg' | t }}<input type="text" inputmode="decimal" [value]="form().startWeight" (input)="setNum('startWeight', $event)" /></label>
           <label class="field">{{ 'settings.calorieTargetKcal' | t }}<input type="text" inputmode="numeric" [value]="form().kcalTarget" (input)="setNum('kcalTarget', $event)" /></label>
           <label class="field">{{ 'settings.proteinTargetG' | t }}<input type="text" inputmode="numeric" [value]="form().proteinTarget" (input)="setNum('proteinTarget', $event)" /></label>
-          <label class="field">
+          <div class="field">
             {{ 'settings.mealsPerDay' | t }}
-            <select [value]="form().mealsPerDay" (change)="setNum('mealsPerDay', $event)">
-              @for (n of [4, 5, 6]; track n) {
-                <option [value]="n">{{ n }}</option>
-              }
-            </select>
-          </label>
-          <label class="field">
+            <app-select [label]="'settings.mealsPerDay' | t" [options]="mealCounts" [value]="form().mealsPerDay" (valueChange)="setOption('mealsPerDay', $event)" />
+          </div>
+          <div class="field">
             {{ 'settings.menuMode' | t }}
-            <select [value]="form().menuMode" (change)="setMenuMode($event)">
-              <option value="trainer">{{ 'settings.trainerPlan' | t }}</option>
-              <option value="auto">{{ 'settings.autoMenu' | t }}</option>
-            </select>
-          </label>
-          <label class="field">
+            <app-select [label]="'settings.menuMode' | t" [options]="menuModes()" [value]="form().menuMode" (valueChange)="setOption('menuMode', $event)" />
+          </div>
+          <div class="field">
             {{ 'settings.workoutMode' | t }}
-            <select [value]="form().workoutMode" (change)="setWorkoutMode($event)">
-              <option value="program">{{ 'settings.builtInProgram' | t }}</option>
-              <option value="trainer">{{ 'settings.trainerWorkout' | t }}</option>
-            </select>
-          </label>
-          <label class="field">
+            <app-select [label]="'settings.workoutMode' | t" [options]="workoutModes()" [value]="form().workoutMode" (valueChange)="setOption('workoutMode', $event)" />
+          </div>
+          <div class="field">
             {{ 'settings.appearance' | t }}
-            <select [value]="form().theme" (change)="setTheme($event)">
-              <option value="system">{{ 'settings.system' | t }}</option>
-              <option value="light">{{ 'settings.light' | t }}</option>
-              <option value="dark">{{ 'settings.dark' | t }}</option>
-            </select>
-          </label>
+            <app-select [label]="'settings.appearance' | t" [options]="themes()" [value]="form().theme" (valueChange)="setOption('theme', $event)" />
+          </div>
           <div class="field">{{ 'settings.workoutTime' | t }}<app-time-picker [label]="'settings.workoutTime' | t" [value]="form().workoutTime" (valueChange)="setTime('workoutTime', $event)" /></div>
           <div class="field">{{ 'settings.wakeUpTime' | t }}<app-time-picker [label]="'settings.wakeUpTime' | t" [value]="form().wakeTime" (valueChange)="setTime('wakeTime', $event)" /></div>
           <div class="field">{{ 'settings.bedtime' | t }}<app-time-picker [label]="'settings.bedtime' | t" [value]="form().sleepTime" (valueChange)="setTime('sleepTime', $event)" /></div>
@@ -106,6 +94,21 @@ export class SettingsPage {
   /** Editable draft, re-synced whenever the stored settings change. */
   protected readonly form = linkedSignal<Settings>(() => ({ ...this.store.settings() }));
 
+  protected readonly mealCounts: SelectOption<number>[] = [4, 5, 6].map((n) => ({ value: n, label: String(n) }));
+  protected readonly menuModes = computed<SelectOption<MenuMode>[]>(() => [
+    { value: 'trainer', label: t('settings.trainerPlan') },
+    { value: 'auto', label: t('settings.autoMenu') },
+  ]);
+  protected readonly workoutModes = computed<SelectOption<WorkoutMode>[]>(() => [
+    { value: 'program', label: t('settings.builtInProgram') },
+    { value: 'trainer', label: t('settings.trainerWorkout') },
+  ]);
+  protected readonly themes = computed<SelectOption<ThemeMode>[]>(() => [
+    { value: 'system', label: t('settings.system') },
+    { value: 'light', label: t('settings.light') },
+    { value: 'dark', label: t('settings.dark') },
+  ]);
+
   protected setNum(field: NumField, e: Event): void {
     const v = parseNum(inputValue(e));
     if (v > 0) this.form.update((f) => ({ ...f, [field]: v }));
@@ -120,19 +123,8 @@ export class SettingsPage {
     if (v) this.form.update((f) => ({ ...f, [field]: v }));
   }
 
-  protected setTheme(e: Event): void {
-    const v = inputValue(e) as ThemeMode;
-    if (v === 'system' || v === 'light' || v === 'dark') this.form.update((f) => ({ ...f, theme: v }));
-  }
-
-  protected setWorkoutMode(e: Event): void {
-    const v = inputValue(e) as WorkoutMode;
-    if (v === 'program' || v === 'trainer') this.form.update((f) => ({ ...f, workoutMode: v }));
-  }
-
-  protected setMenuMode(e: Event): void {
-    const v = inputValue(e) as MenuMode;
-    if (v === 'auto' || v === 'trainer') this.form.update((f) => ({ ...f, menuMode: v }));
+  protected setOption<K extends OptionField>(field: K, v: Settings[K]): void {
+    this.form.update((f) => ({ ...f, [field]: v }));
   }
 
   protected setCreatine(e: Event): void {

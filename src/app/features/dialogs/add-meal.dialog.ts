@@ -5,16 +5,17 @@ import { itemAmount, itemMacros, itemName, sumMacros } from '../../core/nutritio
 import { DayService } from '../../core/services/day.service';
 import { ToastService } from '../../core/services/toast.service';
 import { UiService } from '../../core/services/ui.service';
-import { F, inputValue, nowHM, parseNum } from '../../core/utils';
+import { F, nowHM, parseNum } from '../../core/utils';
 import { IconComponent } from '../../shared/icon.component';
 import { ModalComponent } from '../../shared/modal.component';
-import { TimePickerComponent } from '../../shared/time-picker.component';
+import { SelectComponent, SelectOption } from '../../shared/forms/select.component';
+import { TimePickerComponent } from '../../shared/forms/time-picker.component';
 import { TPipe, TdPipe } from '../../shared/t.pipe';
-import { t } from '../../core/i18n/translate';
+import { t, td } from '../../core/i18n/translate';
 
 @Component({
   selector: 'app-add-meal-dialog',
-  imports: [ModalComponent, IconComponent, TimePickerComponent, TPipe, TdPipe],
+  imports: [ModalComponent, IconComponent, SelectComponent, TimePickerComponent, TPipe, TdPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-modal [heading]="'addMeal.addMeal' | t" (closed)="close()">
@@ -25,11 +26,7 @@ import { t } from '../../core/i18n/translate';
 
       <div class="section-title" style="margin-top: 16px">{{ 'addMeal.addFoodFromDatabase' | t }}</div>
       <div class="flex flex-wrap items-center gap-2">
-        <select style="flex: 1; min-width: 180px" (change)="foodId.set(val($event))">
-          @for (id of foodIds; track id) {
-            <option [value]="id" [selected]="id === foodId()">{{ foods[id].name | td }} ({{ foods[id].unit | td }})</option>
-          }
-        </select>
+        <app-select class="min-w-[180px] flex-1" [label]="'addMeal.addFoodFromDatabase' | t" [options]="foodOptions()" [(value)]="foodId" />
         <input #amt type="text" inputmode="decimal" style="width: 90px" [value]="defaultAmount()" />
         <span class="text-muted">{{ foods[foodId()].unit | td }}</span>
         <button class="btn btn-sm" (click)="addFood(amt.value)" [attr.aria-label]="'addMeal.add' | t"><app-icon name="plus" size="sm" /></button>
@@ -93,9 +90,9 @@ import { t } from '../../core/i18n/translate';
 })
 export class AddMealDialog {
   protected readonly F = F;
-  protected readonly val = inputValue;
   protected readonly foods = FOODS;
-  protected readonly foodIds = FOOD_IDS;
+  /** Food database in the active language. */
+  protected readonly foodOptions = computed<SelectOption<string>[]>(() => FOOD_IDS.map((id) => ({ value: id, label: `${td(FOODS[id].name)} (${td(FOODS[id].unit)})` })));
   protected readonly macros = itemMacros;
   protected readonly name_ = itemName;
   protected readonly amount = itemAmount;

@@ -29,6 +29,8 @@
   "app.switchToDarkMode": "Переключить на тёмную тему",
   "app.switchToLightMode": "Переключить на светлую тему",
   "app.today": "Сегодня",
+  "app.tomorrow": "Завтра",
+  "app.yesterday": "Вчера",
   "body.addWeightAndWaist": "Добавить вес и талию",
   "body.bmiN": "ИМТ {a}",
   "body.cmSinceStart": "см с начала",

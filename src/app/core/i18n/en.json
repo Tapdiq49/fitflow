@@ -29,6 +29,8 @@
   "app.switchToDarkMode": "Switch to dark mode",
   "app.switchToLightMode": "Switch to light mode",
   "app.today": "Today",
+  "app.tomorrow": "Tomorrow",
+  "app.yesterday": "Yesterday",
   "body.addWeightAndWaist": "Add weight and waist",
   "body.bmiN": "BMI {a}",
   "body.cmSinceStart": "cm since start",

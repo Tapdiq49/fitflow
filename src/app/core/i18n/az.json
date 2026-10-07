@@ -29,6 +29,8 @@
   "app.switchToDarkMode": "Qaranlıq rejimə keç",
   "app.switchToLightMode": "İşıqlı rejimə keç",
   "app.today": "Bugün",
+  "app.tomorrow": "Sabah",
+  "app.yesterday": "Dünən",
   "body.addWeightAndWaist": "Çəki və bel ölçüsü əlavə et",
   "body.bmiN": "BKİ {a}",
   "body.cmSinceStart": "sm başlanğıcdan",

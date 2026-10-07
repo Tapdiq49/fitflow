@@ -58,6 +58,8 @@ import { t } from '../../core/i18n/translate';
             <span class="font-bold tabular-nums" [class]="next ? 'text-accent' : 'text-text-2'">{{ it.time }}</span>
             <button
               class="check"
+              role="checkbox"
+              [attr.aria-checked]="it.done"
               [class.check-on]="it.done"
               [disabled]="it.auto"
               [title]="it.auto ? ('dash.markedAutomaticallyAsYou' | t) : ''"

@@ -7,8 +7,10 @@ import { StoreService } from '../../core/services/store.service';
 import { ToastService } from '../../core/services/toast.service';
 import { TrainerPlanService } from '../../core/services/trainer-plan.service';
 import { DateU, clamp, dayName, inputValue, parseNum } from '../../core/utils';
+import { Listbox, Option } from '@angular/aria/listbox';
+import { Tab, TabContent, TabList, TabPanel, Tabs } from '@angular/aria/tabs';
 import { IconComponent } from '../../shared/icon.component';
-import { TimePickerComponent } from '../../shared/time-picker.component';
+import { TimePickerComponent } from '../../shared/forms/time-picker.component';
 import { TPipe } from '../../shared/t.pipe';
 import { t, td } from '../../core/i18n/translate';
 
@@ -30,13 +32,13 @@ interface Row {
 
 @Component({
   selector: 'app-week-plan-page',
-  imports: [IconComponent, TimePickerComponent, TPipe],
+  imports: [Tabs, TabList, Tab, TabPanel, TabContent, Listbox, Option, IconComponent, TimePickerComponent, TPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="flex flex-col gap-[18px]">
-      <div class="flex gap-2">
-        <button class="btn" [class.btn-primary]="tab() === 'meal'" (click)="tab.set('meal')"><app-icon name="utensils" size="sm" />{{ 'plan.mealPlan' | t }}</button>
-        <button class="btn" [class.btn-primary]="tab() === 'workout'" (click)="tab.set('workout')"><app-icon name="dumbbell" size="sm" />{{ 'plan.workoutPlan' | t }}</button>
+    <div ngTabs class="flex flex-col gap-[18px]">
+      <div ngTabList [(selectedTab)]="tab" class="flex gap-2">
+        <button ngTab value="meal" class="btn" [class.btn-primary]="tab() === 'meal'"><app-icon name="utensils" size="sm" />{{ 'plan.mealPlan' | t }}</button>
+        <button ngTab value="workout" class="btn" [class.btn-primary]="tab() === 'workout'"><app-icon name="dumbbell" size="sm" />{{ 'plan.workoutPlan' | t }}</button>
       </div>
       <div class="card">
         <div class="flex flex-wrap items-center justify-between gap-3">
@@ -61,7 +63,8 @@ interface Row {
         }
       </div>
 
-      @if (tab() === 'meal') {
+      <div ngTabPanel value="meal" class="flex flex-col gap-[18px] inert:hidden">
+      <ng-template ngTabContent>
       @for (day of days; track day) {
         <div class="card">
           <div class="card-head"><h3>{{ dayLabel(day) }}</h3></div>
@@ -81,12 +84,26 @@ interface Row {
           <button class="btn btn-danger" (click)="clear()"><app-icon name="trash" size="sm" />{{ 'plan.revertToPreviousWeeksPlan' | t }}</button>
         }
       </div>
-      } @else {
+      </ng-template>
+      </div>
+
+      <div ngTabPanel value="workout" class="flex flex-col gap-[18px] inert:hidden">
+      <ng-template ngTabContent>
         <div class="card">
-          <div class="card-head"><h3><app-icon name="calendar" /> {{ 'plan.gymDays' | t }}</h3></div>
-          <div class="flex flex-wrap gap-2">
+          <div class="card-head"><h3 id="gym-days-title"><app-icon name="calendar" /> {{ 'plan.gymDays' | t }}</h3></div>
+          <div
+            ngListbox
+            [multi]="true"
+            orientation="horizontal"
+            focusMode="roving"
+            selectionMode="explicit"
+            [value]="wDays()"
+            (valueChange)="setGymDays($event)"
+            aria-labelledby="gym-days-title"
+            class="flex flex-wrap gap-2"
+          >
             @for (d of days; track d) {
-              <button class="btn btn-sm" [class.btn-primary]="wDays().includes(d)" [attr.aria-pressed]="wDays().includes(d)" (click)="toggleGymDay(d)">{{ dayName(d - 1) }}</button>
+              <div ngOption [value]="d" [label]="dayName(d - 1)" class="btn btn-sm" [class.btn-primary]="wDays().includes(d)">{{ dayName(d - 1) }}</div>
             }
           </div>
           <p class="text-muted" style="font-size: 12px; margin: 10px 0 0">{{ 'plan.gymDaysHint' | t }}</p>
@@ -112,7 +129,8 @@ interface Row {
             <button class="btn btn-danger" (click)="clearWorkout()"><app-icon name="trash" size="sm" />{{ 'plan.revertToPreviousWeeks' | t }}</button>
           }
         </div>
-      }
+      </ng-template>
+      </div>
     </div>
   `,
 })
@@ -122,7 +140,8 @@ export class WeekPlanPage {
   private readonly toast = inject(ToastService);
 
   protected readonly store = inject(StoreService);
-  protected readonly tab = signal<'meal' | 'workout'>('meal');
+  /** Selected tab: 'meal' or 'workout' (string because `ngTabList` selects by value). */
+  protected readonly tab = signal<string | undefined>('meal');
   protected readonly days = [1, 2, 3, 4, 5, 6, 7];
   protected readonly dayName = dayName;
   protected readonly week = signal(DateU.monday(DateU.today()));
@@ -188,8 +207,8 @@ export class WeekPlanPage {
     this.wDraft.update((d) => ({ ...d, [day]: d[day].filter((_, j) => j !== i) }));
   }
 
-  protected toggleGymDay(d: number): void {
-    this.wDays.update((days) => (days.includes(d) ? days.filter((x) => x !== d) : [...days, d].sort((a, b) => a - b)));
+  protected setGymDays(days: number[]): void {
+    this.wDays.set([...days].sort((a, b) => a - b));
   }
 
   protected saveWorkout(): void {

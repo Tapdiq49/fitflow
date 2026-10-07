@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DOCUMENT, DestroyRef, ElementRef, afterNextRender, computed, inject, viewChild } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
@@ -8,9 +8,11 @@ import { NAV } from './app.routes';
 import { I18nService } from './core/services/i18n.service';
 import { ThemeService } from './core/services/theme.service';
 import { UiService } from './core/services/ui.service';
-import { DateU, dayShort, inputValue } from './core/utils';
+import { DateU, dayName, dayShort } from './core/utils';
 import { AddMealDialog } from './features/dialogs/add-meal.dialog';
 import { DayDetailDialog } from './features/dialogs/day-detail.dialog';
+import { SelectComponent } from './shared/forms/select.component';
+import type { SelectOption } from './shared/forms/select.component';
 import { IconComponent } from './shared/icon.component';
 import { OverlaysComponent } from './shared/overlays.component';
 import { TPipe } from './shared/t.pipe';
@@ -18,7 +20,7 @@ import { t } from './core/i18n/translate';
 
 @Component({
   selector: 'app-root',
-  imports: [NgTemplateOutlet, RouterOutlet, RouterLink, RouterLinkActive, IconComponent, OverlaysComponent, AddMealDialog, DayDetailDialog, TPipe],
+  imports: [NgTemplateOutlet, RouterOutlet, RouterLink, RouterLinkActive, IconComponent, SelectComponent, OverlaysComponent, AddMealDialog, DayDetailDialog, TPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="grid min-h-screen grid-cols-[232px_1fr] tablet:grid-cols-[minmax(0,1fr)]">
@@ -35,8 +37,12 @@ import { t } from './core/i18n/translate';
         <div class="mt-auto rounded-[12px] bg-surface p-3 text-[12px] text-muted"><b class="text-text">{{ 'app.naturalWay' | t }}</b><br />{{ 'app.buildMuscleKeepFat' | t }}</div>
       </aside>
 
-      <main class="min-w-0 px-7 pt-[22px] pb-[90px] tablet:px-4 tablet:pt-4 tablet:pb-24">
-        <header class="mb-5 flex flex-wrap items-center justify-between gap-4">
+      <main class="min-w-0 px-7 pb-[90px] tablet:px-4 tablet:pb-24">
+        <!-- Sticky on every page; its height is published as --header-h for sticky bars below it (workout page). -->
+        <header
+          #header
+          class="sticky top-0 z-40 -mx-7 mb-5 flex flex-wrap items-center justify-between gap-4 border-b border-border-soft bg-bg/92 px-7 pt-[22px] pb-3 backdrop-blur-[10px] tablet:-mx-4 tablet:px-4 tablet:pt-4"
+        >
           <div>
             <h2 class="text-[22px] font-extrabold tracking-[-.02em]">{{ title() }}</h2>
             <div class="text-[13px] text-muted">{{ 'app.naturalMuscleGrowthAthletic' | t }}</div>
@@ -46,11 +52,12 @@ import { t } from './core/i18n/translate';
             <span class="px-2.5 font-semibold whitespace-nowrap phone:px-1 phone:text-[13px]">{{ dateLabel() }}</span>
             <button class="btn btn-ghost btn-icon" (click)="ui.shift(1)" [attr.aria-label]="'app.nextDay' | t"><app-icon name="right" /></button>
             <button class="btn btn-sm" (click)="ui.goToday()">{{ 'app.today' | t }}</button>
-            <select class="h-9 text-[13px] font-semibold" [value]="i18n.lang()" (change)="i18n.setLang(val($event))" [attr.aria-label]="'app.language' | t">
-              @for (l of i18n.langs; track l.id) {
-                <option [value]="l.id" [selected]="l.id === i18n.lang()">{{ l.label }}</option>
-              }
-            </select>
+            <!-- Deferred: the dropdown (Aria + CDK overlay) stays out of the initial bundle. -->
+            @defer (on idle) {
+              <app-select class="w-[78px] [&_[role=combobox]]:h-9 [&_[role=combobox]]:text-[13px] [&_[role=combobox]]:font-semibold" [label]="'app.language' | t" [options]="langOptions" [value]="i18n.lang()" (valueChange)="i18n.setLang($event)" />
+            } @placeholder {
+              <span class="grid h-9 w-[78px] place-items-center rounded-[9px] border border-border text-[13px] font-semibold">{{ i18n.lang().toUpperCase() }}</span>
+            }
             <button
               class="btn btn-ghost btn-icon"
               (click)="theme.toggle()"
@@ -79,8 +86,11 @@ import { t } from './core/i18n/translate';
       }
     </ng-template>
 
-    @if (ui.addMealOpen()) {
-      <app-add-meal-dialog />
+    <!-- Deferred with its form controls (Aria + CDK overlay); fetched in the background once the page is idle. -->
+    @defer (when ui.addMealOpen(); prefetch on idle) {
+      @if (ui.addMealOpen()) {
+        <app-add-meal-dialog />
+      }
     }
     @if (ui.detailDate(); as d) {
       <app-day-detail-dialog [date]="d" />
@@ -92,9 +102,22 @@ export class App {
   protected readonly nav = NAV;
   protected readonly ui = inject(UiService);
   protected readonly i18n = inject(I18nService);
-  protected readonly val = (e: Event): Lang => inputValue(e) as Lang;
+  protected readonly langOptions: SelectOption<Lang>[] = this.i18n.langs.map((l) => ({ value: l.id, label: l.label }));
   protected readonly theme = inject(ThemeService); // also applies data-theme on <html>
   private readonly router = inject(Router);
+  private readonly header = viewChild.required<ElementRef<HTMLElement>>('header');
+
+  constructor() {
+    const root = inject(DOCUMENT).documentElement;
+    const destroyRef = inject(DestroyRef);
+    afterNextRender(() => {
+      if (typeof ResizeObserver === 'undefined') return;
+      const el = this.header().nativeElement;
+      const ro = new ResizeObserver(() => root.style.setProperty('--header-h', `${el.offsetHeight}px`));
+      ro.observe(el);
+      destroyRef.onDestroy(() => ro.disconnect());
+    });
+  }
 
   private readonly url = toSignal(
     this.router.events.pipe(
@@ -104,9 +127,15 @@ export class App {
     { initialValue: this.router.url },
   );
 
+  /** Page name; on the day overview it follows the viewed day: "Today · Wednesday, 7 Oct", or "Friday, 9 Oct" further away. */
   protected readonly title = computed(() => {
     const path = this.url().split('?')[0];
-    return t((NAV.find((n) => n.path !== '/' && path.startsWith(n.path)) ?? NAV[0]).label);
+    const page = NAV.find((n) => n.path !== '/' && path.startsWith(n.path));
+    if (page) return t(page.label);
+    const k = this.ui.viewDate();
+    const day = `${dayName(DateU.dow(k) - 1)}, ${DateU.short(k)}`;
+    const relative = ({ [-1]: 'app.yesterday', 0: 'app.today', 1: 'app.tomorrow' } as Record<number, string>)[DateU.diffDays(this.ui.today(), k)];
+    return relative ? `${t(relative)} · ${day}` : day;
   });
 
   protected readonly dateLabel = computed(() => {

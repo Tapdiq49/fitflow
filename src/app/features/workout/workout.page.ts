@@ -14,26 +14,29 @@ import { DateU, F, dayName, inputValue } from '../../core/utils';
 import { CardioCardComponent } from '../dashboard/cardio-card.component';
 import { ChartComponent } from '../../shared/chart.component';
 import { IconComponent } from '../../shared/icon.component';
-import { TimePickerComponent } from '../../shared/time-picker.component';
+import { SelectComponent, SelectOption } from '../../shared/forms/select.component';
+import { TimePickerComponent } from '../../shared/forms/time-picker.component';
 import { TPipe, TdPipe } from '../../shared/t.pipe';
 import { t } from '../../core/i18n/translate';
 
 @Component({
   selector: 'app-workout-page',
-  imports: [IconComponent, TimePickerComponent, ChartComponent, CardioCardComponent, NgTemplateOutlet, RouterLink, TPipe, TdPipe],
+  imports: [IconComponent, SelectComponent, TimePickerComponent, ChartComponent, CardioCardComponent, NgTemplateOutlet, RouterLink, TPipe, TdPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="flex flex-col gap-[18px]">
       @if (variant()) {
-        <div
-          class="sticky top-0 z-5 mb-4 flex flex-wrap items-center justify-between gap-3 rounded-card border border-border bg-surface/92 px-[18px] py-3.5 backdrop-blur-[10px]"
-        >
+        <!-- Sticky under the app header. The opaque wrapper (page background) covers the 12px gap above, the 16px gap
+             below and the bar's rounded corners, so scrolled cards never show around the bar. -->
+        <div class="sticky top-[var(--header-h,0px)] z-5 -mt-3 bg-bg pt-3 pb-4">
+        <div class="flex flex-wrap items-center justify-between gap-3 rounded-card border border-border bg-surface px-[18px] py-3.5">
           <div>
             <div class="eyebrow">{{ F.long(k()) }}</div>
             <h3 style="font-size: 20px">{{ workout.title(k()) }}</h3>
             <span class="text-muted">{{ 'workout.nPerNExercises' | t: { a: doneCount(), b: cards().length } }}</span>
           </div>
-          <div class="flex flex-wrap items-center gap-2">
+          <!-- Trainer mode: bottom-aligned so the button sits on the same line as the captioned time fields. -->
+          <div class="flex flex-wrap gap-2" [class]="workout.isTrainer() ? 'items-end [&_.btn]:h-10 [&_[role=combobox]]:h-10' : 'items-center'">
             @if (workout.isTrainer()) {
               <div class="flex flex-wrap items-end gap-2">
                 <div class="field w-[120px]">{{ 'workout.started' | t }}<app-time-picker [label]="'workout.started' | t" [value]="log().startTime ?? ''" (valueChange)="workout.setTime(k(), 'startTime', $event)" /></div>
@@ -44,7 +47,7 @@ import { t } from '../../core/i18n/translate';
               </div>
             }
             @if (log().savedAt) {
-              <span class="badge badge-training"><app-icon name="check" size="sm" />{{ 'workout.saved' | t }}</span>
+              <span class="badge badge-training" [class.mb-2]="workout.isTrainer()"><app-icon name="check" size="sm" />{{ 'workout.saved' | t }}</span>
             } @else if (log().startedAt) {
               <span class="text-[22px] font-extrabold text-accent tabular-nums">{{ elapsed() }}</span>
             } @else if (!workout.isTrainer()) {
@@ -54,6 +57,7 @@ import { t } from '../../core/i18n/translate';
               <app-icon name="save" size="sm" />{{ log().savedAt ? ('workout.saveAgain' | t) : ('workout.saveWorkout' | t) }}
             </button>
           </div>
+        </div>
         </div>
 
         <ng-container *ngTemplateOutlet="safetyTpl" />
@@ -116,7 +120,7 @@ import { t } from '../../core/i18n/translate';
                         <input class="w-full text-center font-semibold" type="text" inputmode="numeric" [value]="s.r" [placeholder]="c.ex.min + '–' + c.ex.max" (input)="workout.setValue(k(), c.id, i, 'r', val($event))" />
                       </td>
                       <td class="w-10">
-                        <button class="check" [class.check-on]="s.done" (click)="toggleSet(c.id, i)" [attr.aria-label]="'workout.setCompleted' | t"><app-icon name="check" /></button>
+                        <button class="check" role="checkbox" [attr.aria-checked]="s.done" [class.check-on]="s.done" (click)="toggleSet(c.id, i)" [attr.aria-label]="'workout.setCompleted' | t"><app-icon name="check" /></button>
                       </td>
                       <td class="w-10">
                         @if (i >= c.ex.sets) {
@@ -151,11 +155,7 @@ import { t } from '../../core/i18n/translate';
         <div class="card-head">
           <h3><app-icon name="trend" /> {{ 'workout.progressChart' | t }}</h3>
           @if (historyIds().length) {
-            <select [value]="chartId()" (change)="selectedChart.set(val($event))">
-              @for (id of historyIds(); track id) {
-                <option [value]="id">{{ exName(id) }}</option>
-              }
-            </select>
+            <app-select class="w-[220px] max-w-full" [label]="'workout.progressChart' | t" [options]="chartOptions()" [value]="chartId()!" (valueChange)="selectedChart.set($event)" />
           }
         </div>
         @if (historyIds().length) {
@@ -278,6 +278,7 @@ export class WorkoutPage {
   protected readonly historyIds = computed(() =>
     Object.keys(this.store.state().history).filter((id) => (EXERCISES[id] || id.startsWith(TRAINER_EX_PREFIX)) && (this.store.state().history[id]?.length ?? 0) > 0),
   );
+  protected readonly chartOptions = computed<SelectOption<string>[]>(() => this.historyIds().map((id) => ({ value: id, label: this.exName(id) })));
   protected readonly selectedChart = signal<string | null>(null);
   protected readonly chartId = computed(() => {
     const ids = this.historyIds();
