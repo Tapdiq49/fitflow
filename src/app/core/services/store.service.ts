@@ -41,6 +41,7 @@ export class StoreService {
     if (!settings.programStart) settings.programStart = DateU.monday(DateU.today());
     return {
       settings,
+      customFoods: s.customFoods && typeof s.customFoods === 'object' ? s.customFoods : {},
       workoutPlans: s.workoutPlans && typeof s.workoutPlans === 'object' ? s.workoutPlans : {},
       weekPlans: s.weekPlans && typeof s.weekPlans === 'object' ? s.weekPlans : {},
       days: s.days && typeof s.days === 'object' ? s.days : {},

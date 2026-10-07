@@ -1,8 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { FOODS, FOOD_IDS } from '../../core/data/foods';
+import { FOOD_IDS } from '../../core/data/foods';
 import { MealItem } from '../../core/models';
 import { itemAmount, itemMacros, itemName, sumMacros } from '../../core/nutrition';
 import { DayService } from '../../core/services/day.service';
+import { FoodCatalogService } from '../../core/services/food-catalog.service';
 import { ToastService } from '../../core/services/toast.service';
 import { UiService } from '../../core/services/ui.service';
 import { F, nowHM, parseNum } from '../../core/utils';
@@ -28,7 +29,7 @@ import { t, td } from '../../core/i18n/translate';
       <div class="flex flex-wrap items-center gap-2">
         <app-select class="min-w-[180px] flex-1" [label]="'addMeal.addFoodFromDatabase' | t" [options]="foodOptions()" [(value)]="foodId" />
         <input #amt type="text" inputmode="decimal" style="width: 90px" [value]="defaultAmount()" />
-        <span class="text-muted">{{ foods[foodId()].unit | td }}</span>
+        <span class="text-muted">{{ foodUnit() | td }}</span>
         <button class="btn btn-sm" (click)="addFood(amt.value)" [attr.aria-label]="'addMeal.add' | t"><app-icon name="plus" size="sm" /></button>
       </div>
 
@@ -90,9 +91,8 @@ import { t, td } from '../../core/i18n/translate';
 })
 export class AddMealDialog {
   protected readonly F = F;
-  protected readonly foods = FOODS;
-  /** Food database in the active language. */
-  protected readonly foodOptions = computed<SelectOption<string>[]>(() => FOOD_IDS.map((id) => ({ value: id, label: `${td(FOODS[id].name)} (${td(FOODS[id].unit)})` })));
+  /** Food reference list (system + the user's own) in the active language. */
+  protected readonly foodOptions = computed<SelectOption<string>[]>(() => this.catalog.entries().map((e) => ({ value: e.id, label: `${e.name} (${td(e.unit)})` })));
   protected readonly macros = itemMacros;
   protected readonly name_ = itemName;
   protected readonly amount = itemAmount;
@@ -101,9 +101,11 @@ export class AddMealDialog {
   private readonly ui = inject(UiService);
   private readonly day = inject(DayService);
   private readonly toast = inject(ToastService);
+  private readonly catalog = inject(FoodCatalogService);
 
   protected readonly foodId = signal(FOOD_IDS[0]);
-  protected readonly defaultAmount = computed(() => (FOODS[this.foodId()].unit === 'q' ? 100 : 1));
+  protected readonly foodUnit = computed(() => this.catalog.find(this.foodId())?.unit ?? 'q');
+  protected readonly defaultAmount = computed(() => (this.foodUnit() === 'q' ? 100 : 1));
   protected readonly items = signal<MealItem[]>([]);
   protected readonly total = computed(() => sumMacros(this.items().map(itemMacros)));
 
@@ -113,7 +115,7 @@ export class AddMealDialog {
       this.toast.show(t('addMeal.enterAmount'));
       return;
     }
-    this.items.update((l) => [...l, { food: this.foodId(), amt, base: amt }]);
+    this.items.update((l) => [...l, this.catalog.toMealItem(this.foodId(), amt)]);
   }
 
   protected addCustom(...inputs: HTMLInputElement[]): void {

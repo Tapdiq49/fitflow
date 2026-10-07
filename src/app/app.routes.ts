@@ -13,6 +13,7 @@ export const NAV: NavItem[] = [
   { path: '/body', icon: 'scale', label: 'nav.body' },
   { path: '/supplements', icon: 'pill', label: 'nav.supplements' },
   { path: '/calendar', icon: 'calendar', label: 'nav.calendar' },
+  { path: '/references', icon: 'book', label: 'nav.references' },
   { path: '/settings', icon: 'settings', label: 'nav.settings' },
 ];
 
@@ -27,6 +28,9 @@ export const routes: Routes = [
     loadComponent: () => import('./features/supplements/supplements.page').then((m) => m.SupplementsPage),
   },
   { path: 'calendar', title: 'nav.calendar', loadComponent: () => import('./features/calendar/calendar.page').then((m) => m.CalendarPage) },
+  { path: 'references', title: 'nav.references', loadComponent: () => import('./features/references/references.page').then((m) => m.ReferencesPage) },
+  // One route per list in REFERENCE_LISTS (features/references/reference-lists.ts): path is 'references/<id>'.
+  { path: 'references/foods', title: 'references.foods', loadComponent: () => import('./features/references/food-references.page').then((m) => m.FoodReferencesPage) },
   { path: 'settings', title: 'nav.settings', loadComponent: () => import('./features/settings/settings.page').then((m) => m.SettingsPage) },
   { path: '**', redirectTo: '' },
 ];

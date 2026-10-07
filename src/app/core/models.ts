@@ -171,8 +171,26 @@ export interface TrainerExercise {
 /** Trainer workout for one week, keyed by weekday (1 = Monday). */
 export type WorkoutWeekPlan = Record<number, TrainerExercise[]>;
 
+/**
+ * A food the user added in the reference lists (system foods stay in `data/foods.ts`, later the backend).
+ * Shaped like a backend row: `isSystem` locks deletion, `names` holds one text per language (AZ is the source language).
+ */
+export interface CustomFood {
+  id: string;
+  isSystem: false;
+  names: Partial<Record<Lang, string>>;
+  unit: Unit;
+  /** Per 100 g when the unit is 'q', per single unit otherwise (same convention as `Food`). */
+  k: number;
+  p: number;
+  c: number;
+  f: number;
+}
+
 export interface AppState {
   settings: Settings;
+  /** Foods added by the user, keyed by id. */
+  customFoods: Record<string, CustomFood>;
   /** Trainer plans written by the user, keyed by the week's Monday. Weeks without an entry reuse the latest earlier one. */
   weekPlans: Record<string, WeekPlan>;
   /** Trainer workouts keyed by the week's Monday; a week without an entry reuses the latest earlier one. */

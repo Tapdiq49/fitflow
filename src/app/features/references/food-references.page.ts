@@ -1,0 +1,129 @@
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import { Unit } from '../../core/models';
+import { ConfirmService } from '../../core/services/confirm.service';
+import { FoodCatalogService, FoodEntry } from '../../core/services/food-catalog.service';
+import { ToastService } from '../../core/services/toast.service';
+import { F, inputValue, parseNum } from '../../core/utils';
+import { SelectComponent, SelectOption } from '../../shared/forms/select.component';
+import { IconComponent } from '../../shared/icon.component';
+import { TPipe, TdPipe } from '../../shared/t.pipe';
+import { t, td } from '../../core/i18n/translate';
+
+const BLANK = { az: '', en: '', ru: '', unit: 'q' as Unit, k: '', p: '', c: '', f: '' };
+type Draft = typeof BLANK;
+type TextField = Exclude<keyof Draft, 'unit'>;
+
+/** The food database reference list: system foods (locked) and the user's own (deletable). Opened from the reference index. */
+@Component({
+  selector: 'app-food-references-page',
+  imports: [RouterLink, IconComponent, SelectComponent, TPipe, TdPipe],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <div class="flex flex-col gap-[18px]">
+      <div><a routerLink="/references" class="btn btn-ghost btn-sm"><app-icon name="left" size="sm" />{{ 'nav.references' | t }}</a></div>
+
+      <div class="card">
+        <div class="card-head"><h3><app-icon name="plus" /> {{ 'references.addFood' | t }}</h3></div>
+        <div class="grid grid-cols-[repeat(auto-fit,minmax(170px,1fr))] items-start gap-3 [&_[role=combobox]]:h-[42px] [&_input]:h-[42px]">
+          <label class="field">{{ 'references.nameAz' | t }}<input type="text" [value]="draft().az" (input)="set('az', $event)" (keydown.enter)="add()" /></label>
+          <label class="field">{{ 'references.nameEn' | t }}<input type="text" [value]="draft().en" (input)="set('en', $event)" (keydown.enter)="add()" /></label>
+          <label class="field">{{ 'references.nameRu' | t }}<input type="text" [value]="draft().ru" (input)="set('ru', $event)" (keydown.enter)="add()" /></label>
+          <div class="field">{{ 'references.unit' | t }}<app-select [label]="'references.unit' | t" [options]="unitOptions()" [value]="draft().unit" (valueChange)="setUnit($event)" /></div>
+        </div>
+        <div class="mt-3 grid grid-cols-[repeat(auto-fit,minmax(110px,1fr))] items-start gap-3 [&_input]:h-[42px]">
+          <label class="field">{{ 'addMeal.kcal' | t }}<input type="text" inputmode="decimal" [value]="draft().k" (input)="set('k', $event)" (keydown.enter)="add()" /></label>
+          <label class="field">{{ 'addMeal.p' | t }}<input type="text" inputmode="decimal" [value]="draft().p" (input)="set('p', $event)" (keydown.enter)="add()" /></label>
+          <label class="field">{{ 'addMeal.c' | t }}<input type="text" inputmode="decimal" [value]="draft().c" (input)="set('c', $event)" (keydown.enter)="add()" /></label>
+          <label class="field">{{ 'addMeal.f' | t }}<input type="text" inputmode="decimal" [value]="draft().f" (input)="set('f', $event)" (keydown.enter)="add()" /></label>
+        </div>
+        <p class="text-muted" style="font-size: 12px; margin: 10px 0 0">{{ 'references.macrosPer' | t: { a: perLabel() } }}</p>
+        <div class="mt-3"><button class="btn btn-primary" (click)="add()"><app-icon name="plus" size="sm" />{{ 'references.add' | t }}</button></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h3><app-icon name="utensils" /> {{ 'references.foods' | t }}</h3>
+          <span class="badge">{{ entries().length }}</span>
+        </div>
+        <p class="text-muted" style="font-size: 12px; margin: 0 0 12px">{{ 'references.foodsHint' | t }}</p>
+        <input type="text" class="mb-3 w-full" [value]="query()" (input)="query.set(val($event))" [placeholder]="'references.search' | t" [attr.aria-label]="'references.search' | t" />
+        @if (visible().length) {
+          <div class="overflow-x-auto" style="border: 0">
+            <table class="tbl">
+              <thead>
+                <tr>
+                  <th>{{ 'common.food' | t }}</th><th>{{ 'references.unit' | t }}</th>
+                  <th class="tbl-num">{{ 'addMeal.kcal' | t }}</th><th class="tbl-num">{{ 'addMeal.p' | t }}</th><th class="tbl-num">{{ 'addMeal.c' | t }}</th><th class="tbl-num">{{ 'addMeal.f' | t }}</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (e of visible(); track e.id) {
+                  <tr>
+                    <td class="tbl-text">{{ e.name }}</td>
+                    <td>{{ e.unit | td }}</td>
+                    <td class="tbl-num">{{ F.round(e.k) }}</td><td class="tbl-num">{{ e.p }}</td><td class="tbl-num">{{ e.c }}</td><td class="tbl-num">{{ e.f }}</td>
+                    <td class="text-right">
+                      @if (e.isSystem) {
+                        <span class="badge" [title]="'references.systemLocked' | t"><app-icon name="lock" size="sm" />{{ 'references.system' | t }}</span>
+                      } @else {
+                        <button class="btn btn-ghost btn-icon btn-sm" (click)="remove(e)" [attr.aria-label]="('common.delete' | t) + ': ' + e.name"><app-icon name="trash" size="sm" /></button>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <div class="empty">{{ 'references.nothingFound' | t }}</div>
+        }
+      </div>
+    </div>
+  `,
+})
+export class FoodReferencesPage {
+  protected readonly F = F;
+  protected readonly val = inputValue;
+
+  private readonly catalog = inject(FoodCatalogService);
+  private readonly confirm = inject(ConfirmService);
+  private readonly toast = inject(ToastService);
+
+  protected readonly entries = this.catalog.entries;
+  protected readonly query = signal('');
+  protected readonly visible = computed(() => {
+    const q = this.query().trim().toLowerCase();
+    return q ? this.entries().filter((e) => e.name.toLowerCase().includes(q)) : this.entries();
+  });
+
+  protected readonly draft = signal<Draft>({ ...BLANK });
+  protected readonly unitOptions = computed<SelectOption<Unit>[]>(() => (['q', 'ədəd', 'ölçü'] as const).map((u) => ({ value: u, label: td(u) })));
+  protected readonly perLabel = computed(() => (this.draft().unit === 'q' ? `100 ${td('q')}` : `1 ${td(this.draft().unit)}`));
+
+  protected set(field: TextField, e: Event): void {
+    const value = inputValue(e);
+    this.draft.update((d) => ({ ...d, [field]: value }));
+  }
+
+  protected setUnit(unit: Unit): void {
+    this.draft.update((d) => ({ ...d, unit }));
+  }
+
+  protected add(): void {
+    const d = this.draft();
+    const added = this.catalog.add({ names: { az: d.az, en: d.en, ru: d.ru }, unit: d.unit, k: parseNum(d.k), p: parseNum(d.p), c: parseNum(d.c), f: parseNum(d.f) });
+    if (!added) {
+      this.toast.show(t('references.enterFoodName'));
+      return;
+    }
+    this.draft.set({ ...BLANK, unit: d.unit });
+    this.toast.show(t('references.foodAdded'));
+  }
+
+  protected async remove(e: FoodEntry): Promise<void> {
+    if (!(await this.confirm.ask(t('references.deleteFood', { name: e.name }), { confirmLabel: t('common.delete'), danger: true }))) return;
+    if (this.catalog.remove(e.id)) this.toast.show(t('references.foodDeleted'));
+  }
+}
