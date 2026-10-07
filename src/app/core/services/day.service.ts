@@ -42,9 +42,14 @@ export class DayService {
   setWeekPlan(week: string, plan: WeekPlan | null): void {
     if (plan) this.plans.save(week, plan);
     else this.plans.clear(week);
+    this.rebuildTrainerMenus(week);
+  }
+
+  /** Rebuilds the stored menus from `from` (never before today: past days keep what they had) out of the trainer plans. Does nothing in auto mode. */
+  rebuildTrainerMenus(from: string = DateU.today()): void {
     if (this.store.settings().menuMode !== 'trainer') return;
-    const from = week > DateU.today() ? week : DateU.today(); // past days keep what they had
-    for (const k of Object.keys(this.store.state().days).filter((x) => x >= from)) {
+    const start = from > DateU.today() ? from : DateU.today();
+    for (const k of Object.keys(this.store.state().days).filter((x) => x >= start)) {
       const current = this.store.peek(k)?.menu;
       if (!current) continue;
       const menu = this.menu.generate(k, { keep: current.filter((m) => m.done || m.custom) });

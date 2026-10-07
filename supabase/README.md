@@ -4,7 +4,7 @@ Rules: `_bmad-output/planning-artifacts/backend-migration-rules.md`. Only the pr
 
 ## 1. Database
 
-Supabase Dashboard → **SQL Editor** → New query → paste each file in `migrations/` in name order (`..._auth_profiles.sql`, `..._profiles_avatar.sql`, `..._foods.sql`, `..._foods_generator_fields.sql`, `..._foods_position.sql`, `..._food_order_per_user.sql`, `..._profiles_body.sql`) → Run.
+Supabase Dashboard → **SQL Editor** → New query → paste each file in `migrations/` in name order (`..._auth_profiles.sql`, `..._profiles_avatar.sql`, `..._foods.sql`, `..._foods_generator_fields.sql`, `..._foods_position.sql`, `..._food_order_per_user.sql`, `..._profiles_body.sql`, `..._trainer_plans.sql`) → Run.
 (With the CLI instead: `npx supabase link --project-ref <ref>` then `npx supabase db push`.)
 
 Check RLS afterwards with `tests/rls_profiles_check.sql.txt` (SQL Editor, rolled back at the end).

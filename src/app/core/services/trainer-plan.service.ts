@@ -1,11 +1,13 @@
 import { Injectable, inject } from '@angular/core';
-import { TRAINER_PLAN } from '../data/trainer-plan';
 import { TrainerExercise, WeekPlan, WorkoutWeekPlan } from '../models';
 import { StoreService } from './store.service';
 
 export const DEFAULT_GYM_DAYS: readonly number[] = [1, 3, 5];
 
-/** The trainer's weekly meal plans. A week without its own plan reuses the latest earlier one (or the built-in first week). */
+/**
+ * The user's weekly trainer meal plans. A week without its own plan reuses the latest earlier one; with none at all the plan is empty
+ * (the built-in `TRAINER_PLAN` is only a suggestion the week plan page offers, never in effect by itself).
+ */
 @Injectable({ providedIn: 'root' })
 export class TrainerPlanService {
   private readonly store = inject(StoreService);
@@ -17,7 +19,7 @@ export class TrainerPlanService {
       .filter((k) => k <= week)
       .sort()
       .pop();
-    return key ? plans[key] : TRAINER_PLAN;
+    return key ? plans[key] : {};
   }
 
   hasOwn(week: string): boolean {

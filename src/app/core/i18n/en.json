@@ -706,5 +706,12 @@
   "settings.fixFields": "Fix the fields marked in red",
   "plan.addMeal": "Add meal",
   "settings.mealsFromTrainerPlan": "In the trainer plan the number of meals comes from the weekly plan. To change it, add or remove meals there:",
-  "settings.mealsVary": "Per day {a}. "
+  "settings.mealsVary": "Per day {a}. ",
+  "plan.noPlanEntered": "No plan has been entered for this week",
+  "plan.syncFailed": "The plan could not be saved to your account; it is kept on this device",
+  "plan.suggestion": "Suggestion",
+  "plan.suggestionHint": "The trainer's ready-made plan. Add it, then change it and save.",
+  "plan.addSuggestion": "Add the suggestion",
+  "plan.addSuggestionAll": "Add the suggested plan to every day",
+  "plan.autoMenuInUse": "The automatic menu is in use right now, so this plan does not affect the menu. If you want to write the weekly plan yourself, change the menu mode in"
 }

@@ -139,8 +139,8 @@ export class SettingsPage {
 
   protected readonly mealCounts: SelectOption<number>[] = [3, 4, 5, 6].map((n) => ({ value: n, label: String(n) }));
   protected readonly menuModes = computed<SelectOption<MenuMode>[]>(() => [
-    { value: 'trainer', label: t('settings.trainerPlan') },
     { value: 'auto', label: t('settings.autoMenu') },
+    { value: 'trainer', label: t('settings.trainerPlan') },
   ]);
   protected readonly workoutModes = computed<SelectOption<WorkoutMode>[]>(() => [
     { value: 'program', label: t('settings.builtInProgram') },

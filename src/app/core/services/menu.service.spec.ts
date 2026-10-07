@@ -4,6 +4,7 @@ import { DateU } from '../utils';
 import { StoreService } from './store.service';
 import { DayService } from './day.service';
 import { TrainerPlanService } from './trainer-plan.service';
+import { TRAINER_PLAN } from '../data/trainer-plan';
 import { UiService } from './ui.service';
 
 describe('MenuService (via DayService.ensureDay), auto mode', () => {
@@ -68,10 +69,18 @@ describe('MenuService, trainer mode', () => {
     TestBed.configureTestingModule({});
     store = TestBed.inject(StoreService);
     day = TestBed.inject(DayService);
+    store.mutate((s) => (s.settings.menuMode = 'trainer')); // the default for a new user is auto
+    TestBed.inject(TrainerPlanService).save('2000-01-03', TRAINER_PLAN); // a user who has added the suggested plan; the app itself starts with none
   });
 
-  it('is the default and gives every weekday the trainer meals with dinner at 19:30', () => {
-    expect(store.settings().menuMode).toBe('trainer');
+  it('is not the default: a new user starts with the automatic menu and the built-in workout program', () => {
+    localStorage.clear();
+    const fresh = StoreService.normalize(null).settings;
+    expect(fresh.menuMode).toBe('auto');
+    expect(fresh.workoutMode).toBe('program');
+  });
+
+  it('gives every weekday the trainer meals with dinner at 19:30', () => {
     for (let i = 0; i < 7; i++) {
       const k = DateU.add('2026-10-05', i);
       day.ensureDay(k);

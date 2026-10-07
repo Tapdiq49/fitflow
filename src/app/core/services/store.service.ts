@@ -27,7 +27,7 @@ export const DEFAULT_SETTINGS: Omit<Settings, 'programStart'> = {
   proteinTarget: 180,
   mealsPerDay: 5,
   useWhey: true,
-  menuMode: 'trainer',
+  menuMode: 'auto',
   workoutMode: 'program',
   theme: 'system',
   lang: 'az',

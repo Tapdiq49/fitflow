@@ -1,15 +1,17 @@
 import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal, signal } from '@angular/core';
 import { SLOTS } from '../../core/data/meals';
-import { TRAINER_SLOTS, trainerExId } from '../../core/data/trainer-plan';
-import { MealItem, SlotId, WeekPlan, WorkoutWeekPlan } from '../../core/models';
+import { TRAINER_PLAN, TRAINER_SLOTS, trainerExId } from '../../core/data/trainer-plan';
+import { MealItem, SlotId, TrainerMeal, WeekPlan, WorkoutWeekPlan } from '../../core/models';
 import { DayService } from '../../core/services/day.service';
 import { StoreService } from '../../core/services/store.service';
 import { ToastService } from '../../core/services/toast.service';
 import { TrainerPlanService } from '../../core/services/trainer-plan.service';
 import { DateU, clamp, dayName, fromMin, inputValue, parseNum, toMin } from '../../core/utils';
+import { RouterLink } from '@angular/router';
 import { Listbox, Option } from '@angular/aria/listbox';
 import { Tab, TabContent, TabList, TabPanel, Tabs } from '@angular/aria/tabs';
 import { IconComponent } from '../../shared/icon.component';
+import { BodyBasicsFormComponent } from '../profile/body-basics-form.component';
 import { TimePickerComponent } from '../../shared/forms/time-picker.component';
 import { TPipe } from '../../shared/t.pipe';
 import { t, td } from '../../core/i18n/translate';
@@ -32,10 +34,13 @@ interface Row {
 
 @Component({
   selector: 'app-week-plan-page',
-  imports: [Tabs, TabList, Tab, TabPanel, TabContent, Listbox, Option, IconComponent, TimePickerComponent, TPipe],
+  imports: [RouterLink, BodyBasicsFormComponent, Tabs, TabList, Tab, TabPanel, TabContent, Listbox, Option, IconComponent, TimePickerComponent, TPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div ngTabs class="flex flex-col gap-[18px]">
+      @if (!store.bodyBasicsKnown()) {
+        <div class="alert alert-info"><app-icon name="info" /><div class="w-full"><p style="margin: 0 0 10px"><b>{{ 'bodyBasics.title' | t }}</b> {{ 'bodyBasics.why' | t }}</p><app-body-basics-form /></div></div>
+      }
       <div ngTabList [(selectedTab)]="tab" class="flex gap-2">
         <button ngTab value="meal" class="btn" [class.btn-primary]="tab() === 'meal'"><app-icon name="utensils" size="sm" />{{ 'plan.mealPlan' | t }}</button>
         <button ngTab value="workout" class="btn" [class.btn-primary]="tab() === 'workout'"><app-icon name="dumbbell" size="sm" />{{ 'plan.workoutPlan' | t }}</button>
@@ -47,12 +52,21 @@ interface Row {
             <span class="px-2.5 font-semibold whitespace-nowrap">{{ label() }}</span>
             <button class="btn btn-ghost btn-icon" (click)="shift(1)" [attr.aria-label]="'plan.nextWeek' | t"><app-icon name="right" /></button>
           </div>
-          <span class="badge" [class.badge-training]="currentOwn()">{{ currentOwn() ? ('plan.planWrittenForThis' | t) : ('plan.previousWeeksPlanIn' | t) }}</span>
+          <span class="badge" [class.badge-training]="planState() === 'own'">{{ planStateLabel() }}</span>
         </div>
         @if (tab() === 'meal') {
         <p class="text-muted" style="font-size: 12px; margin: 10px 0 0">
           {{ 'plan.leaveMealFieldEmpty' | t }}
         </p>
+        @if (store.settings().menuMode === 'auto') {
+          <div class="alert alert-info mt-3" role="status">
+            <app-icon name="info" />
+            <div>{{ 'plan.autoMenuInUse' | t }} <a routerLink="/settings">{{ 'nav.settings' | t }}</a></div>
+          </div>
+        }
+        @if (weekEmpty()) {
+          <button class="btn btn-sm" style="margin-top: 10px" (click)="addSuggestionAll()"><app-icon name="plus" size="sm" />{{ 'plan.addSuggestionAll' | t }}</button>
+        }
         } @else {
           <p class="text-muted" style="font-size: 12px; margin: 10px 0 0">
             {{ 'plan.enterExercisesTrainerGave' | t }}
@@ -68,6 +82,8 @@ interface Row {
       @for (day of days; track day) {
         <div class="card">
           <div class="card-head"><h3>{{ dayLabel(day) }}</h3></div>
+          <div class="flex flex-wrap items-start gap-4">
+          <div class="min-w-[300px] flex-1">
           @for (r of draft()[day]; track r.slot; let i = $index) {
             <div class="mb-2 grid grid-cols-[110px_112px_1fr_36px] items-center gap-2 phone:grid-cols-[90px_1fr_36px]">
               <span class="text-[13px] text-text-2">{{ slotLabel(r.slot) }}</span>
@@ -86,6 +102,18 @@ interface Row {
               </div>
             }
           }
+          </div>
+          @if (suggestionFor(day); as suggested) {
+            <aside class="w-[300px] rounded-[12px] border border-dashed border-border bg-surface-2 p-3 phone:w-full">
+              <b class="text-[13px]">{{ 'plan.suggestion' | t }}</b>
+              <p class="text-muted" style="font-size: 12px; margin: 2px 0 8px">{{ 'plan.suggestionHint' | t }}</p>
+              @for (m of suggested; track m.slot) {
+                <div class="text-[12px] text-text-2"><b class="tabular-nums">{{ m.time }}</b> {{ slotLabel(m.slot) }}: {{ m.name }}</div>
+              }
+              <button class="btn btn-sm" style="margin-top: 10px" (click)="addSuggestion(day)"><app-icon name="plus" size="sm" />{{ 'plan.addSuggestion' | t }}</button>
+            </aside>
+          }
+          </div>
         </div>
       }
 
@@ -160,7 +188,15 @@ export class WeekPlanPage {
   protected readonly label = computed(() => `${DateU.short(this.week())} – ${DateU.short(DateU.add(this.week(), 6))}`);
 
   protected readonly wOwn = computed(() => this.plans.hasOwnWorkout(this.week()));
-  protected readonly currentOwn = computed(() => (this.tab() === 'meal' ? this.own() : this.wOwn()));
+  /** What the selected tab holds for this week: its own plan, an earlier week's plan carried over, or nothing entered at all. */
+  protected readonly planState = computed<'own' | 'previous' | 'empty'>(() => {
+    const meal = this.tab() === 'meal';
+    const week = this.week();
+    const filled = meal ? Object.values(this.plans.planFor(week)).some((day) => day.length > 0) : Object.values(this.plans.workoutFor(week)).some((day) => day.length > 0);
+    if (!filled) return 'empty';
+    return (meal ? this.own() : this.wOwn()) ? 'own' : 'previous';
+  });
+  protected readonly planStateLabel = computed(() => t(({ own: 'plan.planWrittenForThis', previous: 'plan.previousWeeksPlanIn', empty: 'plan.noPlanEntered' } as const)[this.planState()]));
   /** Editable copy of the trainer workout in effect for the selected week. */
   protected readonly wDraft = linkedSignal<Record<number, ExRow[]>>(() => this.toExRows(this.plans.workoutFor(this.week())));
   /** Gym weekdays chosen for the selected week — the only days the trainer workout is entered for. */
@@ -183,6 +219,23 @@ export class WeekPlanPage {
 
   /** Meals a day of the trainer plan can have, in the order they are eaten; each at most once a day. */
   private static readonly SLOT_ORDER: readonly SlotId[] = ['breakfast', 'snack', 'lunch', 'snack2', 'pre', 'post', 'dinner'];
+
+  /** The built-in trainer plan for a day, offered while that day has no meals yet. */
+  protected suggestionFor(day: number): TrainerMeal[] | null {
+    const suggested = TRAINER_PLAN[day];
+    return !this.draft()[day].length && suggested?.length ? suggested : null;
+  }
+
+  protected readonly weekEmpty = computed(() => this.days.every((d) => !this.draft()[d].length));
+
+  protected addSuggestion(day: number): void {
+    const rows = (TRAINER_PLAN[day] ?? []).map((m): Row => ({ slot: m.slot, time: m.time, text: m.name, name0: m.name, items0: structuredClone(m.items) }));
+    this.draft.update((d) => ({ ...d, [day]: rows.sort((a, b) => a.time.localeCompare(b.time)) }));
+  }
+
+  protected addSuggestionAll(): void {
+    for (const d of this.days) if (!this.draft()[d].length) this.addSuggestion(d);
+  }
 
   protected unusedSlots(day: number): SlotId[] {
     const used = new Set(this.draft()[day].map((r) => r.slot));

@@ -706,5 +706,12 @@
   "settings.fixFields": "Qırmızı ilə işarələnmiş xanaları düzəlt",
   "plan.addMeal": "Yemək əlavə et",
   "settings.mealsFromTrainerPlan": "Məşqçi planında yemək sayı həftə planından gəlir. Dəyişmək üçün buradan yemək əlavə et və ya sil:",
-  "settings.mealsVary": "Günlər üzrə {a}. "
+  "settings.mealsVary": "Günlər üzrə {a}. ",
+  "plan.noPlanEntered": "Bu həftə üçün plan daxil edilməyib",
+  "plan.syncFailed": "Plan hesaba yazıla bilmədi; bu cihazda saxlanıldı",
+  "plan.suggestion": "Təklif",
+  "plan.suggestionHint": "Məşqçinin hazır planı. Əlavə et, sonra dəyiş və yadda saxla.",
+  "plan.addSuggestion": "Təklifi əlavə et",
+  "plan.addSuggestionAll": "Təklif olunan planı bütün günlərə əlavə et",
+  "plan.autoMenuInUse": "Hazırda avtomatik menyu istifadə olunur, bu plan menyuya təsir etmir. Həftə planını özün yazmaq istəyirsənsə, menyu rejimini Ayarlardan dəyiş:"
 }

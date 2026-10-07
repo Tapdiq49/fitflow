@@ -26,6 +26,26 @@ export interface Database {
         };
         Relationships: [];
       };
+      trainer_plans: {
+        Row: {
+          user_id: string;
+          kind: 'meal' | 'workout';
+          /** Monday of the week the plan starts in (YYYY-MM-DD). */
+          week: string;
+          plan: Record<string, unknown>;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          kind: 'meal' | 'workout';
+          week: string;
+          plan: Record<string, unknown>;
+        };
+        Update: {
+          plan?: Record<string, unknown>;
+        };
+        Relationships: [];
+      };
       foods: {
         Row: {
           id: string;

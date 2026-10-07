@@ -11,7 +11,7 @@ import { TPipe } from '../../shared/t.pipe';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (notice.visible()) {
-      <div class="alert alert-warn mt-4" role="status">
+      <div class="alert alert-warn mt-4 !items-center" role="status">
         <app-icon name="alert" />
         <div class="flex min-w-0 flex-1 flex-wrap items-center gap-x-4 gap-y-2">
           <div class="min-w-[220px] flex-1">

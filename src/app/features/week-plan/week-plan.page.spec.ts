@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { DateU } from '../../core/utils';
 import { StoreService } from '../../core/services/store.service';
 import { TrainerPlanService } from '../../core/services/trainer-plan.service';
@@ -17,6 +18,7 @@ describe('WeekPlanPage tabs and gym days', () => {
 
   beforeEach(async () => {
     localStorage.clear();
+    TestBed.configureTestingModule({ providers: [provideRouter([])] });
     fixture = TestBed.createComponent(WeekPlanPage);
     await render();
   });
@@ -33,10 +35,35 @@ describe('WeekPlanPage tabs and gym days', () => {
     expect(q('[role=listbox]')).toHaveLength(1);
   });
 
+  it('asks for height and weight at the top while they are missing, and stops asking once they are saved', async () => {
+    expect(q('.alert-info')[0].textContent).toContain('boyunu və çəkini');
+    const [h, w] = q<HTMLInputElement>('.alert-info input');
+    h.value = '180';
+    h.dispatchEvent(new Event('input'));
+    w.value = '85';
+    w.dispatchEvent(new Event('input'));
+    q<HTMLButtonElement>('.alert-info .btn-primary')[0].click();
+    await render();
+    expect(TestBed.inject(StoreService).settings()).toMatchObject({ height: 180, startWeight: 85 });
+    expect(q('.alert-info').some((a) => a.textContent?.includes('boyunu və çəkini'))).toBe(false);
+  });
+
+  it('tells the user the automatic menu is in use, with a link to the settings', () => {
+    const alert = q('.alert-info').find((a) => a.textContent?.includes('avtomatik menyu'))!;
+    expect(alert.textContent).toContain('avtomatik menyu istifadə olunur');
+    expect(alert.querySelector('a')?.getAttribute('href')).toBe('/settings');
+  });
+
   it('adds a meal to a day and removes another, then saves the new number of meals', async () => {
     const first = (): HTMLElement => q('.card')[1]; // Monday
     const rows = (): number => first().querySelectorAll('input[type=text]').length;
+    expect(rows()).toBe(0); // a new user starts with an empty plan
+    expect(first().textContent).toContain('Təklif'); // and the built-in plan is only offered
+
+    Array.from(first().querySelectorAll<HTMLButtonElement>('button')).find((b) => b.textContent?.includes('Təklifi əlavə et'))!.click();
+    await render(fixture);
     expect(rows()).toBe(5);
+    expect(first().textContent).not.toContain('Təklifi əlavə et'); // the offer goes away once the day has meals
     expect(Array.from(first().querySelectorAll('button')).some((b) => b.textContent?.includes('Məşqdən əvvəl'))).toBe(true);
 
     Array.from(first().querySelectorAll<HTMLButtonElement>('button')).find((b) => b.textContent?.includes('Məşqdən əvvəl'))!.click();
