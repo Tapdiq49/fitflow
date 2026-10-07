@@ -8,6 +8,8 @@ import { AuthService } from './core/auth/auth.service';
 import { SupabaseAuthService } from './core/auth/supabase-auth.service';
 import { I18nTitleStrategy } from './core/i18n/title.strategy';
 import { BodyBasicsSyncService } from './core/services/body-basics-sync.service';
+import { loadLang } from './core/i18n/translate';
+import { StoreService } from './core/services/store.service';
 import { FoodCatalogService } from './core/services/food-catalog.service';
 import { PlanSyncService } from './core/services/plan-sync.service';
 import { SettingsSyncService } from './core/services/settings-sync.service';
@@ -27,6 +29,8 @@ export const appConfig: ApplicationConfig = {
     { provide: AuthService, useClass: SupabaseAuthService },
     { provide: FoodRepository, useClass: SupabaseFoodRepository },
     { provide: PlanRepository, useClass: SupabasePlanRepository },
+    // The texts of the saved language are loaded before the first screen (Azerbaijani is built in; English and Russian load on demand).
+    provideAppInitializer(() => loadLang(inject(StoreService).settings().lang)),
     // Not awaited: the app opens at once as a guest and updates when the stored session is restored.
     provideAppInitializer(() => {
       void inject(AuthStore).init();

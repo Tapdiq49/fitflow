@@ -1,4 +1,5 @@
-import { Injectable, effect, inject } from '@angular/core';
+import { Injectable, effect, inject, untracked } from '@angular/core';
+import { loadLang } from '../i18n/translate';
 import { Lang } from '../models';
 import { activeLang } from '../utils';
 import { StoreService } from './store.service';
@@ -18,8 +19,13 @@ export class I18nService {
     activeLang.set(this.store.settings().lang);
     effect(() => {
       const l = this.store.settings().lang;
-      activeLang.set(l);
-      document.documentElement.setAttribute('lang', l);
+      // The texts of the language come first (English and Russian are loaded on demand), then the switch.
+      untracked(() =>
+        void loadLang(l).then(() => {
+          activeLang.set(l);
+          document.documentElement.setAttribute('lang', l);
+        }),
+      );
     });
   }
 
