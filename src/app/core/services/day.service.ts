@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { SLOTS } from '../data/meals';
 import { TIPS } from '../data/program';
-import { Meal, TimelineItem, WeekDay, WeekPlan, newDay } from '../models';
+import { Meal, Settings, TimelineItem, WeekDay, WeekPlan, newDay } from '../models';
 import { mealMacros, menuTotals, sleepMinutes } from '../nutrition';
 import { DateU, F, clamp, fromMin, hashStr, nowHM, toMin, uid } from '../utils';
 import { MenuService } from './menu.service';
@@ -14,6 +14,8 @@ import { t, td } from '../i18n/translate';
 
 /** Daily water target in ml (trainer: minimum 1.5 L). */
 const WATER_TARGET_ML = 1500;
+/** Settings the auto-menu generator reads (see MenuService). */
+const AUTO_MENU_SETTINGS = ['kcalTarget', 'proteinTarget', 'mealsPerDay', 'useWhey', 'workoutTime', 'wakeTime'] as const satisfies readonly (keyof Settings)[];
 /** Largest single drink accepted from the manual field (guards against typos like 3500 → 35000). */
 const MAX_DRINK_ML = 5000;
 
@@ -170,6 +172,16 @@ export class DayService {
 
   removeMeal(k: string, id: string): void {
     this.store.mutateDay(k, (d) => (d.menu = (d.menu ?? []).filter((m) => m.id !== id)));
+  }
+
+  /**
+   * Whether saving settings should offer to rebuild the viewed day's menu: only for today or later, only in auto-menu mode
+   * (the trainer's menu comes from the week plan and a mode switch is applied by ensureDay), and only when a setting the
+   * generator reads changed.
+   */
+  offerMenuRegeneration(before: Settings, after: Settings, k: string): boolean {
+    if (after.menuMode !== 'auto' || k < DateU.today()) return false;
+    return AUTO_MENU_SETTINGS.some((key) => before[key] !== after[key]);
   }
 
   /** New menu for the day; eaten and custom meals are kept. */

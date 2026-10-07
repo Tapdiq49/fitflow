@@ -1,6 +1,40 @@
 import { TestBed } from '@angular/core/testing';
+import { Settings } from '../models';
+import { DateU } from '../utils';
 import { DayService } from './day.service';
 import { StoreService } from './store.service';
+
+describe('DayService.offerMenuRegeneration', () => {
+  let day: DayService;
+  let base: Settings;
+  const today = DateU.today();
+
+  beforeEach(() => {
+    localStorage.clear();
+    TestBed.configureTestingModule({});
+    day = TestBed.inject(DayService);
+    base = { ...TestBed.inject(StoreService).settings(), menuMode: 'auto' };
+  });
+
+  it('offers it in auto mode when a setting the generator reads changed', () => {
+    for (const change of [{ kcalTarget: 2900 }, { proteinTarget: 190 }, { mealsPerDay: 6 }, { useWhey: !base.useWhey }, { workoutTime: '07:00' }, { wakeTime: '06:00' }]) {
+      expect(day.offerMenuRegeneration(base, { ...base, ...change }, today)).toBe(true);
+    }
+  });
+
+  it('does not offer it when nothing relevant changed (theme, language, sleep time, creatine)', () => {
+    const after = { ...base, theme: 'dark' as const, lang: 'en' as const, sleepTime: '22:00', showCreatine: !base.showCreatine };
+    expect(day.offerMenuRegeneration(base, after, today)).toBe(false);
+  });
+
+  it('does not offer it in trainer menu mode, even if a relevant setting changed', () => {
+    expect(day.offerMenuRegeneration({ ...base, menuMode: 'trainer' }, { ...base, menuMode: 'trainer', kcalTarget: 2900 }, today)).toBe(false);
+  });
+
+  it('does not offer it for a past day', () => {
+    expect(day.offerMenuRegeneration(base, { ...base, kcalTarget: 2900 }, DateU.add(today, -1))).toBe(false);
+  });
+});
 
 describe('DayService.addWater', () => {
   let store: StoreService;

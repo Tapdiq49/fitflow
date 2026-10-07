@@ -139,9 +139,12 @@ export class SettingsPage {
 
   protected async save(): Promise<void> {
     const f = this.form();
+    const before = this.store.settings();
     this.store.updateSettings(f);
     this.toast.show(t('settings.settingsSaved'));
-    if (await this.confirm.ask(t('settings.regenerateSelectedDaysMenu'), { confirmLabel: t('settings.regenerate') })) this.day.regenerateMenu(this.ui.viewDate());
+    const k = this.ui.viewDate();
+    if (!this.day.offerMenuRegeneration(before, this.store.settings(), k)) return;
+    if (await this.confirm.ask(t('settings.regenerateSelectedDaysMenu'), { confirmLabel: t('settings.regenerate') })) this.day.regenerateMenu(k);
   }
 
   protected exportData(): void {
