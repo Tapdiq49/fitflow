@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { SLOTS } from '../data/meals';
 import { TIPS } from '../data/program';
+import { foodItem } from '../food-book';
 import { Meal, Settings, TimelineItem, WeekDay, WeekPlan, newDay } from '../models';
 import { mealMacros, menuTotals, sleepMinutes } from '../nutrition';
 import { DateU, F, clamp, fromMin, hashStr, nowHM, toMin, uid } from '../utils';
@@ -218,7 +219,7 @@ export class DayService {
       }
       const it = m.items.find((i) => i.food === 'whey');
       if (it) it.amt += 1;
-      else m.items.push({ food: 'whey', amt: 1, base: 1 });
+      else m.items.push(foodItem('whey', 1));
     });
     this.toast.show(t('day.wheyAdded24G'));
   }

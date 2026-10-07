@@ -403,7 +403,7 @@
   "safety.supportiveCompressionAthletic": "Supportive (compression) athletic underwear can add comfort.",
   "references.add": "Add",
   "references.addFood": "Add a new food",
-  "references.deleteFood": "Delete “{name}”? Entries you already added to meals will stay.",
+  "references.deleteFood": "Delete the food “{name}”? If you already added it to meals, it will stay there.",
   "references.enterFoodName": "Enter a name, at least in Azerbaijani",
   "references.foodAdded": "Food added ✓",
   "references.foodDeleted": "Food deleted",
@@ -682,5 +682,8 @@
   "profile.currentPassword": "Current password",
   "profile.currentPasswordWrong": "The current password is incorrect.",
   "profile.providerAccount": "You sign in with Google, so Google manages your password. There is nothing to change here.",
-  "auth.error.invalid_image": "The image could not be read. Pick another one (under 8 MB)."
+  "auth.error.invalid_image": "The image could not be read. Pick another one (under 8 MB).",
+  "references.guestHint": "Sign in to add your own foods. They are saved to your account and show on every device.",
+  "references.loadFailed": "Could not reach the server. The built-in list is shown; your own foods may not be visible yet.",
+  "references.saveFailed": "The change was not saved. Check your connection and try again."
 }

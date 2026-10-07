@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { AuthStore } from '../../core/auth/auth.store';
 import { Unit } from '../../core/models';
 import { ConfirmService } from '../../core/services/confirm.service';
 import { FoodCatalogService, FoodEntry } from '../../core/services/food-catalog.service';
@@ -23,6 +24,7 @@ type TextField = Exclude<keyof Draft, 'unit'>;
     <div class="flex flex-col gap-[18px]">
       <div><a routerLink="/references" class="btn btn-ghost btn-sm"><app-icon name="left" size="sm" />{{ 'nav.references' | t }}</a></div>
 
+      @if (auth.user()) {
       <div class="card">
         <div class="card-head"><h3><app-icon name="plus" /> {{ 'references.addFood' | t }}</h3></div>
         <div class="grid grid-cols-[repeat(auto-fit,minmax(170px,1fr))] items-start gap-3 [&_[role=combobox]]:h-[42px] [&_input]:h-[42px]">
@@ -38,15 +40,28 @@ type TextField = Exclude<keyof Draft, 'unit'>;
           <label class="field">{{ 'addMeal.f' | t }}<input type="text" inputmode="decimal" [value]="draft().f" (input)="set('f', $event)" (keydown.enter)="add()" /></label>
         </div>
         <p class="text-muted" style="font-size: 12px; margin: 10px 0 0">{{ 'references.macrosPer' | t: { a: perLabel() } }}</p>
-        <div class="mt-3"><button class="btn btn-primary" (click)="add()"><app-icon name="plus" size="sm" />{{ 'references.add' | t }}</button></div>
+        <div class="mt-3"><button class="btn btn-primary" [disabled]="busy()" (click)="add()">@if (busy()) { <span class="spinner"></span> } @else { <app-icon name="plus" size="sm" /> }{{ 'references.add' | t }}</button></div>
       </div>
+      } @else if (auth.isGuest()) {
+        <div class="alert alert-info">
+          <app-icon name="info" />
+          <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <span>{{ 'references.guestHint' | t }}</span>
+            <a class="btn btn-sm btn-primary" routerLink="/auth/sign-in">{{ 'auth.signIn' | t }}</a>
+          </div>
+        </div>
+      }
 
       <div class="card">
         <div class="card-head">
           <h3><app-icon name="utensils" /> {{ 'references.foods' | t }}</h3>
+          @if (catalog.loading()) { <span class="spinner text-muted" aria-hidden="true"></span> }
           <span class="badge">{{ entries().length }}</span>
         </div>
         <p class="text-muted" style="font-size: 12px; margin: 0 0 12px">{{ 'references.foodsHint' | t }}</p>
+        @if (catalog.loadFailed()) {
+          <div class="alert alert-warn mb-3" role="status"><app-icon name="alert" /><div>{{ 'references.loadFailed' | t }}</div></div>
+        }
         <input type="text" class="mb-3 w-full" [value]="query()" (input)="query.set(val($event))" [placeholder]="'references.search' | t" [attr.aria-label]="'references.search' | t" />
         @if (visible().length) {
           <div class="overflow-x-auto" style="border: 0">
@@ -87,11 +102,13 @@ export class FoodReferencesPage {
   protected readonly F = F;
   protected readonly val = inputValue;
 
-  private readonly catalog = inject(FoodCatalogService);
+  protected readonly catalog = inject(FoodCatalogService);
+  protected readonly auth = inject(AuthStore);
   private readonly confirm = inject(ConfirmService);
   private readonly toast = inject(ToastService);
 
   protected readonly entries = this.catalog.entries;
+  protected readonly busy = signal(false);
   protected readonly query = signal('');
   protected readonly visible = computed(() => {
     const q = this.query().trim().toLowerCase();
@@ -111,19 +128,31 @@ export class FoodReferencesPage {
     this.draft.update((d) => ({ ...d, unit }));
   }
 
-  protected add(): void {
+  protected async add(): Promise<void> {
+    if (this.busy()) return;
     const d = this.draft();
-    const added = this.catalog.add({ names: { az: d.az, en: d.en, ru: d.ru }, unit: d.unit, k: parseNum(d.k), p: parseNum(d.p), c: parseNum(d.c), f: parseNum(d.f) });
-    if (!added) {
-      this.toast.show(t('references.enterFoodName'));
-      return;
+    this.busy.set(true);
+    try {
+      const added = await this.catalog.add({ names: { az: d.az, en: d.en, ru: d.ru }, unit: d.unit, k: parseNum(d.k), p: parseNum(d.p), c: parseNum(d.c), f: parseNum(d.f) });
+      if (!added) {
+        this.toast.show(t('references.enterFoodName'));
+        return;
+      }
+      this.draft.set({ ...BLANK, unit: d.unit });
+      this.toast.show(t('references.foodAdded'));
+    } catch {
+      this.toast.show(t('references.saveFailed'));
+    } finally {
+      this.busy.set(false);
     }
-    this.draft.set({ ...BLANK, unit: d.unit });
-    this.toast.show(t('references.foodAdded'));
   }
 
   protected async remove(e: FoodEntry): Promise<void> {
     if (!(await this.confirm.ask(t('references.deleteFood', { name: e.name }), { confirmLabel: t('common.delete'), danger: true }))) return;
-    if (this.catalog.remove(e.id)) this.toast.show(t('references.foodDeleted'));
+    try {
+      if (await this.catalog.remove(e.id)) this.toast.show(t('references.foodDeleted'));
+    } catch {
+      this.toast.show(t('references.saveFailed'));
+    }
   }
 }

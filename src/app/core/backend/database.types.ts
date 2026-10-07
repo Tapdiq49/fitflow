@@ -1,0 +1,75 @@
+/** Typed view of the Supabase schema (supabase/migrations). Regenerate with `supabase gen types typescript` after schema changes. */
+export interface Database {
+  public: {
+    Tables: {
+      profiles: {
+        Row: {
+          id: string;
+          username: string | null;
+          email: string;
+          email_preferences: boolean;
+          avatar: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        /** Rows are created by the database trigger only. */
+        Insert: never;
+        Update: {
+          username?: string | null;
+          email_preferences?: boolean;
+          avatar?: string | null;
+        };
+        Relationships: [];
+      };
+      foods: {
+        Row: {
+          id: string;
+          /** Null = system food. */
+          user_id: string | null;
+          /** Stable key of a system food; null for user foods. */
+          code: string | null;
+          names: Record<string, string>;
+          unit: 'g' | 'piece' | 'scoop';
+          kcal: number;
+          protein: number;
+          carbs: number;
+          fat: number;
+          /** Menu generator fields: set on system foods, null on user foods. */
+          role: 'protein' | 'carb' | 'fat' | 'fruit' | 'veg' | 'dairy' | 'supp' | null;
+          step: number | null;
+          min_amount: number | null;
+          max_amount: number | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          names: Record<string, string>;
+          unit: 'g' | 'piece' | 'scoop';
+          kcal: number;
+          protein: number;
+          carbs: number;
+          fat: number;
+        };
+        Update: {
+          names?: Record<string, string>;
+          unit?: 'g' | 'piece' | 'scoop';
+          kcal?: number;
+          protein?: number;
+          carbs?: number;
+          fat?: number;
+        };
+        Relationships: [];
+      };
+    };
+    Views: Record<string, never>;
+    Functions: {
+      is_username_available: {
+        Args: { p_username: string };
+        Returns: boolean;
+      };
+    };
+    Enums: Record<string, never>;
+    CompositeTypes: Record<string, never>;
+  };
+}

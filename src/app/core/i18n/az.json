@@ -403,7 +403,7 @@
   "safety.supportiveCompressionAthletic": "Dəstəkləyici (sıx) idman alt paltarı rahatlıq verə bilər.",
   "references.add": "Əlavə et",
   "references.addFood": "Yeni qida əlavə et",
-  "references.deleteFood": "“{name}” silinsin? Menyulara əvvəl əlavə etdiyin qeydlər qalacaq.",
+  "references.deleteFood": "“{name}” qidası silinsin? Onu artıq menyulara əlavə etmisənsə, orada qalacaq.",
   "references.enterFoodName": "Ən azı Azərbaycan dilində ad yaz",
   "references.foodAdded": "Qida əlavə edildi ✓",
   "references.foodDeleted": "Qida silindi",
@@ -682,5 +682,8 @@
   "profile.currentPassword": "Cari parol",
   "profile.currentPasswordWrong": "Cari parol səhvdir.",
   "profile.providerAccount": "Google ilə daxil olursan, parolu Google idarə edir. Burada dəyişmək lazım deyil.",
-  "auth.error.invalid_image": "Şəkil oxuna bilmədi. Başqa şəkil seç (8 MB-dan kiçik)."
+  "auth.error.invalid_image": "Şəkil oxuna bilmədi. Başqa şəkil seç (8 MB-dan kiçik).",
+  "references.guestHint": "Öz qidalarını əlavə etmək üçün daxil ol. Qidaların hesabında saxlanılır və hər cihazda görünür.",
+  "references.loadFailed": "Serverə qoşulmaq alınmadı. Daxili siyahı göstərilir, öz qidaların hələ görünməyə bilər.",
+  "references.saveFailed": "Dəyişiklik yadda saxlanmadı. Bağlantını yoxla və yenidən cəhd et."
 }

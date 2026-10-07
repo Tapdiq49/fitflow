@@ -1,14 +1,18 @@
-import { Injectable, computed, inject } from '@angular/core';
+import { Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
+import { AuthError } from '../auth/auth.models';
+import { AuthStore } from '../auth/auth.store';
 import { FOODS, FOOD_IDS } from '../data/foods';
+import { foodItem, foodOf, systemFoods } from '../food-book';
 import { td } from '../i18n/translate';
-import { CustomFood, Lang, MealItem, Unit } from '../models';
-import { activeLang, clamp, rnd, uid } from '../utils';
+import { Lang, MealItem, SystemFood, Unit } from '../models';
+import { FoodRepository, FoodRow } from '../repositories/food.repository';
+import { activeLang, clamp, rnd } from '../utils';
 import { StoreService } from './store.service';
 
 /** One row of the food reference list, in the active language. */
 export interface FoodEntry {
   id: string;
-  /** System foods ship with the app (later: come from the backend) and cannot be deleted. */
+  /** System foods come from the backend (the built-in copy is the fallback) and cannot be deleted. */
   isSystem: boolean;
   name: string;
   unit: Unit;
@@ -34,31 +38,106 @@ const MAX_MACRO = 100;
 /** Text for the active language, falling back to Azerbaijani (the source language), then to any language that has one. */
 const nameIn = (names: Partial<Record<Lang, string>>): string => names[activeLang()] || names.az || Object.values(names).find(Boolean) || '';
 
+/** Built-in order first (the order of data/foods.ts), then any other system food by name. */
+const bySystemOrder = (a: FoodRow, b: FoodRow): number => {
+  const ia = FOOD_IDS.indexOf(a.code as string);
+  const ib = FOOD_IDS.indexOf(b.code as string);
+  if (ia >= 0 || ib >= 0) return (ia < 0 ? Infinity : ia) - (ib < 0 ? Infinity : ib);
+  return nameIn(a.names).localeCompare(nameIn(b.names));
+};
+
+const toEntry = (r: FoodRow, isSystem: boolean): FoodEntry => ({ id: isSystem ? (r.code as string) : r.id, isSystem, name: nameIn(r.names), unit: r.unit, k: r.k, p: r.p, c: r.c, f: r.f });
+
 /**
- * Food reference list: the built-in foods (system) plus the ones the user added. Only the system foods feed the menu
- * generator; user foods are picked in "add meal" and stored in the meal as a plain item, so a deleted food never breaks a saved menu.
- * Swapping the system part for backend data later only changes `entries`.
+ * Food reference list: the system foods plus the ones the signed-in user added, all from the backend (`FoodRepository`).
+ * Guests see the system foods and cannot add their own. If the backend cannot be reached the built-in foods
+ * (`data/foods.ts`) are shown. Only the built-in foods feed the menu generator; a user food is picked in "add meal" and stored in the meal as a plain
+ * item, so a deleted food never breaks a saved menu.
  */
 @Injectable({ providedIn: 'root' })
 export class FoodCatalogService {
   private readonly store = inject(StoreService);
+  private readonly repo = inject(FoodRepository);
+  private readonly auth = inject(AuthStore);
+
+  /** What the backend returned last, tagged with the user it was read for. Null = not loaded (or unreachable). */
+  private readonly remote = signal<{ userId: string | null; rows: FoodRow[] } | null>(null);
+  private queue: Promise<void> = Promise.resolve();
+
+  readonly loading = signal(false);
+  /** The backend is configured but could not be read; the built-in list is shown instead. */
+  readonly loadFailed = signal(false);
 
   /** System foods first, then the user's own, named in the active language. */
   readonly entries = computed<FoodEntry[]>(() => {
-    const system = FOOD_IDS.map((id): FoodEntry => {
-      const { name, unit, k, p, c, f } = FOODS[id];
-      return { id, isSystem: true, name: td(name), unit, k, p, c, f };
-    });
-    const own = Object.values(this.store.state().customFoods).map((x): FoodEntry => ({ id: x.id, isSystem: false, name: nameIn(x.names), unit: x.unit, k: x.k, p: x.p, c: x.c, f: x.f }));
-    return [...system, ...own];
+    const rows = this.remote()?.rows ?? [];
+    const systemRows = rows.filter((r) => r.code !== null).sort(bySystemOrder);
+    const published = systemFoods();
+    const system: FoodEntry[] = systemRows.length
+      ? systemRows.map((r) => toEntry(r, true))
+      : published.length
+        ? published.map((x): FoodEntry => ({ id: x.code, isSystem: true, name: nameIn(x.names), unit: x.unit, k: x.k, p: x.p, c: x.c, f: x.f }))
+        : FOOD_IDS.map((id): FoodEntry => {
+            const { name, unit, k, p, c, f } = FOODS[id];
+            return { id, isSystem: true, name: td(name), unit, k, p, c, f };
+          });
+    const userId = this.auth.user()?.id ?? null;
+    const remoteOwn = userId !== null && this.remote()?.userId === userId ? rows.filter((r) => r.code === null) : [];
+    return [...system, ...remoteOwn.map((r) => toEntry(r, false))];
   });
+
+  constructor() {
+    // The system foods saved by the last successful read: the menu generator works with them before (and without) the backend.
+    const saved = this.store.state().foodCache;
+    if (saved.length) systemFoods.set(saved);
+    const userId = computed(() => this.auth.user()?.id ?? null);
+    // Read again when the session becomes known and whenever someone signs in or out.
+    effect(() => {
+      if (this.auth.status() === 'loading') return;
+      userId();
+      untracked(() => void this.refresh());
+    });
+  }
+
+  /** Reads the list from the backend, one read at a time. */
+  refresh(): Promise<void> {
+    return (this.queue = this.queue.then(() => this.load()));
+  }
+
+  private async load(): Promise<void> {
+    this.loading.set(true);
+    try {
+      const rows = await this.repo.list();
+      const userId = this.auth.user()?.id ?? null;
+      this.remote.set({ userId, rows });
+      this.publish(rows);
+      this.loadFailed.set(false);
+    } catch (e) {
+      this.remote.set(null);
+      this.loadFailed.set(!(e instanceof AuthError && e.code === 'not_configured'));
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
+  /** Makes the system foods the app's working list and keeps a copy in the saved state for offline use. */
+  private publish(rows: FoodRow[]): void {
+    const list: SystemFood[] = [];
+    for (const r of rows) {
+      if (r.code === null || r.role === null || r.step === null || r.min === null || r.max === null) continue;
+      list.push({ code: r.code, names: r.names, unit: r.unit, k: r.k, p: r.p, c: r.c, f: r.f, role: r.role, step: r.step, min: r.min, max: r.max });
+    }
+    if (!list.length) return;
+    systemFoods.set(list);
+    if (JSON.stringify(list) !== JSON.stringify(this.store.state().foodCache)) this.store.mutate((s) => (s.foodCache = list));
+  }
 
   find(id: string): FoodEntry | undefined {
     return this.entries().find((e) => e.id === id);
   }
 
-  /** Adds a user food; returns false when no name was given. Macros are clamped to sane per-100 g values. */
-  add(input: NewFood): boolean {
+  /** Adds a user food; returns false when no name was given. Macros are clamped to sane per-100 g values. Throws when the backend refuses it or nobody is signed in. */
+  async add(input: NewFood): Promise<boolean> {
     const names: Partial<Record<Lang, string>> = {};
     for (const lang of ['az', 'en', 'ru'] as const) {
       const text = input.names[lang]?.trim();
@@ -66,22 +145,26 @@ export class FoodCatalogService {
     }
     if (!names.az) return false;
     const macro = (n: number, max: number): number => rnd(clamp(Number.isFinite(n) ? n : 0, 0, max), 1);
-    const food: CustomFood = { id: `c:${uid()}`, isSystem: false, names, unit: input.unit, k: macro(input.k, MAX_KCAL), p: macro(input.p, MAX_MACRO), c: macro(input.c, MAX_MACRO), f: macro(input.f, MAX_MACRO) };
-    this.store.mutate((s) => (s.customFoods[food.id] = food));
+    const food = { names, unit: input.unit, k: macro(input.k, MAX_KCAL), p: macro(input.p, MAX_MACRO), c: macro(input.c, MAX_MACRO), f: macro(input.f, MAX_MACRO) };
+    const userId = this.auth.user()?.id ?? null;
+    if (!userId) throw new AuthError('session_expired');
+    const row = await this.repo.add(food);
+    this.remote.update((r) => ({ userId, rows: [...(r?.rows ?? []), row] }));
     return true;
   }
 
-  /** Deletes a user food; system foods (and unknown ids) are refused. */
-  remove(id: string): boolean {
-    if (!(id in this.store.state().customFoods)) return false;
-    this.store.mutate((s) => delete s.customFoods[id]);
+  /** Deletes a user food; system foods (and unknown ids) are refused. Throws when the backend refuses it. */
+  async remove(id: string): Promise<boolean> {
+    if (!this.remote()?.rows.some((r) => r.id === id && r.code === null)) return false;
+    await this.repo.remove(id);
+    this.remote.update((r) => (r ? { ...r, rows: r.rows.filter((x) => x.id !== id) } : r));
     return true;
   }
 
-  /** Meal item for `amt` of a food: a reference to the system food, or a self-contained snapshot for a user food. */
+  /** Meal item for `amt` of a food: a system food keeps its code (plus a snapshot of its macros), any other food becomes a self-contained item. */
   toMealItem(id: string, amt: number): MealItem {
     const e = this.find(id);
-    if (!e || e.isSystem) return { food: id, amt, base: amt };
+    if (!e || (e.isSystem && foodOf(e.id))) return foodItem(id, amt);
     const m = e.unit === 'q' ? amt / 100 : amt;
     return { name: e.name, amt: 1, k: rnd(e.k * m, 1), p: rnd(e.p * m, 1), c: rnd(e.c * m, 1), f: rnd(e.f * m, 1), amtLabel: `${rnd(amt, 1)} ${td(e.unit)}` };
   }

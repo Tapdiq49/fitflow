@@ -35,9 +35,13 @@ export interface MealTemplate {
 }
 
 export interface MealItem {
+  /** Code of a system food. */
   food?: string;
   amt: number;
   base?: number;
+  /** Snapshot taken when the item was created (system foods): unit and macros per 100 g / per piece, so the saved menu never changes with the food list. */
+  unit?: Unit;
+  per?: Macros;
   note?: string;
   /** Custom (non-database) item fields. */
   name?: string;
@@ -173,26 +177,26 @@ export interface TrainerExercise {
 /** Trainer workout for one week, keyed by weekday (1 = Monday). */
 export type WorkoutWeekPlan = Record<number, TrainerExercise[]>;
 
-/**
- * A food the user added in the reference lists (system foods stay in `data/foods.ts`, later the backend).
- * Shaped like a backend row: `isSystem` locks deletion, `names` holds one text per language (AZ is the source language).
- */
-export interface CustomFood {
-  id: string;
-  isSystem: false;
+/** A system food as the backend sends it. Kept in the saved state (`AppState.foodCache`) so the menu generator also works offline. */
+export interface SystemFood {
+  code: string;
   names: Partial<Record<Lang, string>>;
   unit: Unit;
-  /** Per 100 g when the unit is 'q', per single unit otherwise (same convention as `Food`). */
+  /** Per 100 g when the unit is 'q', per single unit otherwise. */
   k: number;
   p: number;
   c: number;
   f: number;
+  role: FoodRole;
+  step: number;
+  min: number;
+  max: number;
 }
 
 export interface AppState {
   settings: Settings;
-  /** Foods added by the user, keyed by id. */
-  customFoods: Record<string, CustomFood>;
+  /** System foods from the last successful backend read; empty until the first one. */
+  foodCache: SystemFood[];
   /** Trainer plans written by the user, keyed by the week's Monday. Weeks without an entry reuse the latest earlier one. */
   weekPlans: Record<string, WeekPlan>;
   /** Trainer workouts keyed by the week's Monday; a week without an entry reuses the latest earlier one. */

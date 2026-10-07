@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
-import { FOODS } from '../data/foods';
 import { SLOTS, TEMPLATES } from '../data/meals';
+import { foodItem, foodOf } from '../food-book';
 import { DayType, FoodRole, Meal, MealItem, MealTemplate, SlotId, TemplateKey } from '../models';
 import { itemMacros, menuTotals } from '../nutrition';
 import { DateU, clamp, fromMin, rnd, toMin, uid } from '../utils';
@@ -134,15 +134,15 @@ export class MenuService {
 
     const step = (roles: FoodRole[], dir: 1 | -1): boolean => {
       const c = pool().filter((it) => {
-        const f = FOODS[it.food as string];
-        if (!roles.includes(f.role)) return false;
+        const f = foodOf(it.food as string);
+        if (!f || !roles.includes(f.role)) return false;
         const n = it.amt + dir * f.step;
         return dir > 0 ? n <= f.max : n >= f.min;
       });
       if (!c.length) return false;
       c.sort((a, b) => a.amt / (a.base || a.amt) - b.amt / (b.base || b.amt));
       const it = dir > 0 ? c[0] : c[c.length - 1];
-      it.amt = rnd(it.amt + dir * FOODS[it.food as string].step, 1);
+      it.amt = rnd(it.amt + dir * (foodOf(it.food as string)?.step ?? 0), 1);
       return true;
     };
 
@@ -164,7 +164,7 @@ export class MenuService {
       if (menuTotals(meals).k >= tk - 100) break;
       const host = meals.find((m) => !m.locked && !m.custom && slotRe.test(m.slot) && !m.items.some((i) => i.food === food));
       if (host) {
-        host.items.push({ food, amt, base: amt });
+        host.items.push(foodItem(food, amt));
         run();
       }
     }
@@ -174,7 +174,7 @@ export class MenuService {
         meals.find((m) => m.slot.startsWith('snack') && !m.locked) ??
         meals.find((m) => !m.locked && !m.custom);
       if (host) {
-        host.items.push({ food: 'whey', amt: 1, base: 1, note: 'protein çatışmazlığını tamamlamaq üçün' });
+        host.items.push({ ...foodItem('whey', 1), note: 'protein çatışmazlığını tamamlamaq üçün' });
         run();
       }
     }
@@ -195,7 +195,7 @@ export class MenuService {
       main: tpl.main ?? null,
       time: this.slotTime(slot, type),
       done: false,
-      items: tpl.items.map(([food, amt]) => ({ food, amt, base: amt })),
+      items: tpl.items.map(([food, amt]) => foodItem(food, amt)),
     };
   }
 

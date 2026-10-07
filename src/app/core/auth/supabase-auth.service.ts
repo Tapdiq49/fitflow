@@ -1,13 +1,11 @@
-import { Injectable } from '@angular/core';
-import type { AuthChangeEvent, SupabaseClient, User } from '@supabase/supabase-js';
+import { Injectable, inject } from '@angular/core';
+import type { AuthChangeEvent, User } from '@supabase/supabase-js';
 import { environment } from '../../../environments/environment';
+import { Client, SupabaseClientProvider } from '../backend/supabase-client';
 import { AuthError, AuthEvent, AuthUser, OAuthProvider, SignInInput, SignUpInput, SignUpResult } from './auth.models';
 import { normalizeUsername } from './auth-validation';
 import { AuthService } from './auth.service';
-import type { Database } from './database.types';
 import { toAuthError } from './supabase-errors';
-
-type Client = SupabaseClient<Database>;
 
 /** How long a profile read is reused (sign-in / restore are followed at once by a session event). */
 const RECENT_MS = 30_000;
@@ -25,18 +23,12 @@ const EVENTS: Partial<Record<AuthChangeEvent, AuthEvent>> = {
  */
 @Injectable()
 export class SupabaseAuthService extends AuthService {
-  private clientPromise: Promise<Client> | null = null;
+  private readonly provider = inject(SupabaseClientProvider);
   /** The profile read of the last sign-in / restore, so the session event that follows it does not repeat the request. */
   private recent: { id: string; at: number; user: Promise<AuthUser> } | null = null;
 
   private client(): Promise<Client> {
-    if (!environment.supabaseUrl || !environment.supabasePublishableKey) return Promise.reject(new AuthError('not_configured'));
-    return (this.clientPromise ??= import('@supabase/supabase-js').then(({ createClient }) =>
-      createClient<Database>(environment.supabaseUrl, environment.supabasePublishableKey, {
-        // PKCE: the e-mail / OAuth redirect carries a one-time code that only this browser can exchange.
-        auth: { flowType: 'pkce', persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
-      }),
-    ));
+    return this.provider.client();
   }
 
   async initialize(): Promise<AuthUser | null> {

@@ -8,7 +8,9 @@ Status: decided 2026-10-07. **Phase 1, authentication: implemented 2026-10-07** 
 - Code: `core/auth/` (port `AuthService`, adapter `supabase-auth.service.ts`, `AuthStore`, guards, error mapping), `features/auth/` (pages), `supabase/` (migration, `login` Edge Function, setup README).
 - Username login: the Edge Function `login` resolves username → e-mail with the service role and signs in server side, so e-mails are never readable by the public; unknown user and wrong password answer the same; failures are throttled in `login_attempts`. NestJS equivalent: `POST /auth/login`.
 - With e-mail confirmation on, Supabase answers a sign-up for an existing address like a new one, so the UI cannot (and must not) say "email already registered".
-- Phase 2 must add: first sign-in import of the local data (rule 7), `AuthService.accessToken()` for the data API.
+- **Phase 2 started with the food reference list (Soraqçalar), 2026-10-07:** table `foods` (system rows `user_id IS NULL` seeded from `data/foods.ts`, user rows per `user_id`, RLS as in `20261007000300_foods.sql`), `FoodRepository` port + Supabase adapter, shared `SupabaseClientProvider`. Guests only read the system foods; adding a food needs a sign-in, and there is no local copy of user foods (`AppState.customFoods` was removed). Migrate the other data one table at a time the same way (port in `core/repositories/`, adapter, fake for specs, one `StoreService`-owning service).
+- The menu generator now runs on the backend food list too: `foods` carries role/step/min_amount/max_amount for system foods, a copy is kept in `AppState.foodCache` for offline use, and every new meal item snapshots unit and macros (`MealItem.per`/`unit`) so saved menus stay frozen. `data/foods.ts` remains as the last-resort copy for a first visit without a connection.
+- Phase 2 must still add: first sign-in import of the local data (rule 7), `AuthService.accessToken()` for the data API.
 - NestJS move for auth: implement `AuthService` over HTTP (`/auth/login`, `/auth/register`, …), port `profiles` to the new `users` table, keep `AuthStore` and the pages unchanged.
 
 ## Why a backend
