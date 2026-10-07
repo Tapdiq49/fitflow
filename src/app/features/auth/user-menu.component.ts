@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 import { authErrorText } from '../../core/auth/auth-errors';
 import { AuthStore } from '../../core/auth/auth.store';
 import { t } from '../../core/i18n/translate';
+import { SessionService } from '../../core/services/session.service';
 import { ToastService } from '../../core/services/toast.service';
 import { AvatarComponent } from './avatar.component';
 import { POPUP_PANEL } from '../../shared/forms/popup';
@@ -72,6 +73,7 @@ const MENU_POSITIONS: ConnectedPosition[] = [
 })
 export class UserMenuComponent {
   protected readonly auth = inject(AuthStore);
+  private readonly session = inject(SessionService);
   private readonly toast = inject(ToastService);
 
   protected readonly panel = POPUP_PANEL;
@@ -81,8 +83,7 @@ export class UserMenuComponent {
   protected async signOut(): Promise<void> {
     this.signingOut.set(true);
     try {
-      await this.auth.signOut();
-      this.toast.show(t('auth.signedOut'));
+      if (await this.session.signOut()) this.toast.show(t('auth.signedOut'));
     } catch (e) {
       this.toast.show(authErrorText(e));
     } finally {

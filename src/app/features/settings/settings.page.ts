@@ -5,7 +5,9 @@ import { AuthStore } from '../../core/auth/auth.store';
 import { MenuMode, Settings, ThemeMode, WorkoutMode } from '../../core/models';
 import { ConfirmService } from '../../core/services/confirm.service';
 import { DayService } from '../../core/services/day.service';
-import { StoreService } from '../../core/services/store.service';
+import { SessionService } from '../../core/services/session.service';
+import { TrainerPlanService } from '../../core/services/trainer-plan.service';
+import { DEFAULT_SETTINGS, SETTINGS_RANGE, StoreService } from '../../core/services/store.service';
 import { ToastService } from '../../core/services/toast.service';
 import { UiService } from '../../core/services/ui.service';
 import { DateU, inputValue, parseNum } from '../../core/utils';
@@ -48,13 +50,17 @@ type TextField = 'workoutTime' | 'wakeTime' | 'sleepTime' | 'programStart';
       <div class="card">
         <div class="card-head"><h3><app-icon name="settings" /> {{ 'settings.profileAndTargets' | t }}</h3></div>
         <div class="grid grid-cols-4 items-start gap-3 tablet:grid-cols-2 phone:grid-cols-1 [&_[role=combobox]]:h-[42px] [&_input]:h-[42px]">
-          <label class="field">{{ 'settings.heightCm' | t }}<input type="text" inputmode="numeric" [value]="form().height" (input)="setNum('height', $event)" /></label>
-          <label class="field">{{ 'settings.startingWeightKg' | t }}<input type="text" inputmode="decimal" [value]="form().startWeight" (input)="setNum('startWeight', $event)" /></label>
-          <label class="field">{{ 'settings.calorieTargetKcal' | t }}<input type="text" inputmode="numeric" [value]="form().kcalTarget" (input)="setNum('kcalTarget', $event)" /></label>
-          <label class="field">{{ 'settings.proteinTargetG' | t }}<input type="text" inputmode="numeric" [value]="form().proteinTarget" (input)="setNum('proteinTarget', $event)" /></label>
+          <label class="field">{{ 'settings.heightCm' | t }}<input type="text" inputmode="numeric" [value]="form().height ?? ''" [attr.aria-invalid]="errors().height ? 'true' : null" (input)="setNum('height', $event)" />@if (errors().height; as e) { <small class="text-bad">{{ e }}</small> }</label>
+          <label class="field">{{ 'settings.startingWeightKg' | t }}<input type="text" inputmode="decimal" [value]="form().startWeight ?? ''" [attr.aria-invalid]="errors().startWeight ? 'true' : null" (input)="setNum('startWeight', $event)" />@if (errors().startWeight; as e) { <small class="text-bad">{{ e }}</small> }</label>
+          <label class="field">{{ 'settings.calorieTargetKcal' | t }}<input type="text" inputmode="numeric" [placeholder]="std.kcalTarget" [value]="form().kcalTarget" [attr.aria-invalid]="errors().kcalTarget ? 'true' : null" (input)="setNum('kcalTarget', $event)" />@if (errors().kcalTarget; as e) { <small class="text-bad">{{ e }}</small> }</label>
+          <label class="field">{{ 'settings.proteinTargetG' | t }}<input type="text" inputmode="numeric" [placeholder]="std.proteinTarget" [value]="form().proteinTarget" [attr.aria-invalid]="errors().proteinTarget ? 'true' : null" (input)="setNum('proteinTarget', $event)" />@if (errors().proteinTarget; as e) { <small class="text-bad">{{ e }}</small> }</label>
           <div class="field">
             {{ 'settings.mealsPerDay' | t }}
-            <app-select [label]="'settings.mealsPerDay' | t" [options]="mealCounts" [value]="form().mealsPerDay" (valueChange)="setOption('mealsPerDay', $event)" />
+            <!-- One select for both modes: swapping two selects in an @if destroys a half-loaded popup (NG0950). -->
+            <app-select [label]="'settings.mealsPerDay' | t" [options]="trainerMode() ? planCounts : mealCounts" [value]="trainerMode() ? planMeals().hi : form().mealsPerDay" [disabled]="trainerMode()" (valueChange)="setOption('mealsPerDay', $event)" />
+            @if (trainerMode()) {
+              <small class="text-muted">@if (planMeals().lo !== planMeals().hi) { {{ 'settings.mealsVary' | t: { a: planMeals().lo + '–' + planMeals().hi } }} }{{ 'settings.mealsFromTrainerPlan' | t }} <a routerLink="/plan">{{ 'nav.weeklyPlan' | t }}</a></small>
+            }
           </div>
           <div class="field">
             {{ 'settings.menuMode' | t }}
@@ -71,7 +77,7 @@ type TextField = 'workoutTime' | 'wakeTime' | 'sleepTime' | 'programStart';
           <div class="field">{{ 'settings.workoutTime' | t }}<app-time-picker [label]="'settings.workoutTime' | t" [value]="form().workoutTime" (valueChange)="setTime('workoutTime', $event)" /></div>
           <div class="field">{{ 'settings.wakeUpTime' | t }}<app-time-picker [label]="'settings.wakeUpTime' | t" [value]="form().wakeTime" (valueChange)="setTime('wakeTime', $event)" /></div>
           <div class="field">{{ 'settings.bedtime' | t }}<app-time-picker [label]="'settings.bedtime' | t" [value]="form().sleepTime" (valueChange)="setTime('sleepTime', $event)" /></div>
-          <label class="field" [title]="'settings.perBCycleAnd' | t">{{ 'settings.programStart' | t }}<input type="date" [value]="form().programStart" (input)="setText('programStart', $event)" /></label>
+          <label class="field" [title]="'settings.perBCycleAnd' | t">{{ 'settings.programStart' | t }}<input type="date" [value]="form().programStart" [attr.aria-invalid]="errors().programStart ? 'true' : null" (input)="setText('programStart', $event)" />@if (errors().programStart; as e) { <small class="text-bad">{{ e }}</small> }</label>
         </div>
         <label class="flex cursor-pointer items-center gap-2" style="margin-top: 14px">
           <input type="checkbox" [checked]="form().useWhey" (change)="setWhey($event)" /> {{ 'settings.addWheyToMenu' | t }}
@@ -114,12 +120,24 @@ export class SettingsPage {
   private readonly toast = inject(ToastService);
   private readonly confirm = inject(ConfirmService);
   protected readonly auth = inject(AuthStore);
+  private readonly session = inject(SessionService);
   protected readonly signingOut = signal(false);
+  protected readonly std = DEFAULT_SETTINGS;
+  private readonly plans = inject(TrainerPlanService);
 
+  /** Meals a day in the trainer plan of this week, fewest and most over the 7 days: in trainer mode the plan decides, not a setting. */
+  protected readonly planMeals = computed(() => {
+    const plan = this.plans.planFor(DateU.monday(DateU.today()));
+    const counts = [1, 2, 3, 4, 5, 6, 7].map((d) => plan[d]?.length ?? 0);
+    return { lo: Math.min(...counts), hi: Math.max(...counts) };
+  });
+  protected readonly trainerMode = computed(() => this.form().menuMode === 'trainer');
+  /** A trainer-plan day has 0 to 7 meals. */
+  protected readonly planCounts: SelectOption<number>[] = [0, 1, 2, 3, 4, 5, 6, 7].map((n) => ({ value: n, label: String(n) }));
   /** Editable draft, re-synced whenever the stored settings change. */
   protected readonly form = linkedSignal<Settings>(() => ({ ...this.store.settings() }));
 
-  protected readonly mealCounts: SelectOption<number>[] = [4, 5, 6].map((n) => ({ value: n, label: String(n) }));
+  protected readonly mealCounts: SelectOption<number>[] = [3, 4, 5, 6].map((n) => ({ value: n, label: String(n) }));
   protected readonly menuModes = computed<SelectOption<MenuMode>[]>(() => [
     { value: 'trainer', label: t('settings.trainerPlan') },
     { value: 'auto', label: t('settings.autoMenu') },
@@ -134,14 +152,53 @@ export class SettingsPage {
     { value: 'dark', label: t('settings.dark') },
   ]);
 
+  /** What is typed in the required fields right now (the form keeps the last usable value; the typed text is what gets checked on save). */
+  private readonly typed: Partial<Record<NumField | 'programStart', string>> = {};
+  /** Message under each required field that failed the last save. */
+  protected readonly errors = signal<Partial<Record<NumField | 'programStart', string>>>({});
+
+  private clearError(field: NumField | 'programStart'): void {
+    if (this.errors()[field]) this.errors.update(({ [field]: _, ...rest }) => rest);
+  }
+
   protected setNum(field: NumField, e: Event): void {
-    const v = parseNum(inputValue(e));
+    const text = inputValue(e);
+    this.typed[field] = text;
+    this.clearError(field);
+    const v = parseNum(text);
     if (v > 0) this.form.update((f) => ({ ...f, [field]: v }));
   }
 
   protected setText(field: TextField, e: Event): void {
     const v = inputValue(e);
+    if (field === 'programStart') {
+      this.typed[field] = v;
+      this.clearError(field);
+    }
     if (v) this.form.update((f) => ({ ...f, [field]: v }));
+  }
+
+  /** The numbers with a sensible standard value: an empty field means the standard (see DEFAULT_SETTINGS). */
+  private static readonly HAS_STANDARD: readonly NumField[] = ['kcalTarget', 'proteinTarget'];
+
+  /** Height, starting weight and the program start are required; the two targets fall back to the standard when empty. Any out-of-range value is reported, never replaced. */
+  private validate(): boolean {
+    const errors: Partial<Record<NumField | 'programStart', string>> = {};
+    const f = this.form();
+    for (const field of Object.keys(SETTINGS_RANGE) as NumField[]) {
+      const text = this.typed[field];
+      if (SettingsPage.HAS_STANDARD.includes(field) && text !== undefined && !text.trim()) {
+        this.form.update((x) => ({ ...x, [field]: DEFAULT_SETTINGS[field] }));
+        continue;
+      }
+      const v = text === undefined ? (f[field] ?? NaN) : parseNum(text);
+      const { min, max } = SETTINGS_RANGE[field];
+      if (!Number.isFinite(v) || text?.trim() === '') errors[field] = t('settings.required');
+      else if (v < min || v > max) errors[field] = t('settings.outOfRange', { min, max });
+    }
+    if (this.typed.programStart !== undefined && !this.typed.programStart) errors.programStart = t('settings.required');
+    this.errors.set(errors);
+    return Object.keys(errors).length === 0;
   }
 
   protected setTime(field: 'workoutTime' | 'wakeTime' | 'sleepTime', v: string): void {
@@ -163,9 +220,14 @@ export class SettingsPage {
   }
 
   protected async save(): Promise<void> {
+    if (!this.validate()) {
+      this.toast.show(t('settings.fixFields'));
+      return;
+    }
     const f = this.form();
     const before = this.store.settings();
     this.store.updateSettings(f);
+    for (const k of Object.keys(this.typed) as (keyof typeof this.typed)[]) delete this.typed[k];
     this.toast.show(t('settings.settingsSaved'));
     const k = this.ui.viewDate();
     if (!this.day.offerMenuRegeneration(before, this.store.settings(), k)) return;
@@ -175,8 +237,7 @@ export class SettingsPage {
   protected async signOut(): Promise<void> {
     this.signingOut.set(true);
     try {
-      await this.auth.signOut();
-      this.toast.show(t('auth.signedOut'));
+      if (await this.session.signOut()) this.toast.show(t('auth.signedOut'));
     } catch (e) {
       this.toast.show(authErrorText(e));
     } finally {

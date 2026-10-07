@@ -4,6 +4,8 @@ import { App } from './app';
 import { routes } from './app.routes';
 import { AuthService } from './core/auth/auth.service';
 import { FakeAuthService } from './core/auth/fake-auth.service';
+import { AuthStore } from './core/auth/auth.store';
+import { StoreService } from './core/services/store.service';
 
 describe('App', () => {
   beforeEach(async () => {
@@ -20,5 +22,42 @@ describe('App', () => {
     const el = fixture.nativeElement as HTMLElement;
     expect(el.querySelectorAll('aside a.nav-btn').length).toBe(8);
     expect(el.querySelector('[aria-label="Əvvəlki gün"]')?.parentElement?.textContent).toContain('Bugün');
+  });
+
+  it('does not block a guest with the height and weight dialog', async () => {
+    const fixture = TestBed.createComponent(App);
+    await fixture.whenStable();
+    expect(TestBed.inject(StoreService).bodyBasicsKnown()).toBe(false);
+    expect((fixture.nativeElement as HTMLElement).querySelector('app-body-basics-dialog')).toBeNull();
+  });
+
+  it('asks a signed-in user for height and weight until both are entered, and then goes away', async () => {
+    (TestBed.inject(AuthService) as FakeAuthService).stored = { id: 'u1', email: 'a@example.com', username: 'john', emailPreferences: false, avatar: null, height: null, startWeight: null, hasPassword: true };
+    await TestBed.inject(AuthStore).init();
+    const fixture = TestBed.createComponent(App);
+    await fixture.whenStable();
+    const el = fixture.nativeElement as HTMLElement;
+    const store = TestBed.inject(StoreService);
+    expect(store.settings().height).toBeNull();
+    expect(el.querySelector('app-body-basics-dialog [role=dialog]')).not.toBeNull();
+    expect(el.querySelector('app-body-basics-dialog [aria-label="Bağla"]')).toBeNull(); // cannot be closed
+
+    const [h, w] = Array.from(el.querySelectorAll<HTMLInputElement>('app-body-basics-dialog input'));
+    const type = (i: HTMLInputElement, v: string): void => {
+      i.value = v;
+      i.dispatchEvent(new Event('input'));
+    };
+    type(h, '20'); // out of range: stays open
+    type(w, '80');
+    el.querySelector<HTMLButtonElement>('app-body-basics-dialog .btn-primary')!.click();
+    fixture.detectChanges();
+    expect(store.bodyBasicsKnown()).toBe(false);
+
+    type(h, '178');
+    el.querySelector<HTMLButtonElement>('app-body-basics-dialog .btn-primary')!.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(store.settings()).toMatchObject({ height: 178, startWeight: 80 });
+    expect(el.querySelector('app-body-basics-dialog')).toBeNull();
   });
 });

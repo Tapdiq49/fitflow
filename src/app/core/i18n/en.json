@@ -374,7 +374,7 @@
   "plan.exerciseNameEG": "Exercise name (e.g. Bench Press)",
   "plan.gymDays": "Gym days",
   "plan.gymDaysHint": "Pick the days you go to the gym. Other weekdays become cardio days, the weekend is recovery. The choice applies from this week on.",
-  "plan.leaveMealFieldEmpty": "Leave a meal field empty to drop that meal from the plan. Meals whose text you did not change keep their calories and protein; newly written meals count as 0 kcal.",
+  "plan.leaveMealFieldEmpty": "Remove a meal from the plan with the ✕ button; add one with the buttons below. A meal whose field is left empty is dropped too. Meals whose text you did not change keep their calories and protein; newly written meals count as 0 kcal.",
   "plan.max": "max",
   "plan.maxReps": "Max reps",
   "plan.mealPlan": "Meal plan",
@@ -696,5 +696,15 @@
   "references.edit": "Edit",
   "references.foodUpdated": "Food updated",
   "references.drag": "Move: drag, or press the ↑ ↓ keys",
-  "common.loading": "Loading"
+  "common.loading": "Loading",
+  "bodyBasics.title": "First, enter your height and weight",
+  "bodyBasics.why": "Height and weight differ from person to person, so the app needs them: body measures (such as BMI) and weight tracking depend on them. You can change them later in Settings.",
+  "bodyBasics.invalid": "Height must be {h1}–{h2} cm and weight {w1}–{w2} kg.",
+  "auth.signOutConfirm": "If you sign out, all your data on this device (menus, weights, workouts, settings) will be deleted, because for now it is stored only in this browser. You can export it as JSON from Settings first. Sign out?",
+  "settings.required": "This field is required",
+  "settings.outOfRange": "Must be between {min} and {max}",
+  "settings.fixFields": "Fix the fields marked in red",
+  "plan.addMeal": "Add meal",
+  "settings.mealsFromTrainerPlan": "In the trainer plan the number of meals comes from the weekly plan. To change it, add or remove meals there:",
+  "settings.mealsVary": "Per day {a}. "
 }

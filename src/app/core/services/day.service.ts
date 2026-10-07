@@ -52,9 +52,13 @@ export class DayService {
     }
   }
 
-  /** A stored menu built under the other menu mode (generated meals carry a templateId, trainer meals don't). */
+  /**
+   * A stored menu built under the other menu mode (generated meals carry a templateId, trainer meals don't).
+   * An empty menu counts too in auto mode: it is what a trainer plan without meals leaves behind, and the generator always has meals to give.
+   */
   private menuModeMismatch(menu: Meal[]): boolean {
     const trainer = this.store.settings().menuMode === 'trainer';
+    if (!trainer && menu.length === 0) return true;
     return menu.some((m) => !m.custom && !m.done && (trainer ? !!m.templateId : !m.templateId));
   }
 

@@ -1,4 +1,4 @@
-import { AuthEvent, AuthUser, OAuthProvider, SignInInput, SignUpInput, SignUpResult } from './auth.models';
+import { AuthError, AuthEvent, AuthUser, OAuthProvider, SignInInput, SignUpInput, SignUpResult } from './auth.models';
 import { AuthService } from './auth.service';
 
 /** In-memory AuthService for specs. Set `stored` before `initialize`, call `emit` to simulate session changes. */
@@ -25,7 +25,7 @@ export class FakeAuthService extends AuthService {
   }
 
   async signIn(input: SignInInput): Promise<AuthUser> {
-    return (this.stored = { id: 'u1', email: 'a@example.com', username: input.identifier, emailPreferences: false, avatar: null, hasPassword: true });
+    return (this.stored = { id: 'u1', email: 'a@example.com', username: input.identifier, emailPreferences: false, avatar: null, height: null, startWeight: null, hasPassword: true });
   }
 
   async signUp(_input: SignUpInput): Promise<SignUpResult> {
@@ -49,6 +49,11 @@ export class FakeAuthService extends AuthService {
   async setUsername(username: string): Promise<AuthUser> {
     if (!this.stored) throw new Error('not signed in');
     return (this.stored = { ...this.stored, username });
+  }
+
+  async setBodyBasics(height: number, startWeight: number): Promise<AuthUser> {
+    if (!this.stored) throw new AuthError('session_expired');
+    return (this.stored = { ...this.stored, height, startWeight });
   }
 
   async setAvatar(avatar: string | null): Promise<AuthUser> {

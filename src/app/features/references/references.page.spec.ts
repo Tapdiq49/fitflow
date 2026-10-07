@@ -37,7 +37,7 @@ describe('reference lists', () => {
   });
 
   const signIn = async (): Promise<void> => {
-    (TestBed.inject(AuthService) as FakeAuthService).stored = { id: 'u1', email: 'a@example.com', username: 'john', emailPreferences: false, avatar: null, hasPassword: true };
+    (TestBed.inject(AuthService) as FakeAuthService).stored = { id: 'u1', email: 'a@example.com', username: 'john', emailPreferences: false, avatar: null, height: null, startWeight: null, hasPassword: true };
     await TestBed.inject(AuthStore).init();
     await TestBed.inject(FoodCatalogService).refresh();
   };

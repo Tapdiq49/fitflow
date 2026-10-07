@@ -135,8 +135,9 @@ export type ThemeMode = 'system' | 'light' | 'dark';
 export type WorkoutMode = 'program' | 'trainer';
 
 export interface Settings {
-  height: number;
-  startWeight: number;
+  /** cm and kg; null until the user enters them (they differ per person, so there is no default). */
+  height: number | null;
+  startWeight: number | null;
   kcalTarget: number;
   proteinTarget: number;
   mealsPerDay: number;

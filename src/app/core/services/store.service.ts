@@ -6,9 +6,23 @@ import { t } from '../i18n/translate';
 
 const STORAGE_KEY = 'fitflow.v1';
 
+/** Bounds of the body measurements the user can enter (cm, kg). */
+export const MIN_HEIGHT = 100;
+export const MAX_HEIGHT = 250;
+export const MIN_WEIGHT = 30;
+export const MAX_WEIGHT = 300;
+
+/** The numbers of the settings form are required and must lie in these ranges; the form reports a value outside instead of changing it. */
+export const SETTINGS_RANGE = {
+  height: { min: MIN_HEIGHT, max: MAX_HEIGHT },
+  startWeight: { min: MIN_WEIGHT, max: MAX_WEIGHT },
+  kcalTarget: { min: 1500, max: 4500 },
+  proteinTarget: { min: 80, max: 300 },
+} as const;
+
 export const DEFAULT_SETTINGS: Omit<Settings, 'programStart'> = {
-  height: 186,
-  startWeight: 99,
+  height: null,
+  startWeight: null,
   kcalTarget: 2700,
   proteinTarget: 180,
   mealsPerDay: 5,
@@ -35,11 +49,14 @@ export class StoreService {
 
   readonly state = this._state.asReadonly();
   readonly settings = computed(() => this._state().settings);
+  /** Height and weight are filled in; everything that depends on them waits for this. */
+  readonly bodyBasicsKnown = computed(() => this.settings().height != null && this.settings().startWeight != null);
 
   static normalize(raw: unknown): AppState {
     const s = (raw && typeof raw === 'object' ? raw : {}) as Partial<AppState>;
     const settings: Settings = { ...DEFAULT_SETTINGS, programStart: '', ...(s.settings ?? {}) };
     if (!settings.programStart) settings.programStart = DateU.monday(DateU.today());
+    for (const k of ['height', 'startWeight'] as const) if (typeof settings[k] !== 'number' || !(settings[k] > 0)) settings[k] = null;
     return {
       settings,
       foodCache: Array.isArray(s.foodCache) ? s.foodCache : [],
@@ -75,9 +92,11 @@ export class StoreService {
       for (const [k, d] of Object.entries(s.days)) if (k < today && !d.snap) d.snap = { workoutTime, wakeTime, sleepTime, showCreatine };
       s.settings = {
         ...f,
-        kcalTarget: clamp(f.kcalTarget, 1500, 4500),
-        proteinTarget: clamp(f.proteinTarget, 80, 300),
-        mealsPerDay: clamp(Math.round(f.mealsPerDay), 4, 6),
+        height: f.height == null ? null : clamp(f.height, MIN_HEIGHT, MAX_HEIGHT),
+        startWeight: f.startWeight == null ? null : clamp(f.startWeight, MIN_WEIGHT, MAX_WEIGHT),
+        kcalTarget: clamp(f.kcalTarget, SETTINGS_RANGE.kcalTarget.min, SETTINGS_RANGE.kcalTarget.max),
+        proteinTarget: clamp(f.proteinTarget, SETTINGS_RANGE.proteinTarget.min, SETTINGS_RANGE.proteinTarget.max),
+        mealsPerDay: clamp(Math.round(f.mealsPerDay), 3, 6),
         programStart: DateU.monday(f.programStart),
       };
     });

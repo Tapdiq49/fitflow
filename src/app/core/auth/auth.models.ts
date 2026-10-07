@@ -7,6 +7,9 @@ export interface AuthUser {
   emailPreferences: boolean;
   /** Small JPEG as a data URL; null = no picture. */
   avatar: string | null;
+  /** Height (cm) and starting weight (kg) kept in the profile; null = not entered yet. */
+  height: number | null;
+  startWeight: number | null;
   /** False for an account that only signs in with a provider (Google): it has no password to change. */
   hasPassword: boolean;
 }

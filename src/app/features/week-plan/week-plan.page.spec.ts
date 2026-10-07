@@ -33,6 +33,22 @@ describe('WeekPlanPage tabs and gym days', () => {
     expect(q('[role=listbox]')).toHaveLength(1);
   });
 
+  it('adds a meal to a day and removes another, then saves the new number of meals', async () => {
+    const first = (): HTMLElement => q('.card')[1]; // Monday
+    const rows = (): number => first().querySelectorAll('input[type=text]').length;
+    expect(rows()).toBe(5);
+    expect(Array.from(first().querySelectorAll('button')).some((b) => b.textContent?.includes('Məşqdən əvvəl'))).toBe(true);
+
+    Array.from(first().querySelectorAll<HTMLButtonElement>('button')).find((b) => b.textContent?.includes('Məşqdən əvvəl'))!.click();
+    await render();
+    expect(rows()).toBe(6);
+
+    first().querySelector<HTMLButtonElement>('button[aria-label^="Sil"]')!.click();
+    await render();
+    expect(rows()).toBe(5);
+    expect(Array.from(first().querySelectorAll('button')).some((b) => b.textContent?.includes('Səhər yeməyi'))).toBe(true); // the removed meal can be added back
+  });
+
   it('picks gym days with the multi-select listbox and saves them', async () => {
     q('[role=tab]')[1].click();
     await render();

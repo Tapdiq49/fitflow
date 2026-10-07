@@ -8,11 +8,12 @@ import { UiService } from '../../core/services/ui.service';
 import { F, parseNum } from '../../core/utils';
 import { ChartComponent } from '../../shared/chart.component';
 import { IconComponent } from '../../shared/icon.component';
+import { BodyBasicsFormComponent } from '../profile/body-basics-form.component';
 import { TPipe } from '../../shared/t.pipe';
 
 @Component({
   selector: 'app-body-card',
-  imports: [IconComponent, ChartComponent, RouterLink, TPipe],
+  imports: [IconComponent, ChartComponent, BodyBasicsFormComponent, RouterLink, TPipe],
   host: { class: 'card' },
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -20,6 +21,9 @@ import { TPipe } from '../../shared/t.pipe';
       <h3><app-icon name="scale" /> {{ 'dash.bodyProgress' | t }}</h3>
       <a class="btn btn-sm btn-ghost" routerLink="/body">{{ 'dash.details' | t }} <app-icon name="right" size="sm" /></a>
     </div>
+    @if (!store.bodyBasicsKnown()) {
+      <div class="alert alert-info" style="margin-bottom: 14px"><app-icon name="info" /><div class="w-full"><p style="margin: 0 0 10px"><b>{{ 'bodyBasics.title' | t }}</b> {{ 'bodyBasics.why' | t }}</p><app-body-basics-form /></div></div>
+    }
     @let st = stats();
     <div class="mb-3.5 grid grid-cols-3 gap-2.5 phone:grid-cols-2">
       <div class="sum-box">
@@ -59,7 +63,7 @@ export class BodyCardComponent {
   protected readonly day = inject(DayService);
   private readonly body = inject(BodyService);
   private readonly ui = inject(UiService);
-  private readonly store = inject(StoreService);
+  protected readonly store = inject(StoreService);
 
   protected readonly startWeight = computed(() => this.store.settings().startWeight);
   protected readonly stats = computed(() => this.body.stats(this.ui.viewDate()));

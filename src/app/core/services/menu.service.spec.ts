@@ -4,6 +4,7 @@ import { DateU } from '../utils';
 import { StoreService } from './store.service';
 import { DayService } from './day.service';
 import { TrainerPlanService } from './trainer-plan.service';
+import { UiService } from './ui.service';
 
 describe('MenuService (via DayService.ensureDay), auto mode', () => {
   let store: StoreService;
@@ -23,6 +24,22 @@ describe('MenuService (via DayService.ensureDay), auto mode', () => {
       const k = DateU.add(start, i);
       day.ensureDay(k);
       const t = menuTotals(store.peek(k)?.menu);
+      expect(t.k).toBeGreaterThanOrEqual(2600);
+      expect(t.k).toBeLessThanOrEqual(2800);
+      expect(t.p).toBeGreaterThanOrEqual(170);
+      expect(t.p).toBeLessThanOrEqual(190);
+    }
+  });
+
+  it('works with three meals a day and still hits the targets', () => {
+    store.mutate((s) => (s.settings.mealsPerDay = 3));
+    const start = '2026-10-05';
+    for (let i = 0; i < 120; i++) {
+      const k = DateU.add(start, i);
+      day.ensureDay(k);
+      const menu = store.peek(k)?.menu ?? [];
+      const t = menuTotals(menu);
+      expect(menu.filter((m) => !m.custom)).toHaveLength(3);
       expect(t.k).toBeGreaterThanOrEqual(2600);
       expect(t.k).toBeLessThanOrEqual(2800);
       expect(t.p).toBeGreaterThanOrEqual(170);
@@ -85,6 +102,31 @@ describe('MenuService, trainer mode', () => {
     const menu = store.peek(k)?.menu ?? [];
     expect(menu.map((m) => m.time)).toEqual(['08:00', '11:00', '14:00', '16:00', '19:30']);
     expect(menu.every((m) => !m.templateId)).toBe(true);
+  });
+
+  it('rebuilds the open day right away when the menu mode is switched to auto', () => {
+    const ui = TestBed.inject(UiService);
+    TestBed.tick();
+    const k = ui.viewDate();
+    expect((store.peek(k)?.menu ?? []).every((m) => !m.templateId)).toBe(true); // the trainer's meals
+    store.mutate((s) => (s.settings.menuMode = 'auto'));
+    TestBed.tick();
+    const menu = store.peek(k)?.menu ?? [];
+    expect(menu.length).toBeGreaterThan(0);
+    expect(menu.every((m) => !!m.templateId)).toBe(true);
+  });
+
+  it('fills a day with meals after the switch to auto even if the trainer plan has none', () => {
+    const ui = TestBed.inject(UiService);
+    const k = ui.viewDate();
+    day.setWeekPlan(DateU.monday(k), { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [] }); // every meal removed from the week plan
+    day.ensureDay(k);
+    expect(store.peek(k)?.menu).toEqual([]);
+    store.mutate((s) => (s.settings.menuMode = 'auto'));
+    TestBed.tick();
+    const menu = store.peek(k)?.menu ?? [];
+    expect(menu.length).toBeGreaterThan(0);
+    expect(menu.every((m) => !!m.templateId)).toBe(true);
   });
 
   it('has no swap alternative for trainer meals', () => {

@@ -1,11 +1,13 @@
 import { DestroyRef, Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
 import { DateU, fromMin } from '../utils';
 import { DayService } from './day.service';
+import { StoreService } from './store.service';
 
 /** Selected day, clock and dialog visibility. Creates the day's plan whenever a day is opened. */
 @Injectable({ providedIn: 'root' })
 export class UiService {
   private readonly day = inject(DayService);
+  private readonly store = inject(StoreService);
 
   readonly today = signal(DateU.today());
   readonly viewDate = signal(DateU.today());
@@ -23,6 +25,7 @@ export class UiService {
   constructor() {
     effect(() => {
       const k = this.viewDate();
+      this.store.settings().menuMode; // a switch between the trainer plan and the automatic menu rebuilds the open day at once
       untracked(() => this.day.ensureDay(k));
     });
     const timer = setInterval(() => this.tick(), 1000);

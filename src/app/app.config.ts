@@ -7,6 +7,7 @@ import { supabaseRestInterceptor } from './core/backend/supabase-rest.intercepto
 import { AuthService } from './core/auth/auth.service';
 import { SupabaseAuthService } from './core/auth/supabase-auth.service';
 import { I18nTitleStrategy } from './core/i18n/title.strategy';
+import { BodyBasicsSyncService } from './core/services/body-basics-sync.service';
 import { FoodCatalogService } from './core/services/food-catalog.service';
 import { FoodRepository } from './core/repositories/food.repository';
 import { SupabaseFoodRepository } from './core/repositories/supabase-food.repository';
@@ -27,6 +28,7 @@ export const appConfig: ApplicationConfig = {
     // Loads the food list at start: meals on every screen show the food names the backend sends.
     provideAppInitializer(() => {
       inject(FoodCatalogService);
+      inject(BodyBasicsSyncService);
     }),
   ]
 };

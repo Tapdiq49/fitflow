@@ -9,6 +9,9 @@ export interface Database {
           email: string;
           email_preferences: boolean;
           avatar: string | null;
+          /** cm and kg; null = not entered yet. */
+          height_cm: number | null;
+          start_weight_kg: number | null;
           created_at: string;
           updated_at: string;
         };
@@ -18,6 +21,8 @@ export interface Database {
           username?: string | null;
           email_preferences?: boolean;
           avatar?: string | null;
+          height_cm?: number | null;
+          start_weight_kg?: number | null;
         };
         Relationships: [];
       };

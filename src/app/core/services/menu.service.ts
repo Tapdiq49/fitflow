@@ -8,15 +8,18 @@ import { ProgramService } from './program.service';
 import { StoreService } from './store.service';
 import { TrainerPlanService } from './trainer-plan.service';
 
-const SLOT_PLANS: Record<DayType | 'other', Record<4 | 5 | 6, SlotId[]>> = {
+const SLOT_PLANS: Record<DayType | 'other', Record<3 | 4 | 5 | 6, SlotId[]>> = {
   training: {
+    // Three meals: no separate pre- and post-workout meal; the evening meal is the one after training.
+    3: ['breakfast', 'lunch', 'post'],
     4: ['breakfast', 'lunch', 'pre', 'post'],
     5: ['breakfast', 'lunch', 'pre', 'post', 'dinner'],
     6: ['breakfast', 'snack', 'lunch', 'pre', 'post', 'dinner'],
   },
-  cardio: { 4: [], 5: [], 6: [] },
-  rest: { 4: [], 5: [], 6: [] },
+  cardio: { 3: [], 4: [], 5: [], 6: [] },
+  rest: { 3: [], 4: [], 5: [], 6: [] },
   other: {
+    3: ['breakfast', 'lunch', 'dinner'],
     4: ['breakfast', 'lunch', 'snack2', 'dinner'],
     5: ['breakfast', 'snack', 'lunch', 'snack2', 'dinner'],
     6: ['breakfast', 'snack', 'lunch', 'snack2', 'dinner'],
@@ -43,7 +46,7 @@ export class MenuService {
   private readonly plans = inject(TrainerPlanService);
 
   slotsFor(type: DayType, n: number): SlotId[] {
-    const c = clamp(Math.round(n) || 5, 4, 6) as 4 | 5 | 6;
+    const c = clamp(Math.round(n) || 5, 3, 6) as 3 | 4 | 5 | 6;
     return SLOT_PLANS[type === 'training' ? 'training' : 'other'][c];
   }
 

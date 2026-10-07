@@ -12,7 +12,7 @@ import { itemMacros, itemName } from '../nutrition';
 import { FoodCatalogService } from './food-catalog.service';
 import { StoreService } from './store.service';
 
-const USER: AuthUser = { id: 'u1', email: 'a@example.com', username: 'john', emailPreferences: false, avatar: null, hasPassword: true };
+const USER: AuthUser = { id: 'u1', email: 'a@example.com', username: 'john', emailPreferences: false, avatar: null, height: null, startWeight: null, hasPassword: true };
 const row = (id: string, code: string | null, az: string, extra: Partial<FoodRow> = {}): FoodRow => ({ id, code, names: { az, en: `${az} EN` }, unit: 'q', k: 100, p: 10, c: 10, f: 1, role: null, step: null, min: null, max: null, position: null, ...extra });
 const GEN = { role: 'protein', step: 1, min: 1, max: 4 } as const;
 

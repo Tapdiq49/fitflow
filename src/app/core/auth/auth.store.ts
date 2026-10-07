@@ -70,6 +70,10 @@ export class AuthStore {
     this.apply(await this.auth.setAvatar(avatar));
   }
 
+  async setBodyBasics(height: number, startWeight: number): Promise<void> {
+    this.apply(await this.auth.setBodyBasics(height, startWeight));
+  }
+
   changePassword(current: string, next: string): Promise<void> {
     return this.auth.changePassword(current, next);
   }

@@ -379,6 +379,10 @@
   }
 }
 
+input[aria-invalid='true'] {
+  border-color: var(--bad);
+}
+
 /* Drag and drop of table rows (the grip in <app-data-table>; cdk drag-drop adds the cdk-* classes). */
 .drag-handle {
   display: inline-grid;

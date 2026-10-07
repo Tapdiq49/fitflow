@@ -12,6 +12,8 @@ import { UiService } from './core/services/ui.service';
 import { DateU, dayName, dayShort } from './core/utils';
 import { AddMealDialog } from './features/dialogs/add-meal.dialog';
 import { DayDetailDialog } from './features/dialogs/day-detail.dialog';
+import { BodyBasicsDialog } from './features/profile/body-basics.dialog';
+import { StoreService } from './core/services/store.service';
 import { GuestNoticeComponent } from './features/auth/guest-notice.component';
 import { UserMenuComponent } from './features/auth/user-menu.component';
 import { SelectComponent } from './shared/forms/select.component';
@@ -23,7 +25,7 @@ import { t } from './core/i18n/translate';
 
 @Component({
   selector: 'app-root',
-  imports: [NgTemplateOutlet, RouterOutlet, RouterLink, RouterLinkActive, IconComponent, SelectComponent, OverlaysComponent, AddMealDialog, DayDetailDialog, GuestNoticeComponent, UserMenuComponent, TPipe],
+  imports: [NgTemplateOutlet, RouterOutlet, RouterLink, RouterLinkActive, IconComponent, SelectComponent, OverlaysComponent, AddMealDialog, DayDetailDialog, BodyBasicsDialog, GuestNoticeComponent, UserMenuComponent, TPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <!-- On /auth pages the shell is only hidden, never removed: destroying the half-loaded deferred language select throws. -->
@@ -117,6 +119,9 @@ import { t } from './core/i18n/translate';
     @if (ui.detailDate(); as d) {
       <app-day-detail-dialog [date]="d" />
     }
+    @if (auth.user() && auth.user()?.height == null && !isAuthPage() && !store.bodyBasicsKnown()) {
+      <app-body-basics-dialog />
+    }
     <app-overlays />
   `,
 })
@@ -129,6 +134,7 @@ export class App {
   private readonly router = inject(Router);
   private readonly location = inject(Location);
   protected readonly auth = inject(AuthStore);
+  protected readonly store = inject(StoreService);
   private readonly header = viewChild.required<ElementRef<HTMLElement>>('header');
 
   constructor() {

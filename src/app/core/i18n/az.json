@@ -374,7 +374,7 @@
   "plan.exerciseNameEG": "Hərəkətin adı (məs. Bench Press)",
   "plan.gymDays": "Məşq günləri",
   "plan.gymDaysHint": "Zala getdiyin günləri seç. Seçilməyən iş günləri kardio, həftəsonu bərpa günü olur. Seçim bu həftədən etibarən keçərlidir.",
-  "plan.leaveMealFieldEmpty": "Yemək xanasını boş qoysan, o yemək planda olmur. Mətnini dəyişmədiyin yeməklərin kalori və proteini saxlanılır; yeni yazdığın yeməklər 0 kcal sayılır.",
+  "plan.leaveMealFieldEmpty": "Yeməyi planda istəmirsənsə ✕ düyməsi ilə sil; əlavə etmək üçün aşağıdakı düymələrdən seç. Yemək xanasını boş qoysan da, o yemək planda olmur. Mətnini dəyişmədiyin yeməklərin kalori və proteini saxlanılır; yeni yazdığın yeməklər 0 kcal sayılır.",
   "plan.max": "maks",
   "plan.maxReps": "Maks təkrar",
   "plan.mealPlan": "Yemək planı",
@@ -696,5 +696,15 @@
   "references.edit": "Dəyiş",
   "references.foodUpdated": "Qida yeniləndi",
   "references.drag": "Yerini dəyiş: sürüklə və ya ↑ ↓ düymələrini bas",
-  "common.loading": "Yüklənir"
+  "common.loading": "Yüklənir",
+  "bodyBasics.title": "Əvvəlcə boyunu və çəkini yaz",
+  "bodyBasics.why": "Boy və çəki hər adamda fərqlidir, ona görə proqram onları bilməlidir: bədən göstəriciləri (məsələn BKİ) və çəki izləməsi buna görə hesablanır. Sonra Ayarlardan dəyişə bilərsən.",
+  "bodyBasics.invalid": "Boy {h1}–{h2} sm, çəki {w1}–{w2} kq arasında olmalıdır.",
+  "auth.signOutConfirm": "Çıxsan, bu cihazdakı bütün məlumatların (menyu, çəki, məşqlər, ayarlar) silinəcək, çünki hələlik yalnız bu brauzerdə saxlanır. İstəyirsənsə, əvvəl Ayarlardan JSON kimi yüklə. Çıxılsın?",
+  "settings.required": "Bu xana mütləqdir",
+  "settings.outOfRange": "{min}–{max} aralığında olmalıdır",
+  "settings.fixFields": "Qırmızı ilə işarələnmiş xanaları düzəlt",
+  "plan.addMeal": "Yemək əlavə et",
+  "settings.mealsFromTrainerPlan": "Məşqçi planında yemək sayı həftə planından gəlir. Dəyişmək üçün buradan yemək əlavə et və ya sil:",
+  "settings.mealsVary": "Günlər üzrə {a}. "
 }

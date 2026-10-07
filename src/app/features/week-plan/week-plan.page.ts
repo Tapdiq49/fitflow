@@ -6,7 +6,7 @@ import { DayService } from '../../core/services/day.service';
 import { StoreService } from '../../core/services/store.service';
 import { ToastService } from '../../core/services/toast.service';
 import { TrainerPlanService } from '../../core/services/trainer-plan.service';
-import { DateU, clamp, dayName, inputValue, parseNum } from '../../core/utils';
+import { DateU, clamp, dayName, fromMin, inputValue, parseNum, toMin } from '../../core/utils';
 import { Listbox, Option } from '@angular/aria/listbox';
 import { Tab, TabContent, TabList, TabPanel, Tabs } from '@angular/aria/tabs';
 import { IconComponent } from '../../shared/icon.component';
@@ -69,11 +69,22 @@ interface Row {
         <div class="card">
           <div class="card-head"><h3>{{ dayLabel(day) }}</h3></div>
           @for (r of draft()[day]; track r.slot; let i = $index) {
-            <div class="mb-2 grid grid-cols-[110px_112px_1fr] items-center gap-2 phone:grid-cols-[90px_1fr]">
+            <div class="mb-2 grid grid-cols-[110px_112px_1fr_36px] items-center gap-2 phone:grid-cols-[90px_1fr_36px]">
               <span class="text-[13px] text-text-2">{{ slotLabel(r.slot) }}</span>
               <app-time-picker [label]="'common.time' | t" [value]="r.time" (valueChange)="setTime(day, i, $event)" />
-              <input type="text" [value]="r.text" (input)="setText(day, i, $event)" [placeholder]="'plan.eGBuckwheat4' | t" class="phone:col-span-2" />
+              <input type="text" [value]="r.text" (input)="setText(day, i, $event)" [placeholder]="'plan.eGBuckwheat4' | t" class="phone:col-span-3" />
+              <button class="btn btn-ghost btn-icon btn-sm" (click)="removeMeal(day, r.slot)" [attr.aria-label]="('common.delete' | t) + ': ' + slotLabel(r.slot)"><app-icon name="x" size="sm" /></button>
             </div>
+          }
+          @if (unusedSlots(day); as free) {
+            @if (free.length) {
+              <div class="mt-1 flex flex-wrap items-center gap-2">
+                <span class="text-[12px] text-muted">{{ 'plan.addMeal' | t }}:</span>
+                @for (slot of free; track slot) {
+                  <button class="btn btn-ghost btn-sm" (click)="addMeal(day, slot)"><app-icon name="plus" size="sm" />{{ slotLabel(slot) }}</button>
+                }
+              </div>
+            }
           }
         </div>
       }
@@ -170,6 +181,32 @@ export class WeekPlanPage {
     this.week.update((w) => DateU.add(w, n * 7));
   }
 
+  /** Meals a day of the trainer plan can have, in the order they are eaten; each at most once a day. */
+  private static readonly SLOT_ORDER: readonly SlotId[] = ['breakfast', 'snack', 'lunch', 'snack2', 'pre', 'post', 'dinner'];
+
+  protected unusedSlots(day: number): SlotId[] {
+    const used = new Set(this.draft()[day].map((r) => r.slot));
+    return WeekPlanPage.SLOT_ORDER.filter((s) => !used.has(s));
+  }
+
+  /** Default time of a meal: the trainer's times, and around the workout for the meals before and after it. */
+  private defaultTime(slot: SlotId): string {
+    const workout = toMin(this.store.settings().workoutTime);
+    if (slot === 'pre') return fromMin(workout - 60);
+    if (slot === 'post') return fromMin(workout + 90);
+    return TRAINER_SLOTS.find((x) => x.slot === slot)?.time ?? '12:00';
+  }
+
+  protected addMeal(day: number, slot: SlotId): void {
+    if (this.draft()[day].some((r) => r.slot === slot)) return;
+    const row: Row = { slot, time: this.defaultTime(slot), text: '', name0: '', items0: [] };
+    this.draft.update((d) => ({ ...d, [day]: [...d[day], row].sort((a, b) => a.time.localeCompare(b.time)) }));
+  }
+
+  protected removeMeal(day: number, slot: SlotId): void {
+    this.draft.update((d) => ({ ...d, [day]: d[day].filter((r) => r.slot !== slot) }));
+  }
+
   protected setText(day: number, i: number, e: Event): void {
     this.patch(day, i, { text: inputValue(e) });
   }
@@ -260,10 +297,7 @@ export class WeekPlanPage {
   private toRows(plan: WeekPlan): Record<number, Row[]> {
     const rows: Record<number, Row[]> = {};
     for (const d of this.days) {
-      rows[d] = TRAINER_SLOTS.map(({ slot, time }) => {
-        const m = (plan[d] ?? []).find((x) => x.slot === slot);
-        return { slot, time: m?.time ?? time, text: m?.name ?? '', name0: m?.name ?? '', items0: m?.items ?? [] };
-      });
+      rows[d] = (plan[d] ?? []).map((m): Row => ({ slot: m.slot, time: m.time, text: m.name, name0: m.name, items0: m.items })).sort((a, b) => a.time.localeCompare(b.time));
     }
     return rows;
   }

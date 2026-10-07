@@ -4,7 +4,7 @@ import { AuthService } from './auth.service';
 import { AuthStore } from './auth.store';
 import { FakeAuthService } from './fake-auth.service';
 
-const user = (username: string | null): AuthUser => ({ id: 'u1', email: 'a@example.com', username, emailPreferences: false, avatar: null, hasPassword: true });
+const user = (username: string | null): AuthUser => ({ id: 'u1', email: 'a@example.com', username, emailPreferences: false, avatar: null, height: null, startWeight: null, hasPassword: true });
 
 describe('AuthStore', () => {
   let fake: FakeAuthService;

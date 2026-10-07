@@ -61,11 +61,11 @@ export class TableCellDirective {
           </thead>
           <tbody cdkDropList [cdkDropListDisabled]="!reorderable()" [cdkDropListSortPredicate]="sortPredicate" (cdkDropListDropped)="dropped($event)">
             @for (row of rows(); track rowKey()(row); let i = $index) {
-              <tr cdkDrag [cdkDragDisabled]="!draggable(row)" cdkDragPreviewClass="tbl-drag-preview">
+              <tr cdkDrag [cdkDragDisabled]="!draggable(row)" cdkDragPreviewClass="tbl-drag-preview" cdkDragPreviewContainer="parent" (cdkDragEnded)="unfreeze($event.source.element.nativeElement)">
                 @if (reorderable()) {
                   <td class="w-8">
                     @if (canDrag()(row)) {
-                      <button type="button" cdkDragHandle class="drag-handle" [attr.aria-label]="reorderLabel()" [title]="reorderLabel()" (keydown)="handleKey($event, i)">
+                      <button type="button" cdkDragHandle class="drag-handle" [attr.aria-label]="reorderLabel()" [title]="reorderLabel()" (keydown)="handleKey($event, i)" (pointerdown)="freeze($event)" (pointerup)="unfreeze(rowOf($event))">
                         <app-icon name="grip" size="sm" />
                       </button>
                     }
@@ -128,6 +128,30 @@ export class DataTableComponent<T> {
     const row = this.rows()[index];
     return row === undefined || this.canDrag()(row);
   };
+
+  private static readonly CELL_STYLE = ['width', 'min-width', 'max-width', 'box-sizing'] as const;
+
+  protected rowOf(e: Event): HTMLTableRowElement {
+    return (e.currentTarget as HTMLElement).closest('tr') as HTMLTableRowElement;
+  }
+
+  /**
+   * The drag preview is a copy of the row. Its cells must keep the width they have in the table, so they are pinned
+   * before the copy is made (a copy lives outside the column layout) and released when the drag is over.
+   */
+  protected freeze(e: Event): void {
+    const row = this.rowOf(e);
+    const widths = Array.from(row.cells, (c) => c.getBoundingClientRect().width);
+    Array.from(row.cells).forEach((c, i) => {
+      c.style.boxSizing = 'border-box';
+      c.style.width = c.style.minWidth = c.style.maxWidth = `${widths[i]}px`;
+    });
+  }
+
+  protected unfreeze(row: HTMLTableRowElement | HTMLElement | null): void {
+    if (!row) return;
+    for (const c of Array.from((row as HTMLTableRowElement).cells)) for (const p of DataTableComponent.CELL_STYLE) c.style.removeProperty(p);
+  }
 
   protected dropped(e: CdkDragDrop<unknown>): void {
     if (e.previousIndex !== e.currentIndex) this.reorder.emit({ from: e.previousIndex, to: e.currentIndex });

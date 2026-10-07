@@ -1,7 +1,7 @@
 import { Injectable, computed, inject } from '@angular/core';
 import { Advice, BodyStats, WeightEntry } from '../models';
 import { DateU, F, rnd } from '../utils';
-import { StoreService } from './store.service';
+import { MAX_HEIGHT, MAX_WEIGHT, MIN_HEIGHT, MIN_WEIGHT, StoreService } from './store.service';
 import { ToastService } from './toast.service';
 import { t } from '../i18n/translate';
 
@@ -11,6 +11,7 @@ export class BodyService {
   private readonly toast = inject(ToastService);
 
   readonly sorted = computed(() => [...this.store.state().weights].sort((a, b) => a.date.localeCompare(b.date)));
+  /** Newest weight, else the starting weight; null while the user has entered neither. */
   readonly latestKg = computed(() => this.sorted().at(-1)?.kg ?? this.store.settings().startWeight);
 
   stats(ref: string): BodyStats | null {
@@ -65,6 +66,19 @@ export class BodyService {
       };
     }
     return { level: 'good', text: t('bodySvc.paceFineNKg', { r: F.signed(st.rate) }) };
+  }
+
+  /** Saves the height (cm) and starting weight (kg) the user typed; false (with a message) when they are not usable. */
+  saveBasics(height: number, weight: number): boolean {
+    if (!(height >= MIN_HEIGHT && height <= MAX_HEIGHT) || !(weight >= MIN_WEIGHT && weight <= MAX_WEIGHT)) {
+      this.toast.show(t('bodyBasics.invalid', { h1: MIN_HEIGHT, h2: MAX_HEIGHT, w1: MIN_WEIGHT, w2: MAX_WEIGHT }));
+      return false;
+    }
+    this.store.mutate((s) => {
+      s.settings.height = rnd(height, 0);
+      s.settings.startWeight = rnd(weight, 1);
+    });
+    return true;
   }
 
   save(date: string, kg: number, waist: number): boolean {

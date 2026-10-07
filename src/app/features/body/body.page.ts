@@ -8,22 +8,26 @@ import { UiService } from '../../core/services/ui.service';
 import { DateU, F, parseNum } from '../../core/utils';
 import { ChartComponent } from '../../shared/chart.component';
 import { IconComponent } from '../../shared/icon.component';
+import { BodyBasicsFormComponent } from '../profile/body-basics-form.component';
 import { TPipe } from '../../shared/t.pipe';
 import { t } from '../../core/i18n/translate';
 
 @Component({
   selector: 'app-body-page',
-  imports: [IconComponent, ChartComponent, TPipe],
+  imports: [IconComponent, ChartComponent, BodyBasicsFormComponent, TPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @let st = stats();
     @let adv = advice();
     <div class="flex flex-col gap-[18px]">
+      @if (!store.bodyBasicsKnown()) {
+        <div class="alert alert-info" style="margin-bottom: 14px"><app-icon name="info" /><div class="w-full"><p style="margin: 0 0 10px"><b>{{ 'bodyBasics.title' | t }}</b> {{ 'bodyBasics.why' | t }}</p><app-body-basics-form /></div></div>
+      }
       <div class="card">
         <div class="card-head"><h3><app-icon name="plus" /> {{ 'body.addWeightAndWaist' | t }}</h3></div>
         <div class="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-3">
           <label class="field">{{ 'body.date' | t }}<input #date type="date" [value]="ui.viewDate()" /></label>
-          <label class="field">{{ 'common.weightKg' | t }}<input #kg type="text" inputmode="decimal" placeholder="99.0" /></label>
+          <label class="field">{{ 'common.weightKg' | t }}<input #kg type="text" inputmode="decimal" /></label>
           <label class="field">{{ 'body.waistCmAtNavel' | t }}<input #waist type="text" inputmode="decimal" [placeholder]="'body.optional' | t" /></label>
           <button class="btn btn-primary" style="align-self: end" (click)="add(date.value, kg, waist)"><app-icon name="save" size="sm" />{{ 'common.addWeight' | t }}</button>
         </div>
@@ -33,7 +37,7 @@ import { t } from '../../core/i18n/translate';
         <div class="sum-box"><span class="eyebrow">{{ 'body.todaysWeight' | t }}</span><b>{{ st?.today ? F.kg(st?.today?.kg) + ' ' + ('common.kg' | t) : '—' }}</b><small>{{ F.short(ui.viewDate()) }}</small></div>
         <div class="sum-box">
           <span class="eyebrow">{{ 'body.firstWeight' | t }}</span><b>{{ 'common.nKg' | t: { a: F.kg(st ? st.first.kg : startWeight()) } }}</b>
-          <small>{{ st ? F.short(st.first.date) : 'ayarlardan' }}</small>
+          <small>{{ st ? F.short(st.first.date) : startWeight() != null ? 'ayarlardan' : '' }}</small>
         </div>
         <div class="sum-box"><span class="eyebrow">{{ 'common.currentWeight' | t }}</span><b>{{ st ? F.kg(st.cur.kg) + ' ' + ('common.kg' | t) : '—' }}</b><small>{{ 'body.bmiN' | t: { a: bmi() ?? '—' } }}</small></div>
         <div class="sum-box"><span class="eyebrow">{{ 'body.weeklyAverage' | t }}</span><b>{{ st?.avg7 ? F.kg(st?.avg7) + ' ' + ('common.kg' | t) : '—' }}</b><small>{{ 'body.last7Days' | t }}</small></div>
@@ -107,7 +111,7 @@ export class BodyPage {
   protected readonly day = inject(DayService);
   private readonly body = inject(BodyService);
   private readonly confirm = inject(ConfirmService);
-  private readonly store = inject(StoreService);
+  protected readonly store = inject(StoreService);
 
   protected readonly startWeight = computed(() => this.store.settings().startWeight);
   protected readonly stats = computed(() => this.body.stats(this.ui.viewDate()));
@@ -115,8 +119,10 @@ export class BodyPage {
   protected readonly history = computed(() => [...this.body.sorted()].reverse());
   protected readonly bmi = computed(() => {
     const st = this.stats();
-    const h = this.store.settings().height / 100;
-    return st ? F.r1(st.cur.kg / (h * h)) : null;
+    const height = this.store.settings().height;
+    if (!st || height == null) return null;
+    const h = height / 100;
+    return F.r1(st.cur.kg / (h * h));
   });
   protected readonly weightCfg = computed(() => weightChart(this.body.sorted()));
   protected readonly waistCfg = computed(() => {
