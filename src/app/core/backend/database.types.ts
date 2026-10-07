@@ -12,6 +12,8 @@ export interface Database {
           /** cm and kg; null = not entered yet. */
           height_cm: number | null;
           start_weight_kg: number | null;
+          age: number | null;
+          sex: 'male' | 'female' | null;
           created_at: string;
           updated_at: string;
         };
@@ -23,6 +25,8 @@ export interface Database {
           avatar?: string | null;
           height_cm?: number | null;
           start_weight_kg?: number | null;
+          age?: number | null;
+          sex?: 'male' | 'female' | null;
         };
         Relationships: [];
       };

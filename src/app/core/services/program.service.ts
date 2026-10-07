@@ -17,7 +17,7 @@ export class ProgramService {
   private readonly plans = inject(TrainerPlanService);
 
   private isTrainer(): boolean {
-    return this.store.settings().workoutMode === 'trainer';
+    return this.store.effectiveWorkoutMode() === 'trainer';
   }
 
   dayType(k: string): DayType {

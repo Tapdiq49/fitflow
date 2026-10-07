@@ -1,3 +1,4 @@
+import type { Sex } from '../models';
 import { AuthEvent, AuthUser, OAuthProvider, SignInInput, SignUpInput, SignUpResult } from './auth.models';
 
 /**
@@ -30,8 +31,8 @@ export abstract class AuthService {
   abstract setUsername(username: string): Promise<AuthUser>;
   /** A resized JPEG data URL, or null to remove the picture. */
   abstract setAvatar(avatar: string | null): Promise<AuthUser>;
-  /** Saves the person's height (cm) and starting weight (kg) in the profile. */
-  abstract setBodyBasics(height: number, startWeight: number): Promise<AuthUser>;
+  /** Saves the person's height (cm), starting weight (kg), age and sex in the profile. */
+  abstract setBodyBasics(height: number, startWeight: number, age: number, sex: Sex): Promise<AuthUser>;
   /** Checks the current password first (throws invalid_credentials), then sets the new one. */
   abstract changePassword(current: string, next: string): Promise<void>;
 }

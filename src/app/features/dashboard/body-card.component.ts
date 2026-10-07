@@ -71,7 +71,7 @@ export class BodyCardComponent {
   protected readonly chart = computed(() => weightChart(this.body.sorted()));
 
   protected add(kg: HTMLInputElement, waist: HTMLInputElement): void {
-    if (this.body.save(this.ui.viewDate(), parseNum(kg.value), parseNum(waist.value))) {
+    if (this.body.save(this.ui.viewDate() > this.ui.today() ? this.ui.today() : this.ui.viewDate(), parseNum(kg.value), parseNum(waist.value))) {
       kg.value = '';
       waist.value = '';
     }

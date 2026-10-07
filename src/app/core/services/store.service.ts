@@ -1,5 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { AppState, DayRecord, Settings, newDay } from '../models';
+import { AppState, DayRecord, MenuMode, Settings, WorkoutMode, newDay } from '../models';
+import { BodyIssue, KCAL_MAX, KCAL_MIN, PROTEIN_MAX, PROTEIN_MIN, bmiOf, bodyIssue } from '../targets';
 import { DateU, clamp } from '../utils';
 import { ToastService } from './toast.service';
 import { t } from '../i18n/translate';
@@ -16,13 +17,18 @@ export const MAX_WEIGHT = 300;
 export const SETTINGS_RANGE = {
   height: { min: MIN_HEIGHT, max: MAX_HEIGHT },
   startWeight: { min: MIN_WEIGHT, max: MAX_WEIGHT },
-  kcalTarget: { min: 1500, max: 4500 },
-  proteinTarget: { min: 80, max: 300 },
+  age: { min: 14, max: 90 },
+  kcalTarget: { min: KCAL_MIN, max: KCAL_MAX },
+  proteinTarget: { min: PROTEIN_MIN, max: PROTEIN_MAX },
 } as const;
 
 export const DEFAULT_SETTINGS: Omit<Settings, 'programStart'> = {
   height: null,
   startWeight: null,
+  age: null,
+  sex: null,
+  goal: 'maintain',
+  targetMode: 'auto',
   kcalTarget: 2700,
   proteinTarget: 180,
   mealsPerDay: 5,
@@ -49,14 +55,50 @@ export class StoreService {
 
   readonly state = this._state.asReadonly();
   readonly settings = computed(() => this._state().settings);
-  /** Height and weight are filled in; everything that depends on them waits for this. */
-  readonly bodyBasicsKnown = computed(() => this.settings().height != null && this.settings().startWeight != null);
+  /** Height, weight, age and sex are filled in; everything that depends on them (the menu, the calorie targets) waits for this. */
+  readonly bodyBasicsKnown = computed(() => {
+    const s = this.settings();
+    return s.height != null && s.startWeight != null && s.age != null && s.sex != null;
+  });
+
+  /** Why no menu or calorie target may be shown (a minor, or a dangerously low BMI), judged on the newest weight; null when the body data is missing or fine. */
+  readonly bodySafetyIssue = computed<BodyIssue | null>(() => {
+    const s = this.settings();
+    const kg = this.currentWeight();
+    if (!this.bodyBasicsKnown() || kg == null) return null;
+    return bodyIssue(s.height as number, kg, s.age as number);
+  });
+  /** The newest weight the user logged, else the starting weight from the settings; null while neither exists. */
+  readonly currentWeight = computed<number | null>(() => {
+    const latest = this._state().weights.reduce<{ date: string; kg: number } | null>((a, w) => (a && a.date >= w.date ? a : w), null);
+    return latest?.kg ?? this.settings().startWeight;
+  });
+  /** BMI (one decimal) of the height and the current weight; null while either is missing. */
+  readonly currentBmi = computed<number | null>(() => {
+    const h = this.settings().height;
+    const kg = this.currentWeight();
+    return h == null || kg == null ? null : Math.round(bmiOf(h, kg) * 10) / 10;
+  });
+  /** The calorie and protein cards are shown only when the body data is complete and the app may advise this person. */
+  readonly menuAllowed = computed(() => this.bodyBasicsKnown() && this.bodySafetyIssue() === null);
+  /**
+   * The menu mode in force. A person the app must not advise gets no generated menu: the trainer plan, which they write
+   * themselves, is used whatever the setting says. Read this, never `settings().menuMode`, to decide how a menu is made.
+   */
+  readonly effectiveMenuMode = computed<MenuMode>(() => (this.bodySafetyIssue() ? 'trainer' : this.settings().menuMode));
+  /** Same for the workout: such a person gets the trainer workout they write, not the built-in program. */
+  readonly effectiveWorkoutMode = computed<WorkoutMode>(() => (this.bodySafetyIssue() ? 'trainer' : this.settings().workoutMode));
 
   static normalize(raw: unknown): AppState {
     const s = (raw && typeof raw === 'object' ? raw : {}) as Partial<AppState>;
     const settings: Settings = { ...DEFAULT_SETTINGS, programStart: '', ...(s.settings ?? {}) };
     if (!settings.programStart) settings.programStart = DateU.monday(DateU.today());
-    for (const k of ['height', 'startWeight'] as const) if (typeof settings[k] !== 'number' || !(settings[k] > 0)) settings[k] = null;
+    for (const k of ['height', 'startWeight', 'age'] as const) if (typeof settings[k] !== 'number' || !(settings[k] > 0)) settings[k] = null;
+    if (settings.sex !== 'male' && settings.sex !== 'female') settings.sex = null;
+    // Settings saved before the targets could be automatic keep their typed numbers.
+    if (s.settings && !('targetMode' in s.settings)) settings.targetMode = 'custom';
+    if (settings.targetMode !== 'auto' && settings.targetMode !== 'custom') settings.targetMode = 'auto';
+    if (settings.goal !== 'lose' && settings.goal !== 'maintain' && settings.goal !== 'gain') settings.goal = 'maintain';
     return {
       settings,
       foodCache: Array.isArray(s.foodCache) ? s.foodCache : [],
@@ -94,6 +136,7 @@ export class StoreService {
         ...f,
         height: f.height == null ? null : clamp(f.height, MIN_HEIGHT, MAX_HEIGHT),
         startWeight: f.startWeight == null ? null : clamp(f.startWeight, MIN_WEIGHT, MAX_WEIGHT),
+        age: f.age == null ? null : clamp(Math.round(f.age), SETTINGS_RANGE.age.min, SETTINGS_RANGE.age.max),
         kcalTarget: clamp(f.kcalTarget, SETTINGS_RANGE.kcalTarget.min, SETTINGS_RANGE.kcalTarget.max),
         proteinTarget: clamp(f.proteinTarget, SETTINGS_RANGE.proteinTarget.min, SETTINGS_RANGE.proteinTarget.max),
         mealsPerDay: clamp(Math.round(f.mealsPerDay), 3, 6),

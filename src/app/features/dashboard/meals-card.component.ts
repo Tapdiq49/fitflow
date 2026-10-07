@@ -22,7 +22,7 @@ import { t, td } from '../../core/i18n/translate';
       <h3><app-icon name="utensils" /> {{ 'dash.todaysMeals' | t }}</h3>
       <div class="flex flex-wrap items-center gap-2">
         <!-- The trainer's menu is fixed by the week plan, so a new one would be identical. -->
-        @if (store.settings().menuMode !== 'trainer') {
+        @if (store.effectiveMenuMode() !== 'trainer') {
           <button class="btn btn-primary btn-sm" (click)="day.regenerateMenu(k())"><app-icon name="refresh" size="sm" />{{ 'dash.createNewDailyMenu' | t }}</button>
         }
         <button class="btn btn-sm" (click)="ui.addMealOpen.set(true)"><app-icon name="plus" size="sm" />{{ 'dash.addMeal' | t }}</button>

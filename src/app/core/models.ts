@@ -134,10 +134,22 @@ export type ThemeMode = 'system' | 'light' | 'dark';
 /** 'program' = built-in Full Body A/B with progression; 'trainer' = exercises the trainer gives, entered per week. */
 export type WorkoutMode = 'program' | 'trainer';
 
+export type Sex = 'male' | 'female';
+
+/** `auto`: the calorie and protein targets are worked out from the body data and the goal; `custom`: the user types them. */
+export type TargetMode = 'auto' | 'custom';
+
+/** What the user wants from their weight: lose it, keep it, or gain it. */
+export type Goal = 'lose' | 'maintain' | 'gain';
+
 export interface Settings {
-  /** cm and kg; null until the user enters them (they differ per person, so there is no default). */
+  /** cm, kg, years and sex; null until the user enters them (they differ per person, so there is no default). */
   height: number | null;
   startWeight: number | null;
+  age: number | null;
+  sex: Sex | null;
+  goal: Goal;
+  targetMode: TargetMode;
   kcalTarget: number;
   proteinTarget: number;
   mealsPerDay: number;

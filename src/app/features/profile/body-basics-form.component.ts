@@ -1,26 +1,47 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { Sex } from '../../core/models';
 import { BodyService } from '../../core/services/body.service';
+import { StoreService } from '../../core/services/store.service';
 import { parseNum } from '../../core/utils';
 import { IconComponent } from '../../shared/icon.component';
 import { TPipe } from '../../shared/t.pipe';
 
-/** Height and starting weight inputs with a save button; used by the sign-in dialog and in place of the numbers that depend on them. */
+/**
+ * Height, starting weight, age and sex with a save button; used by the sign-in dialog and in place of the numbers that depend on them.
+ * Starts with whatever is already known (an older account has height and weight but no age or sex).
+ * The sex is a radio group of buttons, not a select: this form sits in the app shell and must not pull the dropdown code into the first bundle.
+ */
 @Component({
   selector: 'app-body-basics-form',
   imports: [IconComponent, TPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="grid grid-cols-[repeat(auto-fit,minmax(130px,1fr))] items-end gap-3 [&_input]:h-[42px]">
-      <label class="field">{{ 'settings.heightCm' | t }}<input #h type="text" inputmode="numeric" (keydown.enter)="save(h.value, w.value)" /></label>
-      <label class="field">{{ 'common.weightKg' | t }}<input #w type="text" inputmode="decimal" (keydown.enter)="save(h.value, w.value)" /></label>
-      <button class="btn btn-primary" (click)="save(h.value, w.value)"><app-icon name="save" size="sm" />{{ 'common.save' | t }}</button>
+    <div class="grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] items-end gap-3 [&_input]:h-[42px]">
+      <label class="field">{{ 'settings.heightCm' | t }}<input #h type="text" inputmode="numeric" [value]="known.height ?? ''" (keydown.enter)="save(h.value, w.value, a.value)" /></label>
+      <label class="field">{{ 'common.weightKg' | t }}<input #w type="text" inputmode="decimal" [value]="known.startWeight ?? ''" (keydown.enter)="save(h.value, w.value, a.value)" /></label>
+      <label class="field">{{ 'settings.age' | t }}<input #a type="text" inputmode="numeric" [value]="known.age ?? ''" (keydown.enter)="save(h.value, w.value, a.value)" /></label>
+      <div class="field" role="radiogroup" [attr.aria-label]="'settings.sex' | t">
+        {{ 'settings.sex' | t }}
+        <div class="flex gap-2">
+          @for (o of sexes; track o.value) {
+            <button type="button" role="radio" class="btn h-[42px] flex-1" [class.btn-primary]="sex() === o.value" [attr.aria-checked]="sex() === o.value" (click)="sex.set(o.value)">{{ o.label | t }}</button>
+          }
+        </div>
+      </div>
     </div>
+    <div class="mt-3"><button class="btn btn-primary" (click)="save(h.value, w.value, a.value)"><app-icon name="save" size="sm" />{{ 'common.save' | t }}</button></div>
   `,
 })
 export class BodyBasicsFormComponent {
   private readonly body = inject(BodyService);
+  protected readonly known = inject(StoreService).settings();
+  protected readonly sex = signal<Sex | null>(this.known.sex);
+  protected readonly sexes: { value: Sex; label: string }[] = [
+    { value: 'male', label: 'settings.sexMale' },
+    { value: 'female', label: 'settings.sexFemale' },
+  ];
 
-  protected save(height: string, weight: string): void {
-    this.body.saveBasics(parseNum(height), parseNum(weight));
+  protected save(height: string, weight: string, age: string): void {
+    this.body.saveBasics(parseNum(height), parseNum(weight), parseNum(age), this.sex());
   }
 }

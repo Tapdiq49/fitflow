@@ -17,6 +17,7 @@ import { t } from '../../core/i18n/translate';
   host: { class: 'grid grid-cols-4 gap-4 laptop:grid-cols-2 phone:gap-2.5' },
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
+    @if (store.menuAllowed()) {
     <div class="card flex flex-col gap-3">
       <div class="flex items-center justify-between"><span class="eyebrow">{{ 'dash.calories' | t }}</span><span class="grid size-9 place-items-center rounded-[10px] bg-kcal/14 text-kcal"><app-icon name="flame" /></span></div>
       <div class="text-[28px] font-extrabold tracking-[-.02em] tabular-nums phone:text-[22px]">{{ F.round(eaten().k) }} <small class="text-[14px] font-semibold text-muted">{{ 'dash.perNKcal' | t: { a: s().kcalTarget } }}</small></div>
@@ -30,6 +31,8 @@ import { t } from '../../core/i18n/translate';
       <div class="bar bar-protein"><i [style.width.%]="F.pct(eaten().p, s().proteinTarget)"></i></div>
       <small class="text-muted">{{ 'dash.planNGN' | t: { a: F.round(plan().p), b: F.round(max0(s().proteinTarget - eaten().p)) } }}</small>
     </div>
+
+    }
 
     <div class="card flex flex-col gap-3">
       <div class="flex items-center justify-between"><span class="eyebrow">{{ 'dash.water' | t }}</span><span class="grid size-9 place-items-center rounded-[10px] bg-water/14 text-water"><app-icon name="droplet" /></span></div>
@@ -73,7 +76,7 @@ export class StatCardsComponent {
   protected readonly val = inputValue;
   protected readonly waterSteps = [250, 500, 750, 1000];
   protected readonly day = inject(DayService);
-  private readonly store = inject(StoreService);
+  protected readonly store = inject(StoreService);
   private readonly ui = inject(UiService);
   private readonly toast = inject(ToastService);
 

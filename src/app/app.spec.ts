@@ -31,8 +31,8 @@ describe('App', () => {
     expect((fixture.nativeElement as HTMLElement).querySelector('app-body-basics-dialog')).toBeNull();
   });
 
-  it('asks a signed-in user for height and weight until both are entered, and then goes away', async () => {
-    (TestBed.inject(AuthService) as FakeAuthService).stored = { id: 'u1', email: 'a@example.com', username: 'john', emailPreferences: false, avatar: null, height: null, startWeight: null, hasPassword: true };
+  it('asks a signed-in user for height, weight, age and sex until all are entered, and then goes away', async () => {
+    (TestBed.inject(AuthService) as FakeAuthService).stored = { id: 'u1', email: 'a@example.com', username: 'john', emailPreferences: false, avatar: null, height: null, startWeight: null, age: null, sex: null, hasPassword: true };
     await TestBed.inject(AuthStore).init();
     const fixture = TestBed.createComponent(App);
     await fixture.whenStable();
@@ -42,22 +42,24 @@ describe('App', () => {
     expect(el.querySelector('app-body-basics-dialog [role=dialog]')).not.toBeNull();
     expect(el.querySelector('app-body-basics-dialog [aria-label="Bağla"]')).toBeNull(); // cannot be closed
 
-    const [h, w] = Array.from(el.querySelectorAll<HTMLInputElement>('app-body-basics-dialog input'));
+    const [h, w, a] = Array.from(el.querySelectorAll<HTMLInputElement>('app-body-basics-dialog input'));
     const type = (i: HTMLInputElement, v: string): void => {
       i.value = v;
       i.dispatchEvent(new Event('input'));
     };
     type(h, '20'); // out of range: stays open
     type(w, '80');
-    el.querySelector<HTMLButtonElement>('app-body-basics-dialog .btn-primary')!.click();
+    type(a, '30');
+    el.querySelector<HTMLButtonElement>('app-body-basics-dialog [role=radio]')!.click(); // male
+    Array.from(el.querySelectorAll<HTMLButtonElement>('app-body-basics-dialog button')).find((b) => b.textContent?.includes('Yadda saxla'))!.click();
     fixture.detectChanges();
     expect(store.bodyBasicsKnown()).toBe(false);
 
     type(h, '178');
-    el.querySelector<HTMLButtonElement>('app-body-basics-dialog .btn-primary')!.click();
+    Array.from(el.querySelectorAll<HTMLButtonElement>('app-body-basics-dialog button')).find((b) => b.textContent?.includes('Yadda saxla'))!.click();
     fixture.detectChanges();
     await fixture.whenStable();
-    expect(store.settings()).toMatchObject({ height: 178, startWeight: 80 });
+    expect(store.settings()).toMatchObject({ height: 178, startWeight: 80, age: 30, sex: 'male' });
     expect(el.querySelector('app-body-basics-dialog')).toBeNull();
   });
 });

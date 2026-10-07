@@ -2,7 +2,9 @@ import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal, sig
 import { RouterLink } from '@angular/router';
 import { authErrorText } from '../../core/auth/auth-errors';
 import { AuthStore } from '../../core/auth/auth.store';
-import { MenuMode, Settings, ThemeMode, WorkoutMode } from '../../core/models';
+import { Goal, MenuMode, Settings, Sex, TargetMode, ThemeMode, WorkoutMode } from '../../core/models';
+import { BodyIssue, OBESE_BMI, TargetSuggestion, bmiOf, bodyIssue, plausibleBody, suggestTargets } from '../../core/targets';
+import { BodyService } from '../../core/services/body.service';
 import { ConfirmService } from '../../core/services/confirm.service';
 import { DayService } from '../../core/services/day.service';
 import { SessionService } from '../../core/services/session.service';
@@ -10,20 +12,20 @@ import { TrainerPlanService } from '../../core/services/trainer-plan.service';
 import { DEFAULT_SETTINGS, SETTINGS_RANGE, StoreService } from '../../core/services/store.service';
 import { ToastService } from '../../core/services/toast.service';
 import { UiService } from '../../core/services/ui.service';
-import { DateU, inputValue, parseNum } from '../../core/utils';
+import { DateU, F, inputValue, parseNum } from '../../core/utils';
 import { IconComponent } from '../../shared/icon.component';
+import { DatePickerComponent } from '../../shared/forms/date-picker.component';
 import { SelectComponent, SelectOption } from '../../shared/forms/select.component';
 import { TimePickerComponent } from '../../shared/forms/time-picker.component';
 import { TPipe } from '../../shared/t.pipe';
 import { t } from '../../core/i18n/translate';
 
-type NumField = 'height' | 'startWeight' | 'kcalTarget' | 'proteinTarget';
-type OptionField = 'mealsPerDay' | 'menuMode' | 'workoutMode' | 'theme';
-type TextField = 'workoutTime' | 'wakeTime' | 'sleepTime' | 'programStart';
+type NumField = 'height' | 'startWeight' | 'age' | 'kcalTarget' | 'proteinTarget';
+type OptionField = 'mealsPerDay' | 'menuMode' | 'workoutMode' | 'theme' | 'goal' | 'targetMode';
 
 @Component({
   selector: 'app-settings-page',
-  imports: [RouterLink, IconComponent, SelectComponent, TimePickerComponent, TPipe],
+  imports: [RouterLink, IconComponent, DatePickerComponent, SelectComponent, TimePickerComponent, TPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="flex flex-col gap-[18px]">
@@ -52,8 +54,33 @@ type TextField = 'workoutTime' | 'wakeTime' | 'sleepTime' | 'programStart';
         <div class="grid grid-cols-4 items-start gap-3 tablet:grid-cols-2 phone:grid-cols-1 [&_[role=combobox]]:h-[42px] [&_input]:h-[42px]">
           <label class="field">{{ 'settings.heightCm' | t }}<input type="text" inputmode="numeric" [value]="form().height ?? ''" [attr.aria-invalid]="errors().height ? 'true' : null" (input)="setNum('height', $event)" />@if (errors().height; as e) { <small class="text-bad">{{ e }}</small> }</label>
           <label class="field">{{ 'settings.startingWeightKg' | t }}<input type="text" inputmode="decimal" [value]="form().startWeight ?? ''" [attr.aria-invalid]="errors().startWeight ? 'true' : null" (input)="setNum('startWeight', $event)" />@if (errors().startWeight; as e) { <small class="text-bad">{{ e }}</small> }</label>
-          <label class="field">{{ 'settings.calorieTargetKcal' | t }}<input type="text" inputmode="numeric" [placeholder]="std.kcalTarget" [value]="form().kcalTarget" [attr.aria-invalid]="errors().kcalTarget ? 'true' : null" (input)="setNum('kcalTarget', $event)" />@if (errors().kcalTarget; as e) { <small class="text-bad">{{ e }}</small> }</label>
-          <label class="field">{{ 'settings.proteinTargetG' | t }}<input type="text" inputmode="numeric" [placeholder]="std.proteinTarget" [value]="form().proteinTarget" [attr.aria-invalid]="errors().proteinTarget ? 'true' : null" (input)="setNum('proteinTarget', $event)" />@if (errors().proteinTarget; as e) { <small class="text-bad">{{ e }}</small> }</label>
+          @if (latestLog(); as log) {
+            <div class="field">
+              {{ 'settings.currentWeightKg' | t }}
+              <input type="text" [value]="log.kg" disabled [attr.aria-label]="'settings.currentWeightKg' | t" />
+              <small class="text-muted">{{ 'settings.currentWeightHint' | t: { date: F.short(log.date) } }} <a routerLink="/body">{{ 'nav.body' | t }}</a></small>
+            </div>
+          }
+          <label class="field">{{ 'settings.age' | t }}<input type="text" inputmode="numeric" [value]="form().age ?? ''" [attr.aria-invalid]="errors().age ? 'true' : null" (input)="setNum('age', $event)" />@if (errors().age; as e) { <small class="text-bad">{{ e }}</small> }</label>
+          <div class="field" role="radiogroup" [attr.aria-label]="'settings.sex' | t">
+            {{ 'settings.sex' | t }}
+            <div class="flex gap-2">
+              @for (o of sexes; track o.value) {
+                <button type="button" role="radio" class="btn h-[42px] flex-1" [class.btn-primary]="form().sex === o.value" [attr.aria-checked]="form().sex === o.value" (click)="setSex(o.value)">{{ o.label | t }}</button>
+              }
+            </div>
+            @if (errors().sex; as e) { <small class="text-bad">{{ e }}</small> }
+          </div>
+          <div class="field">
+            {{ 'settings.goal' | t }}
+            <app-select [label]="'settings.goal' | t" [options]="goalOptions()" [value]="form().goal" (valueChange)="setOption('goal', $event)" />
+          </div>
+          <div class="field">
+            {{ 'settings.targetMode' | t }}
+            <app-select [label]="'settings.targetMode' | t" [options]="targetModes()" [value]="form().targetMode" (valueChange)="setOption('targetMode', $event)" />
+          </div>
+          <label class="field">{{ 'settings.calorieTargetKcal' | t }}<input type="text" inputmode="numeric" [placeholder]="std.kcalTarget" [disabled]="targetAuto()" [value]="targetAuto() ? suggestion()!.kcal : form().kcalTarget" [attr.aria-invalid]="errors().kcalTarget ? 'true' : null" (input)="setNum('kcalTarget', $event)" />@if (errors().kcalTarget; as e) { <small class="text-bad">{{ e }}</small> }</label>
+          <label class="field">{{ 'settings.proteinTargetG' | t }}<input type="text" inputmode="numeric" [placeholder]="std.proteinTarget" [disabled]="targetAuto()" [value]="targetAuto() ? suggestion()!.protein : form().proteinTarget" [attr.aria-invalid]="errors().proteinTarget ? 'true' : null" (input)="setNum('proteinTarget', $event)" />@if (errors().proteinTarget; as e) { <small class="text-bad">{{ e }}</small> }</label>
           <div class="field">
             {{ 'settings.mealsPerDay' | t }}
             <!-- One select for both modes: swapping two selects in an @if destroys a half-loaded popup (NG0950). -->
@@ -64,11 +91,11 @@ type TextField = 'workoutTime' | 'wakeTime' | 'sleepTime' | 'programStart';
           </div>
           <div class="field">
             {{ 'settings.menuMode' | t }}
-            <app-select [label]="'settings.menuMode' | t" [options]="menuModes()" [value]="form().menuMode" (valueChange)="setOption('menuMode', $event)" />
+            <app-select [label]="'settings.menuMode' | t" [options]="menuModes()" [disabled]="!!safetyIssue()" [value]="safetyIssue() ? 'trainer' : form().menuMode" (valueChange)="setOption('menuMode', $event)" />
           </div>
           <div class="field">
             {{ 'settings.workoutMode' | t }}
-            <app-select [label]="'settings.workoutMode' | t" [options]="workoutModes()" [value]="form().workoutMode" (valueChange)="setOption('workoutMode', $event)" />
+            <app-select [label]="'settings.workoutMode' | t" [options]="workoutModes()" [disabled]="!!safetyIssue()" [value]="safetyIssue() ? 'trainer' : form().workoutMode" (valueChange)="setOption('workoutMode', $event)" />
           </div>
           <div class="field">
             {{ 'settings.appearance' | t }}
@@ -77,8 +104,36 @@ type TextField = 'workoutTime' | 'wakeTime' | 'sleepTime' | 'programStart';
           <div class="field">{{ 'settings.workoutTime' | t }}<app-time-picker [label]="'settings.workoutTime' | t" [value]="form().workoutTime" (valueChange)="setTime('workoutTime', $event)" /></div>
           <div class="field">{{ 'settings.wakeUpTime' | t }}<app-time-picker [label]="'settings.wakeUpTime' | t" [value]="form().wakeTime" (valueChange)="setTime('wakeTime', $event)" /></div>
           <div class="field">{{ 'settings.bedtime' | t }}<app-time-picker [label]="'settings.bedtime' | t" [value]="form().sleepTime" (valueChange)="setTime('sleepTime', $event)" /></div>
-          <label class="field" [title]="'settings.perBCycleAnd' | t">{{ 'settings.programStart' | t }}<input type="date" [value]="form().programStart" [attr.aria-invalid]="errors().programStart ? 'true' : null" (input)="setText('programStart', $event)" />@if (errors().programStart; as e) { <small class="text-bad">{{ e }}</small> }</label>
+          <div class="field" [title]="'settings.perBCycleAnd' | t">{{ 'settings.programStart' | t }}<app-date-picker [label]="'settings.programStart' | t" [value]="form().programStart" (valueChange)="setProgramStart($event)" />@if (errors().programStart; as e) { <small class="text-bad">{{ e }}</small> }</div>
         </div>
+        @if (implausible(); as bmi) {
+          <div class="alert alert-warn" role="alert" style="margin-top: 14px">
+            <app-icon name="alert" />
+            <div>{{ 'bodyBasics.implausible' | t: { bmi: bmi } }}</div>
+          </div>
+        } @else if (safetyIssue(); as issue) {
+          <div class="alert alert-bad" role="alert" style="margin-top: 14px">
+            <app-icon name="alert" />
+            <div><b>{{ 'safety.title' | t }}</b> {{ (issue === 'minor' ? 'safety.minor' : 'safety.underweight') | t }} {{ 'safety.basis' | t: { bmi: basis().bmi, kg: basis().kg } }} {{ 'safety.ownPlan' | t }} <a routerLink="/plan">{{ 'nav.weeklyPlan' | t }}</a></div>
+          </div>
+        } @else if (suggestion(); as sug) {
+          <div class="alert alert-info" style="margin-top: 14px">
+            <app-icon name="info" />
+            <div class="w-full">
+              <b>{{ (targetAuto() ? 'settings.autoTargets' : 'settings.suggestedTargets') | t }}</b>
+              {{ 'settings.suggestedTargetsText' | t: { k: sug.kcal, p: sug.protein, bmi: F.r1(sug.bmi) } }}
+              @if (sug.goalChanged) {
+                <div class="mt-1">{{ 'settings.underweightNoLose' | t }}</div>
+              } @else if (sug.bmi >= obeseBmi && sug.goal !== 'lose') {
+                <div class="mt-1">{{ 'settings.highBmiHint' | t }}</div>
+              }
+              <div class="text-muted mt-1" style="font-size: 12px">{{ 'settings.suggestedTargetsNote' | t }}</div>
+              @if (!targetAuto()) {
+                <button class="btn btn-sm mt-2" (click)="applySuggestion(sug)"><app-icon name="check" size="sm" />{{ 'settings.applyTargets' | t }}</button>
+              }
+            </div>
+          </div>
+        }
         <label class="flex cursor-pointer items-center gap-2" style="margin-top: 14px">
           <input type="checkbox" [checked]="form().useWhey" (change)="setWhey($event)" /> {{ 'settings.addWheyToMenu' | t }}
         </label>
@@ -123,6 +178,9 @@ export class SettingsPage {
   private readonly session = inject(SessionService);
   protected readonly signingOut = signal(false);
   protected readonly std = DEFAULT_SETTINGS;
+  protected readonly obeseBmi = OBESE_BMI;
+  protected readonly F = F;
+  private readonly body = inject(BodyService);
   private readonly plans = inject(TrainerPlanService);
 
   /** Meals a day in the trainer plan of this week, fewest and most over the 7 days: in trainer mode the plan decides, not a setting. */
@@ -131,11 +189,63 @@ export class SettingsPage {
     const counts = [1, 2, 3, 4, 5, 6, 7].map((d) => plan[d]?.length ?? 0);
     return { lo: Math.min(...counts), hi: Math.max(...counts) };
   });
-  protected readonly trainerMode = computed(() => this.form().menuMode === 'trainer');
+  protected readonly trainerMode = computed(() => !!this.safetyIssue() || this.form().menuMode === 'trainer');
   /** A trainer-plan day has 0 to 7 meals. */
   protected readonly planCounts: SelectOption<number>[] = [0, 1, 2, 3, 4, 5, 6, 7].map((n) => ({ value: n, label: String(n) }));
   /** Editable draft, re-synced whenever the stored settings change. */
   protected readonly form = linkedSignal<Settings>(() => ({ ...this.store.settings() }));
+
+  /** Two buttons instead of a dropdown: a person whose sex is not entered yet has no option to show as selected. */
+  protected readonly sexes: { value: Sex; label: string }[] = [
+    { value: 'male', label: 'settings.sexMale' },
+    { value: 'female', label: 'settings.sexFemale' },
+  ];
+  protected readonly goalOptions = computed<SelectOption<Goal>[]>(() => [
+    { value: 'lose', label: t('settings.goalLose') },
+    { value: 'maintain', label: t('settings.goalMaintain') },
+    { value: 'gain', label: t('settings.goalGain') },
+  ]);
+
+  /** Calories and protein worked out from the form's body data and goal; null while something they need is missing. */
+  /** The newest weight logged on the Body page; shown as the current weight, which every check and target uses instead of the starting weight. */
+  protected readonly latestLog = computed(() => this.body.sorted().at(-1) ?? null);
+
+  /** The weight the checks use (the newest logged one, else the starting weight in the form) and the BMI it gives. */
+  protected readonly basis = computed(() => {
+    const f = this.form();
+    const kg = this.body.latestKg() ?? f.startWeight;
+    return { kg, bmi: f.height != null && kg != null ? Math.round(bmiOf(f.height, kg) * 10) / 10 : null };
+  });
+
+  /** The BMI (rounded) when the height and weight in the form cannot belong to one person; null otherwise. Nothing is suggested then. */
+  protected readonly implausible = computed<number | null>(() => {
+    const f = this.form();
+    const weight = this.body.latestKg() ?? f.startWeight;
+    if (f.height == null || weight == null || plausibleBody(f.height, weight)) return null;
+    return Math.round(bmiOf(f.height, weight));
+  });
+
+  /** Whether the body data in the form is one the app must not advise on (a minor, or a dangerously low BMI). */
+  protected readonly safetyIssue = computed<BodyIssue | null>(() => {
+    const f = this.form();
+    const weight = this.body.latestKg() ?? f.startWeight;
+    if (f.height == null || weight == null || f.age == null || this.implausible() !== null) return null;
+    return bodyIssue(f.height, weight, f.age);
+  });
+
+  protected readonly suggestion = computed<TargetSuggestion | null>(() => {
+    const f = this.form();
+    const weight = this.body.latestKg() ?? f.startWeight;
+    if (f.height == null || weight == null || f.age == null || f.sex == null || this.safetyIssue() || this.implausible() !== null) return null;
+    return suggestTargets({ height: f.height, weight, age: f.age, sex: f.sex, goal: f.goal });
+  });
+
+  protected readonly targetModes = computed<SelectOption<TargetMode>[]>(() => [
+    { value: 'auto', label: t('settings.targetAuto') },
+    { value: 'custom', label: t('settings.targetCustom') },
+  ]);
+  /** The calorie and protein fields are not typed by the user: they follow the body data and the goal. */
+  protected readonly targetAuto = computed(() => this.form().targetMode === 'auto' && this.suggestion() !== null);
 
   protected readonly mealCounts: SelectOption<number>[] = [3, 4, 5, 6].map((n) => ({ value: n, label: String(n) }));
   protected readonly menuModes = computed<SelectOption<MenuMode>[]>(() => [
@@ -155,9 +265,9 @@ export class SettingsPage {
   /** What is typed in the required fields right now (the form keeps the last usable value; the typed text is what gets checked on save). */
   private readonly typed: Partial<Record<NumField | 'programStart', string>> = {};
   /** Message under each required field that failed the last save. */
-  protected readonly errors = signal<Partial<Record<NumField | 'programStart', string>>>({});
+  protected readonly errors = signal<Partial<Record<NumField | 'programStart' | 'sex', string>>>({});
 
-  private clearError(field: NumField | 'programStart'): void {
+  private clearError(field: NumField | 'programStart' | 'sex'): void {
     if (this.errors()[field]) this.errors.update(({ [field]: _, ...rest }) => rest);
   }
 
@@ -169,23 +279,36 @@ export class SettingsPage {
     if (v > 0) this.form.update((f) => ({ ...f, [field]: v }));
   }
 
-  protected setText(field: TextField, e: Event): void {
-    const v = inputValue(e);
-    if (field === 'programStart') {
-      this.typed[field] = v;
-      this.clearError(field);
-    }
-    if (v) this.form.update((f) => ({ ...f, [field]: v }));
+  protected setSex(value: Sex): void {
+    this.form.update((f) => ({ ...f, sex: value }));
+    this.clearError('sex');
+  }
+
+  /** Puts the suggested calories and protein in the form (still saved only with the Save button). */
+  protected applySuggestion(sug: TargetSuggestion): void {
+    delete this.typed.kcalTarget;
+    delete this.typed.proteinTarget;
+    this.clearError('kcalTarget');
+    this.clearError('proteinTarget');
+    this.form.update((f) => ({ ...f, kcalTarget: sug.kcal, proteinTarget: sug.protein }));
+  }
+
+  protected setProgramStart(v: string): void {
+    this.typed.programStart = v;
+    this.clearError('programStart');
+    if (v) this.form.update((f) => ({ ...f, programStart: v }));
   }
 
   /** The numbers with a sensible standard value: an empty field means the standard (see DEFAULT_SETTINGS). */
   private static readonly HAS_STANDARD: readonly NumField[] = ['kcalTarget', 'proteinTarget'];
 
-  /** Height, starting weight and the program start are required; the two targets fall back to the standard when empty. Any out-of-range value is reported, never replaced. */
+  /** Height, starting weight, age, sex and the program start are required; the two targets fall back to the standard when empty. Any out-of-range value is reported, never replaced. */
   private validate(): boolean {
-    const errors: Partial<Record<NumField | 'programStart', string>> = {};
+    const errors: Partial<Record<NumField | 'programStart' | 'sex', string>> = {};
     const f = this.form();
+    if (!f.sex) errors.sex = t('settings.required');
     for (const field of Object.keys(SETTINGS_RANGE) as NumField[]) {
+      if (this.targetAuto() && (field === 'kcalTarget' || field === 'proteinTarget')) continue; // worked out, not typed
       const text = this.typed[field];
       if (SettingsPage.HAS_STANDARD.includes(field) && text !== undefined && !text.trim()) {
         this.form.update((x) => ({ ...x, [field]: DEFAULT_SETTINGS[field] }));
@@ -196,6 +319,9 @@ export class SettingsPage {
       if (!Number.isFinite(v) || text?.trim() === '') errors[field] = t('settings.required');
       else if (v < min || v > max) errors[field] = t('settings.outOfRange', { min, max });
     }
+    const height = errors.height ? NaN : this.typed.height !== undefined ? parseNum(this.typed.height) : (f.height ?? NaN);
+    const weight = errors.startWeight ? NaN : this.typed.startWeight !== undefined ? parseNum(this.typed.startWeight) : (f.startWeight ?? NaN);
+    if (Number.isFinite(height) && Number.isFinite(weight) && !plausibleBody(height, weight)) errors.startWeight = t('bodyBasics.implausible', { bmi: Math.round(bmiOf(height, weight)) });
     if (this.typed.programStart !== undefined && !this.typed.programStart) errors.programStart = t('settings.required');
     this.errors.set(errors);
     return Object.keys(errors).length === 0;
@@ -224,6 +350,8 @@ export class SettingsPage {
       this.toast.show(t('settings.fixFields'));
       return;
     }
+    const sug = this.suggestion();
+    if (this.targetAuto() && sug) this.form.update((x) => ({ ...x, kcalTarget: sug.kcal, proteinTarget: sug.protein }));
     const f = this.form();
     const before = this.store.settings();
     this.store.updateSettings(f);

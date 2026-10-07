@@ -1,3 +1,5 @@
+import type { Sex } from '../models';
+
 /** The app's own view of an account. UI code never sees a Supabase (or later NestJS) user object. */
 export interface AuthUser {
   id: string;
@@ -7,9 +9,11 @@ export interface AuthUser {
   emailPreferences: boolean;
   /** Small JPEG as a data URL; null = no picture. */
   avatar: string | null;
-  /** Height (cm) and starting weight (kg) kept in the profile; null = not entered yet. */
+  /** Height (cm), starting weight (kg), age and sex kept in the profile; null = not entered yet. */
   height: number | null;
   startWeight: number | null;
+  age: number | null;
+  sex: Sex | null;
   /** False for an account that only signs in with a provider (Google): it has no password to change. */
   hasPassword: boolean;
 }

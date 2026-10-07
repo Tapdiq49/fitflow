@@ -36,16 +36,19 @@ describe('WeekPlanPage tabs and gym days', () => {
   });
 
   it('asks for height and weight at the top while they are missing, and stops asking once they are saved', async () => {
-    expect(q('.alert-info')[0].textContent).toContain('boyunu və çəkini');
-    const [h, w] = q<HTMLInputElement>('.alert-info input');
+    expect(q('.alert-info')[0].textContent).toContain('boyunu');
+    const [h, w, a] = q<HTMLInputElement>('.alert-info input');
     h.value = '180';
     h.dispatchEvent(new Event('input'));
     w.value = '85';
     w.dispatchEvent(new Event('input'));
-    q<HTMLButtonElement>('.alert-info .btn-primary')[0].click();
+    a.value = '35';
+    a.dispatchEvent(new Event('input'));
+    q<HTMLButtonElement>('.alert-info [role=radio]')[1].click(); // female
+    q<HTMLButtonElement>('.alert-info button').find((b) => b.textContent?.includes('Yadda saxla'))!.click();
     await render();
-    expect(TestBed.inject(StoreService).settings()).toMatchObject({ height: 180, startWeight: 85 });
-    expect(q('.alert-info').some((a) => a.textContent?.includes('boyunu və çəkini'))).toBe(false);
+    expect(TestBed.inject(StoreService).settings()).toMatchObject({ height: 180, startWeight: 85, age: 35, sex: 'female' });
+    expect(q('.alert-info').some((a) => a.textContent?.includes('boyunu'))).toBe(false);
   });
 
   it('tells the user the automatic menu is in use, with a link to the settings', () => {
@@ -61,7 +64,7 @@ describe('WeekPlanPage tabs and gym days', () => {
     expect(first().textContent).toContain('Təklif'); // and the built-in plan is only offered
 
     Array.from(first().querySelectorAll<HTMLButtonElement>('button')).find((b) => b.textContent?.includes('Təklifi əlavə et'))!.click();
-    await render(fixture);
+    await render();
     expect(rows()).toBe(5);
     expect(first().textContent).not.toContain('Təklifi əlavə et'); // the offer goes away once the day has meals
     expect(Array.from(first().querySelectorAll('button')).some((b) => b.textContent?.includes('Məşqdən əvvəl'))).toBe(true);

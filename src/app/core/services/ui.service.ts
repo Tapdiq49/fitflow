@@ -25,7 +25,7 @@ export class UiService {
   constructor() {
     effect(() => {
       const k = this.viewDate();
-      this.store.settings().menuMode; // a switch between the trainer plan and the automatic menu rebuilds the open day at once
+      this.store.effectiveMenuMode(); // a switch between the trainer plan and the automatic menu rebuilds the open day at once
       untracked(() => this.day.ensureDay(k));
     });
     const timer = setInterval(() => this.tick(), 1000);

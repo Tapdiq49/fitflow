@@ -37,7 +37,7 @@ describe('reference lists', () => {
   });
 
   const signIn = async (): Promise<void> => {
-    (TestBed.inject(AuthService) as FakeAuthService).stored = { id: 'u1', email: 'a@example.com', username: 'john', emailPreferences: false, avatar: null, height: null, startWeight: null, hasPassword: true };
+    (TestBed.inject(AuthService) as FakeAuthService).stored = { id: 'u1', email: 'a@example.com', username: 'john', emailPreferences: false, avatar: null, height: null, startWeight: null, age: null, sex: null, hasPassword: true };
     await TestBed.inject(AuthStore).init();
     await TestBed.inject(FoodCatalogService).refresh();
   };
@@ -101,12 +101,12 @@ describe('reference lists', () => {
     expect(root.textContent).not.toContain('ən azı 3 simvol');
   });
 
-  it('lists the foods with system ones locked, and adds and deletes the signed-in user's own', async () => {
+  it("lists the foods with system ones locked, and adds and deletes the signed-in user's own", async () => {
     await signIn();
     const fixture = TestBed.createComponent(FoodReferencesPage);
     await render(fixture);
     const root: HTMLElement = fixture.nativeElement;
-    expect(rowsOf(root).every((r) => r.querySelector('button') === null)).toBe(true); // no delete on system rows
+    expect(rowsOf(root).every((r) => r.querySelector('button:not(.drag-handle)') === null)).toBe(true); // no edit or delete on system rows
     expect(rowsOf(root)[0].textContent).toContain('Sistem');
 
     const inputs = Array.from(root.querySelectorAll<HTMLInputElement>('input[type=text]'));
@@ -125,7 +125,7 @@ describe('reference lists', () => {
     expect(own.textContent).not.toContain('Sistem');
 
     const confirm = TestBed.inject(ConfirmService);
-    own.querySelector('button')!.click();
+    own.querySelector<HTMLButtonElement>('button[aria-label^="Sil"]')!.click();
     confirm.answer(true);
     await render(fixture);
     await render(fixture);
@@ -156,6 +156,7 @@ describe('reference lists', () => {
     fixture.detectChanges();
     Array.from(root.querySelectorAll<HTMLButtonElement>('button')).find((b) => b.textContent?.includes('Yadda saxla'))!.click();
     await render(fixture);
+    await render(fixture); // the save is a chain of promises; the form leaves edit mode when it ends
     expect(repo.rows[0].names.az).toBe('Yeni qidam');
     expect(root.textContent).not.toContain('Qidanı dəyiş'); // back to the add form
 

@@ -10,7 +10,7 @@ import { PlanSyncService } from './plan-sync.service';
 import { StoreService } from './store.service';
 import { TrainerPlanService } from './trainer-plan.service';
 
-const USER: AuthUser = { id: 'u1', email: 'a@example.com', username: 'john', emailPreferences: false, avatar: null, height: null, startWeight: null, hasPassword: true };
+const USER: AuthUser = { id: 'u1', email: 'a@example.com', username: 'john', emailPreferences: false, avatar: null, height: null, startWeight: null, age: null, sex: null, hasPassword: true };
 const meal = (name: string): TrainerMeal => ({ slot: 'breakfast', time: '08:00', name, items: [] });
 const plan = (name: string): WeekPlan => ({ 1: [meal(name)] });
 const WEEK = '2026-10-05';

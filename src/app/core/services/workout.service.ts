@@ -28,7 +28,7 @@ export class WorkoutService {
   }
 
   isTrainer(): boolean {
-    return this.store.settings().workoutMode === 'trainer';
+    return this.store.effectiveWorkoutMode() === 'trainer';
   }
 
   title(k: string): string {

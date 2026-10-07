@@ -12,6 +12,9 @@ describe('SettingsPage required fields', () => {
     TestBed.inject(StoreService).mutate((s) => {
       s.settings.height = 180;
       s.settings.startWeight = 80;
+      s.settings.age = 30;
+      s.settings.sex = 'male';
+      s.settings.targetMode = 'custom'; // most tests here are about typed numbers
     });
   });
 
@@ -20,10 +23,11 @@ describe('SettingsPage required fields', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     const root: HTMLElement = fixture.nativeElement;
-    const field = (label: string): HTMLInputElement => Array.from(root.querySelectorAll('label.field')).find((l) => l.textContent?.includes(label))!.querySelector('input')!;
+    const field = (label: string): HTMLInputElement => Array.from(root.querySelectorAll('.field')).find((l) => l.textContent?.includes(label))!.querySelector('input')!;
     const type = (el: HTMLInputElement, v: string): void => {
       el.value = v;
       el.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
     };
     const save = async (): Promise<void> => {
       Array.from(root.querySelectorAll<HTMLButtonElement>('button')).find((b) => b.textContent?.includes('Yadda saxla'))!.click();
@@ -68,5 +72,66 @@ describe('SettingsPage required fields', () => {
     await save();
     expect(TestBed.inject(StoreService).settings().proteinTarget).toBe(180);
     expect(root.textContent).toContain('80–300');
+  });
+
+  it('suggests calories and protein from the body data and the goal, and applies them only when asked', async () => {
+    const { root, save } = await open();
+    expect(root.textContent).toContain('Təklif olunan hədəf');
+    expect(root.textContent).toContain('2760 kkal'); // 80 kg, 180 cm, 30 y, male, maintain: 1780 × 1.55 = 2759, rounded to 2760
+    const store = TestBed.inject(StoreService);
+    expect(store.settings().kcalTarget).toBe(2700); // nothing applied yet
+
+    Array.from(root.querySelectorAll<HTMLButtonElement>('button')).find((b) => b.textContent?.includes('Hədəfləri tətbiq et'))!.click();
+    await save();
+    expect(store.settings().kcalTarget).toBe(2760);
+    expect(store.settings().proteinTarget).toBe(145);
+  });
+
+  it('asks for the age and the sex like any other required field', async () => {
+    TestBed.inject(StoreService).mutate((s) => (s.settings.sex = null));
+    const { root, save } = await open();
+    await save();
+    expect(root.textContent).toContain('Bu xana mütləqdir');
+  });
+
+  it('gives no target suggestion to a minor or to a dangerously low BMI, only a warning', async () => {
+    TestBed.inject(StoreService).mutate((s) => Object.assign(s.settings, { height: 150, startWeight: 30, age: 15, sex: 'female' }));
+    const { root } = await open();
+    expect(root.textContent).not.toContain('Hədəfləri tətbiq et');
+    expect(root.textContent).toContain('18 yaşdan yuxarılar üçündür');
+  });
+
+  it('shows automatic targets in disabled fields, without an apply button', async () => {
+    TestBed.inject(StoreService).mutate((s) => (s.settings.targetMode = 'auto'));
+    const { root, field } = await open();
+    expect(field('Kalori hədəfi').disabled).toBe(true);
+    expect(field('Kalori hədəfi').value).toBe('2760');
+    expect(root.textContent).toContain('Hədəflər avtomatik hesablanır');
+    expect(Array.from(root.querySelectorAll('button')).some((b) => b.textContent?.includes('Hədəfləri tətbiq et'))).toBe(false);
+  });
+
+  it('refuses a height and weight that cannot be one person, even though each is inside its own range', async () => {
+    const { root, field, type, save } = await open();
+    type(field('Boy'), '100');
+    type(field('Başlanğıc çəki'), '300');
+    await save();
+    expect(TestBed.inject(StoreService).settings()).toMatchObject({ height: 180, startWeight: 80 }); // nothing saved
+    expect(root.textContent).toContain('bir-birinə uyğun gəlmir');
+    expect(root.textContent).not.toContain('Təklif olunan hədəf'); // and no target is suggested for it
+    expect(root.textContent).not.toContain('Hədəflər avtomatik hesablanır');
+  });
+
+  it('shows the newest logged weight as the current weight, and the checks use it instead of the starting weight', async () => {
+    const store = TestBed.inject(StoreService);
+    store.mutate((s) => s.weights.push({ date: '2026-01-01', kg: 50, waist: null }));
+    const { root, field, type, save } = await open();
+    expect(field('Cari çəki').value).toBe('50');
+    expect(field('Cari çəki').disabled).toBe(true);
+    type(field('Başlanğıc çəki'), '100');
+    await save();
+    expect(store.settings().startWeight).toBe(100);
+    expect(store.currentWeight()).toBe(50); // the log still wins; the starting weight is only the fallback
+    expect(store.state().weights).toHaveLength(1); // saving the starting weight does not write a weight entry
+    expect(root.textContent).toContain('Cari çəki');
   });
 });

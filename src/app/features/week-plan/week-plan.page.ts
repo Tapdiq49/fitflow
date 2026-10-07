@@ -38,6 +38,9 @@ interface Row {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div ngTabs class="flex flex-col gap-[18px]">
+      @if (store.bodySafetyIssue(); as issue) {
+        <div class="alert alert-bad" role="alert"><app-icon name="alert" /><div><b>{{ 'safety.title' | t }}</b> {{ (issue === 'minor' ? 'safety.minor' : 'safety.underweight') | t }} {{ 'safety.basis' | t: { bmi: store.currentBmi(), kg: store.currentWeight() } }} {{ 'safety.ownPlanHere' | t }}</div></div>
+      }
       @if (!store.bodyBasicsKnown()) {
         <div class="alert alert-info"><app-icon name="info" /><div class="w-full"><p style="margin: 0 0 10px"><b>{{ 'bodyBasics.title' | t }}</b> {{ 'bodyBasics.why' | t }}</p><app-body-basics-form /></div></div>
       }
@@ -58,20 +61,20 @@ interface Row {
         <p class="text-muted" style="font-size: 12px; margin: 10px 0 0">
           {{ 'plan.leaveMealFieldEmpty' | t }}
         </p>
-        @if (store.settings().menuMode === 'auto') {
+        @if (store.effectiveMenuMode() === 'auto') {
           <div class="alert alert-info mt-3" role="status">
             <app-icon name="info" />
             <div>{{ 'plan.autoMenuInUse' | t }} <a routerLink="/settings">{{ 'nav.settings' | t }}</a></div>
           </div>
         }
-        @if (weekEmpty()) {
+        @if (weekEmpty() && !store.bodySafetyIssue()) {
           <button class="btn btn-sm" style="margin-top: 10px" (click)="addSuggestionAll()"><app-icon name="plus" size="sm" />{{ 'plan.addSuggestionAll' | t }}</button>
         }
         } @else {
           <p class="text-muted" style="font-size: 12px; margin: 10px 0 0">
             {{ 'plan.enterExercisesTrainerGave' | t }}
           </p>
-          @if (store.settings().workoutMode !== 'trainer') {
+          @if (store.effectiveWorkoutMode() !== 'trainer') {
             <p class="mt-2 mb-0 text-[12px] text-warn">{{ 'plan.workoutModeCurrentlyBuilt' | t }}</p>
           }
         }
@@ -223,7 +226,8 @@ export class WeekPlanPage {
   /** The built-in trainer plan for a day, offered while that day has no meals yet. */
   protected suggestionFor(day: number): TrainerMeal[] | null {
     const suggested = TRAINER_PLAN[day];
-    return !this.draft()[day].length && suggested?.length ? suggested : null;
+    // The built-in plan (a trainer's menu of about 2700 kcal) is not offered to a person the app must not advise.
+    return !this.draft()[day].length && suggested?.length && !this.store.bodySafetyIssue() ? suggested : null;
   }
 
   protected readonly weekEmpty = computed(() => this.days.every((d) => !this.draft()[d].length));

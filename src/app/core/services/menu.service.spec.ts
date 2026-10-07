@@ -32,6 +32,26 @@ describe('MenuService (via DayService.ensureDay), auto mode', () => {
     }
   });
 
+  it('follows other calorie and protein targets too, from 1500 to 4000 kcal, with 3 to 6 meals', () => {
+    const targets: [number, number][] = [[1500, 80], [1760, 80], [2000, 110], [2300, 130], [3000, 170], [3500, 190], [4000, 220]];
+    for (const meals of [3, 4, 5, 6]) {
+      for (const [kcal, protein] of targets) {
+        if (meals === 3 && kcal > 3000) continue; // three meals cannot carry more than about 3000 kcal with the portion caps
+        localStorage.clear();
+        store.reset();
+        store.mutate((s) => Object.assign(s.settings, { menuMode: 'auto', mealsPerDay: meals, kcalTarget: kcal, proteinTarget: protein }));
+        for (let i = 0; i < 30; i++) {
+          const k = DateU.add('2026-10-05', i);
+          day.ensureDay(k);
+          const t = menuTotals(store.peek(k)?.menu);
+          const where = `${meals} meals, ${kcal}/${protein}, day ${i}: ${Math.round(t.k)} kcal, ${Math.round(t.p)} g`;
+          expect(Math.abs(t.k - kcal), where).toBeLessThanOrEqual(200);
+          expect(Math.abs(t.p - protein), where).toBeLessThanOrEqual(25);
+        }
+      }
+    }
+  });
+
   it('works with three meals a day and still hits the targets', () => {
     store.mutate((s) => (s.settings.mealsPerDay = 3));
     const start = '2026-10-05';
@@ -46,6 +66,18 @@ describe('MenuService (via DayService.ensureDay), auto mode', () => {
       expect(t.p).toBeGreaterThanOrEqual(170);
       expect(t.p).toBeLessThanOrEqual(190);
     }
+  });
+
+  it('gives a person the app must not advise their own trainer plan instead of a generated menu', () => {
+    store.mutate((s) => Object.assign(s.settings, { height: 150, startWeight: 30, age: 15, sex: 'female' }));
+    const k = '2026-10-05'; // a Monday
+    TestBed.inject(TrainerPlanService).save(DateU.monday(k), { 1: [{ slot: 'breakfast', time: '08:00', name: 'Mənim yeməyim', items: [] }] });
+    day.ensureDay(k);
+    const menu = store.peek(k)?.menu ?? [];
+    expect(store.settings().menuMode).toBe('auto');
+    expect(store.effectiveMenuMode()).toBe('trainer');
+    expect(menu.map((m) => m.name)).toEqual(['Mənim yeməyim']);
+    expect(menu.every((m) => !m.templateId)).toBe(true);
   });
 
   it('does not repeat a meal template on consecutive days', () => {

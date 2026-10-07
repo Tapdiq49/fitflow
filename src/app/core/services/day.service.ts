@@ -5,6 +5,7 @@ import { foodItem } from '../food-book';
 import { Meal, Settings, TimelineItem, WeekDay, WeekPlan, newDay } from '../models';
 import { mealMacros, menuTotals, sleepMinutes } from '../nutrition';
 import { DateU, F, clamp, fromMin, hashStr, nowHM, toMin, uid } from '../utils';
+import { KCAL_MAX, KCAL_MIN } from '../targets';
 import { MenuService } from './menu.service';
 import { ProgramService } from './program.service';
 import { StoreService } from './store.service';
@@ -47,7 +48,7 @@ export class DayService {
 
   /** Rebuilds the stored menus from `from` (never before today: past days keep what they had) out of the trainer plans. Does nothing in auto mode. */
   rebuildTrainerMenus(from: string = DateU.today()): void {
-    if (this.store.settings().menuMode !== 'trainer') return;
+    if (this.store.effectiveMenuMode() !== 'trainer') return;
     const start = from > DateU.today() ? from : DateU.today();
     for (const k of Object.keys(this.store.state().days).filter((x) => x >= start)) {
       const current = this.store.peek(k)?.menu;
@@ -62,7 +63,7 @@ export class DayService {
    * An empty menu counts too in auto mode: it is what a trainer plan without meals leaves behind, and the generator always has meals to give.
    */
   private menuModeMismatch(menu: Meal[]): boolean {
-    const trainer = this.store.settings().menuMode === 'trainer';
+    const trainer = this.store.effectiveMenuMode() === 'trainer';
     if (!trainer && menu.length === 0) return true;
     return menu.some((m) => !m.custom && !m.done && (trainer ? !!m.templateId : !m.templateId));
   }
@@ -75,7 +76,8 @@ export class DayService {
     const d = this.store.peek(k) ?? newDay();
     const s = { ...this.store.settings(), ...d.snap };
     const type = this.program.dayType(k);
-    const menu = d.menu ?? [];
+    // Meals depend on the person's height and weight: until they are entered no meal is suggested anywhere.
+    const menu = this.store.bodyBasicsKnown() ? (d.menu ?? []) : [];
     const items: TimelineItem[] = menu.map((m) => {
       const mm = mealMacros(m);
       return {
@@ -276,9 +278,27 @@ export class DayService {
     if (done) this.toast.show(t('day.cardioRecorded'));
   }
 
+  /** Rebuilds the stored menus of today and later days whose totals are no longer close to the (changed) targets; eaten and custom meals stay. */
+  refreshMenusForTargets(): void {
+    if (this.store.effectiveMenuMode() !== 'auto') return;
+    const { kcalTarget, proteinTarget } = this.store.settings();
+    for (const k of Object.keys(this.store.state().days).filter((x) => x >= DateU.today())) {
+      const current = this.store.peek(k)?.menu;
+      if (!current?.length) continue;
+      const t = menuTotals(current);
+      if (Math.abs(t.k - kcalTarget) <= 150 && Math.abs(t.p - proteinTarget) <= 20) continue;
+      const menu = this.menu.generate(k, { keep: current.filter((m) => m.done || m.custom) });
+      this.store.mutateDay(k, (d) => (d.menu = menu));
+    }
+  }
+
+  /** The body-trend advice moves the calorie target. That is the user taking over the numbers, so automatic targets switch to typed ones. */
   adjustKcal(delta: number): void {
     let v = 0;
-    this.store.mutate((s) => (v = s.settings.kcalTarget = clamp(s.settings.kcalTarget + delta, 2000, 3400)));
+    this.store.mutate((s) => {
+      s.settings.targetMode = 'custom';
+      v = s.settings.kcalTarget = clamp(s.settings.kcalTarget + delta, KCAL_MIN, KCAL_MAX);
+    });
     this.toast.show(t('day.calorieTargetNKcal', { v }));
   }
 }

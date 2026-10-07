@@ -67,7 +67,7 @@ export class MenuService {
   }
 
   generate(k: string, opts: { keep?: Meal[]; avoid?: string[] } = {}): Meal[] {
-    if (this.store.settings().menuMode === 'trainer') return this.trainerMenu(k, opts.keep ?? []);
+    if (this.store.effectiveMenuMode() === 'trainer') return this.trainerMenu(k, opts.keep ?? []);
     const type = this.program.dayType(k);
     const slots = this.slotsFor(type, this.store.settings().mealsPerDay);
     const keep = opts.keep ?? [];
@@ -132,6 +132,9 @@ export class MenuService {
     const s = this.store.settings();
     const tk = s.kcalTarget;
     const tp = s.proteinTarget;
+    // Portion caps are set for about 2700 kcal. A much smaller target needs smaller portions, a much bigger one bigger portions.
+    const smaller = clamp(tk / 2400, 0.5, 1);
+    const bigger = clamp(tk / 2700, 1, 1.6);
     const pool = (): MealItem[] =>
       meals.filter((m) => !m.locked && !m.custom).flatMap((m) => m.items.filter((it) => it.food && it.food !== 'whey'));
 
@@ -140,7 +143,7 @@ export class MenuService {
         const f = foodOf(it.food as string);
         if (!f || !roles.includes(f.role)) return false;
         const n = it.amt + dir * f.step;
-        return dir > 0 ? n <= f.max : n >= f.min;
+        return dir > 0 ? n <= f.max * bigger : n >= Math.max(f.step, f.min * smaller);
       });
       if (!c.length) return false;
       c.sort((a, b) => a.amt / (a.base || a.amt) - b.amt / (b.base || b.amt));
@@ -162,7 +165,20 @@ export class MenuService {
       }
     };
 
+    // A small protein target can be out of reach even with the smallest portions: drop protein items, side meals first, and refill with carbs.
+    const DROP_ORDER: SlotId[] = ['snack', 'snack2', 'breakfast', 'pre', 'dinner', 'lunch', 'post'];
+    const dropProtein = (): boolean => {
+      const cands = meals
+        .filter((m) => !m.locked && !m.custom && m.items.length > 2)
+        .flatMap((m) => m.items.filter((it) => it.food && foodOf(it.food)?.role === 'protein').map((it) => ({ m, it })))
+        .sort((a, b) => DROP_ORDER.indexOf(a.m.slot) - DROP_ORDER.indexOf(b.m.slot) || itemMacros(b.it).p - itemMacros(a.it).p);
+      if (!cands.length) return false;
+      cands[0].m.items = cands[0].m.items.filter((x) => x !== cands[0].it);
+      return true;
+    };
+
     run();
+    for (let i = 0; i < 8 && menuTotals(meals).p > tp + 10 && dropProtein(); i++) run();
     for (const [food, amt, slotRe] of EXTRAS) {
       if (menuTotals(meals).k >= tk - 100) break;
       const host = meals.find((m) => !m.locked && !m.custom && slotRe.test(m.slot) && !m.items.some((i) => i.food === food));

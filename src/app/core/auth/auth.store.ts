@@ -1,3 +1,4 @@
+import type { Sex } from '../models';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { t } from '../i18n/translate';
 import { ToastService } from '../services/toast.service';
@@ -70,8 +71,8 @@ export class AuthStore {
     this.apply(await this.auth.setAvatar(avatar));
   }
 
-  async setBodyBasics(height: number, startWeight: number): Promise<void> {
-    this.apply(await this.auth.setBodyBasics(height, startWeight));
+  async setBodyBasics(height: number, startWeight: number, age: number, sex: Sex): Promise<void> {
+    this.apply(await this.auth.setBodyBasics(height, startWeight, age, sex));
   }
 
   changePassword(current: string, next: string): Promise<void> {

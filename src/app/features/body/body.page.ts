@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal } from '@angular/core';
 import { WATER, lineChart, lineSeries, weightChart } from '../../core/charts';
 import { BodyService } from '../../core/services/body.service';
 import { ConfirmService } from '../../core/services/confirm.service';
@@ -7,6 +7,7 @@ import { StoreService } from '../../core/services/store.service';
 import { UiService } from '../../core/services/ui.service';
 import { DateU, F, parseNum } from '../../core/utils';
 import { ChartComponent } from '../../shared/chart.component';
+import { DatePickerComponent } from '../../shared/forms/date-picker.component';
 import { IconComponent } from '../../shared/icon.component';
 import { BodyBasicsFormComponent } from '../profile/body-basics-form.component';
 import { TPipe } from '../../shared/t.pipe';
@@ -14,7 +15,7 @@ import { t } from '../../core/i18n/translate';
 
 @Component({
   selector: 'app-body-page',
-  imports: [IconComponent, ChartComponent, BodyBasicsFormComponent, TPipe],
+  imports: [IconComponent, ChartComponent, DatePickerComponent, BodyBasicsFormComponent, TPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @let st = stats();
@@ -26,10 +27,10 @@ import { t } from '../../core/i18n/translate';
       <div class="card">
         <div class="card-head"><h3><app-icon name="plus" /> {{ 'body.addWeightAndWaist' | t }}</h3></div>
         <div class="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-3">
-          <label class="field">{{ 'body.date' | t }}<input #date type="date" [value]="ui.viewDate()" /></label>
+          <div class="field">{{ 'body.date' | t }}<app-date-picker [label]="'body.date' | t" [(value)]="date" [max]="ui.today()" /></div>
           <label class="field">{{ 'common.weightKg' | t }}<input #kg type="text" inputmode="decimal" /></label>
           <label class="field">{{ 'body.waistCmAtNavel' | t }}<input #waist type="text" inputmode="decimal" [placeholder]="'body.optional' | t" /></label>
-          <button class="btn btn-primary" style="align-self: end" (click)="add(date.value, kg, waist)"><app-icon name="save" size="sm" />{{ 'common.addWeight' | t }}</button>
+          <button class="btn btn-primary" style="align-self: end" (click)="add(kg, waist)"><app-icon name="save" size="sm" />{{ 'common.addWeight' | t }}</button>
         </div>
       </div>
 
@@ -135,8 +136,14 @@ export class BodyPage {
     );
   });
 
-  protected add(date: string, kg: HTMLInputElement, waist: HTMLInputElement): void {
-    if (this.body.save(date || this.ui.viewDate(), parseNum(kg.value), parseNum(waist.value))) {
+  /** The viewed day, but never a day to come: a weight cannot be measured in advance. */
+  protected readonly defaultDate = computed(() => (this.ui.viewDate() > this.ui.today() ? this.ui.today() : this.ui.viewDate()));
+
+  /** The day the weight is recorded for; follows the viewed day until the user picks another. */
+  protected readonly date = linkedSignal(() => this.defaultDate());
+
+  protected add(kg: HTMLInputElement, waist: HTMLInputElement): void {
+    if (this.body.save(this.date() || this.defaultDate(), parseNum(kg.value), parseNum(waist.value))) {
       kg.value = '';
       waist.value = '';
     }
