@@ -165,6 +165,8 @@
   input[type='text'],
   input[type='time'],
   input[type='date'],
+  input[type='email'],
+  input[type='password'],
   select,
   textarea {
     background: var(--bg);

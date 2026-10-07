@@ -8,7 +8,7 @@ Single-user fitness tracker: workouts, generated daily menu, weight, digestion, 
 ## Policy
 
 - Do not change exercises, progression increments, phase/RIR limits or `SAFETY` text in `src/app/core/data/program.ts` and `ProgramService.phase()` without the user's explicit approval — they encode post-surgery (varicocele) loading caution. Propose the change instead.
-- Do not add Supabase (client, SDK, env config) or any other backend yet — persistence stays static in localStorage until the user starts that migration. Keep every read/write behind `StoreService` so the swap stays in one place.
+- Supabase is allowed for authentication only (started 2026-10-07). App data stays static in localStorage until the user starts the data migration; keep every read/write behind `StoreService` so the swap stays in one place. Do not add another backend or more Supabase features (Realtime, Storage) without asking.
 - Ask before adding a runtime dependency to `package.json`.
 
 ## Where things are
@@ -46,4 +46,11 @@ Single-user fitness tracker: workouts, generated daily menu, weight, digestion, 
 
 ## Backend migration (kept outside the managed block)
 
-When the user starts the Supabase migration, follow `_bmad-output/planning-artifacts/backend-migration-rules.md` (Supabase first, adapter-only SDK use, plain Postgres, so a later NestJS + Postgres move is an adapter swap). Do not start it before the user says so.
+Follow `_bmad-output/planning-artifacts/backend-migration-rules.md` (Supabase first, adapter-only SDK use, plain Postgres, so a later NestJS + Postgres move is an adapter swap). Authentication is built; the data migration is not started — do not start it before the user says so.
+
+Authentication (guest mode stays: no route requires a login, a notice tells guests their data lives only in this browser):
+
+- `core/auth/`: `AuthService` is the abstract port, `supabase-auth.service.ts` the only file that imports `@supabase/supabase-js` (loaded with a dynamic `import()`), the provider is chosen in `app.config.ts`. State is `AuthStore` (signals); pages and guards use the store, never Supabase types. Errors become `AuthError` codes (`supabase-errors.ts`) and are shown through `auth.error.<code>` texts, never the backend message.
+- Username or e-mail login goes through the Edge Function `supabase/functions/login` (the username → e-mail lookup stays on the server). Schema, RLS and triggers: `supabase/migrations/`; setup steps: `supabase/README.md`.
+- Keys: `src/environments/environment.ts` (dev) and `environment.prod.ts` (production build) are committed; only the project URL and the publishable key go there. Never the service-role key.
+- Pages are in `features/auth/` under `/auth/*` and render without the app shell (`App.isAuthPage`).

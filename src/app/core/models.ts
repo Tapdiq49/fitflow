@@ -146,6 +146,8 @@ export interface Settings {
   wakeTime: string;
   sleepTime: string;
   programStart: string;
+  /** Local date key of the day the guest notice was closed; '' = never. It comes back after a week. */
+  guestNoticeDismissedAt: string;
 }
 
 /** One meal of the trainer's plan. */

@@ -1,8 +1,9 @@
 import { ChangeDetectionStrategy, Component, DOCUMENT, DestroyRef, ElementRef, afterNextRender, computed, inject, viewChild } from '@angular/core';
-import { NgTemplateOutlet } from '@angular/common';
+import { Location, NgTemplateOutlet } from '@angular/common';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter, map } from 'rxjs';
+import { AuthStore } from './core/auth/auth.store';
 import { Lang } from './core/models';
 import { NAV } from './app.routes';
 import { I18nService } from './core/services/i18n.service';
@@ -11,6 +12,8 @@ import { UiService } from './core/services/ui.service';
 import { DateU, dayName, dayShort } from './core/utils';
 import { AddMealDialog } from './features/dialogs/add-meal.dialog';
 import { DayDetailDialog } from './features/dialogs/day-detail.dialog';
+import { GuestNoticeComponent } from './features/auth/guest-notice.component';
+import { UserMenuComponent } from './features/auth/user-menu.component';
 import { SelectComponent } from './shared/forms/select.component';
 import type { SelectOption } from './shared/forms/select.component';
 import { IconComponent } from './shared/icon.component';
@@ -20,11 +23,13 @@ import { t } from './core/i18n/translate';
 
 @Component({
   selector: 'app-root',
-  imports: [NgTemplateOutlet, RouterOutlet, RouterLink, RouterLinkActive, IconComponent, SelectComponent, OverlaysComponent, AddMealDialog, DayDetailDialog, TPipe],
+  imports: [NgTemplateOutlet, RouterOutlet, RouterLink, RouterLinkActive, IconComponent, SelectComponent, OverlaysComponent, AddMealDialog, DayDetailDialog, GuestNoticeComponent, UserMenuComponent, TPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="grid min-h-screen grid-cols-[232px_1fr] tablet:grid-cols-[minmax(0,1fr)]">
+    <!-- On /auth pages the shell is only hidden, never removed: destroying the half-loaded deferred language select throws. -->
+    <div class="grid min-h-screen grid-cols-[232px_1fr] tablet:grid-cols-[minmax(0,1fr)]" [style.display]="isAuthPage() ? 'block' : null">
       <aside
+        [style.display]="isAuthPage() ? 'none' : null"
         class="sticky top-0 flex h-screen flex-col gap-1.5 border-r border-border-soft bg-[linear-gradient(180deg,var(--color-sidebar-top),var(--color-bg))] px-3.5 py-[22px] tablet:hidden"
       >
         <a routerLink="/" class="flex items-center gap-2.5 px-2.5 pt-1 pb-5 text-[18px] font-extrabold tracking-[-.02em] text-inherit no-underline" [attr.aria-label]="'app.fitflowHomePage' | t">
@@ -37,10 +42,14 @@ import { t } from './core/i18n/translate';
         <div class="mt-auto rounded-[12px] bg-surface p-3 text-[12px] text-muted"><b class="text-text">{{ 'app.naturalWay' | t }}</b><br />{{ 'app.buildMuscleKeepFat' | t }}</div>
       </aside>
 
-      <main class="min-w-0 px-7 pb-[90px] tablet:px-4 tablet:pb-24">
+      <main class="min-w-0 px-7 pb-[90px] tablet:px-4 tablet:pb-24" [style.padding]="isAuthPage() ? '0' : null">
+        @if (!isAuthPage()) {
+          <app-guest-notice />
+        }
         <!-- Sticky on every page; its height is published as --header-h for sticky bars below it (workout page). -->
         <header
           #header
+          [style.display]="isAuthPage() ? 'none' : null"
           class="sticky top-0 z-40 -mx-7 mb-5 flex flex-wrap items-center justify-between gap-4 border-b border-border-soft bg-bg/92 px-7 pt-[22px] pb-3 backdrop-blur-[10px] tablet:-mx-4 tablet:px-4 tablet:pt-4"
         >
           <div>
@@ -66,6 +75,16 @@ import { t } from './core/i18n/translate';
             >
               <app-icon [name]="theme.resolved() === 'dark' ? 'sun' : 'moon'" />
             </button>
+            @if (auth.user()) {
+              <!-- Deferred: CDK menu stays out of the initial bundle. -->
+              @defer (on idle) {
+                <app-user-menu />
+              } @placeholder {
+                <span class="size-9 rounded-full bg-accent"></span>
+              }
+            } @else if (auth.isGuest()) {
+              <a class="btn btn-sm btn-primary" routerLink="/auth/sign-in">{{ 'auth.signIn' | t }}</a>
+            }
           </div>
         </header>
         <router-outlet />
@@ -73,6 +92,7 @@ import { t } from './core/i18n/translate';
     </div>
 
     <nav
+      [style.display]="isAuthPage() ? 'none' : null"
       class="fixed right-0 bottom-0 left-0 z-50 hidden overflow-x-auto border-t border-border-soft bg-bg/95 px-1.5 pt-1.5 pb-[calc(6px+env(safe-area-inset-bottom))] backdrop-blur-[12px] tablet:flex"
     >
       <ng-container *ngTemplateOutlet="navLinks; context: { bottom: true }" />
@@ -105,6 +125,8 @@ export class App {
   protected readonly langOptions: SelectOption<Lang>[] = this.i18n.langs.map((l) => ({ value: l.id, label: l.label }));
   protected readonly theme = inject(ThemeService); // also applies data-theme on <html>
   private readonly router = inject(Router);
+  private readonly location = inject(Location);
+  protected readonly auth = inject(AuthStore);
   private readonly header = viewChild.required<ElementRef<HTMLElement>>('header');
 
   constructor() {
@@ -124,8 +146,12 @@ export class App {
       filter((e): e is NavigationEnd => e instanceof NavigationEnd),
       map((e) => e.urlAfterRedirects),
     ),
-    { initialValue: this.router.url },
+    // Before the first navigation ends, router.url is still "/" — the browser's address says whether this is an /auth page.
+    { initialValue: this.location.path() },
   );
+
+  /** Sign-in, sign-up and the other /auth pages are full-screen, without the app shell. */
+  protected readonly isAuthPage = computed(() => this.url().split('?')[0].startsWith('/auth'));
 
   /** Page name; on the day overview it follows the viewed day: "Today · Wednesday, 7 Oct", or "Friday, 9 Oct" further away. */
   protected readonly title = computed(() => {

@@ -21,6 +21,7 @@ export const DEFAULT_SETTINGS: Omit<Settings, 'programStart'> = {
   workoutTime: '18:00',
   wakeTime: '07:00',
   sleepTime: '23:30',
+  guestNoticeDismissedAt: '',
 };
 
 /**

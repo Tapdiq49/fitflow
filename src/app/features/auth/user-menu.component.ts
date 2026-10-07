@@ -1,0 +1,84 @@
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { CdkMenu, CdkMenuItem, CdkMenuTrigger } from '@angular/cdk/menu';
+import { ConnectedPosition } from '@angular/cdk/overlay';
+import { authErrorText } from '../../core/auth/auth-errors';
+import { AuthStore } from '../../core/auth/auth.store';
+import { t } from '../../core/i18n/translate';
+import { ToastService } from '../../core/services/toast.service';
+import { POPUP_PANEL } from '../../shared/forms/popup';
+import { IconComponent } from '../../shared/icon.component';
+import { TPipe } from '../../shared/t.pipe';
+
+/** Below the avatar, right edges aligned (the avatar sits at the right end of the header). */
+const MENU_POSITIONS: ConnectedPosition[] = [
+  { originX: 'end', originY: 'bottom', overlayX: 'end', overlayY: 'top', offsetY: 6 },
+  { originX: 'end', originY: 'top', overlayX: 'end', overlayY: 'bottom', offsetY: -6 },
+];
+
+/**
+ * Round avatar in the header that opens the account menu (who is signed in, sign out; room for more entries later).
+ * CDK Menu gives the keyboard handling (↑ ↓, Enter, Escape) and the overlay. Defer it: it stays out of the initial bundle.
+ */
+@Component({
+  selector: 'app-user-menu',
+  imports: [CdkMenu, CdkMenuItem, CdkMenuTrigger, IconComponent, TPipe],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    @if (auth.user(); as u) {
+      <button
+        type="button"
+        class="grid size-9 cursor-pointer place-items-center rounded-full border-0 bg-accent text-[14px] font-extrabold text-accent-ink uppercase outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        [cdkMenuTriggerFor]="menu"
+        [cdkMenuPosition]="positions"
+        [attr.aria-label]="'auth.accountMenu' | t"
+        [title]="u.email"
+      >
+        {{ initial() }}
+      </button>
+      <ng-template #menu>
+        <div cdkMenu [class]="panel + ' min-w-[210px] max-w-[280px] p-1'" [attr.aria-label]="'auth.accountMenu' | t">
+          <div class="px-2.5 py-2">
+            <div class="truncate font-semibold">{{ u.username ?? u.email }}</div>
+            @if (u.username) {
+              <div class="truncate text-[12px] text-muted">{{ u.email }}</div>
+            }
+          </div>
+          <div class="my-1 h-px bg-border-soft" role="separator"></div>
+          <button
+            type="button"
+            cdkMenuItem
+            class="flex w-full cursor-pointer items-center gap-2 rounded-[8px] border-0 bg-transparent px-2.5 py-2 text-left text-[14px] outline-none hover:bg-surface focus-visible:bg-surface focus-visible:outline focus-visible:outline-accent/60"
+            [disabled]="signingOut()"
+            (cdkMenuItemTriggered)="signOut()"
+          >
+            <app-icon name="lock" size="sm" />{{ 'auth.signOut' | t }}
+          </button>
+        </div>
+      </ng-template>
+    }
+  `,
+})
+export class UserMenuComponent {
+  protected readonly auth = inject(AuthStore);
+  private readonly toast = inject(ToastService);
+
+  protected readonly panel = POPUP_PANEL;
+  protected readonly positions = MENU_POSITIONS;
+  protected readonly signingOut = signal(false);
+  protected readonly initial = computed(() => {
+    const u = this.auth.user();
+    return (u?.username ?? u?.email ?? '').charAt(0);
+  });
+
+  protected async signOut(): Promise<void> {
+    this.signingOut.set(true);
+    try {
+      await this.auth.signOut();
+      this.toast.show(t('auth.signedOut'));
+    } catch (e) {
+      this.toast.show(authErrorText(e));
+    } finally {
+      this.signingOut.set(false);
+    }
+  }
+}

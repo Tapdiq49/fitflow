@@ -1,4 +1,7 @@
-import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import { authErrorText } from '../../core/auth/auth-errors';
+import { AuthStore } from '../../core/auth/auth.store';
 import { MenuMode, Settings, ThemeMode, WorkoutMode } from '../../core/models';
 import { ConfirmService } from '../../core/services/confirm.service';
 import { DayService } from '../../core/services/day.service';
@@ -18,10 +21,26 @@ type TextField = 'workoutTime' | 'wakeTime' | 'sleepTime' | 'programStart';
 
 @Component({
   selector: 'app-settings-page',
-  imports: [IconComponent, SelectComponent, TimePickerComponent, TPipe],
+  imports: [RouterLink, IconComponent, SelectComponent, TimePickerComponent, TPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="flex flex-col gap-[18px]">
+      <div class="card">
+        <div class="card-head"><h3><app-icon name="lock" /> {{ 'auth.account' | t }}</h3></div>
+        @if (auth.user(); as u) {
+          <p class="text-text-2" style="margin-top: 0">{{ 'auth.signedInAs' | t: { name: u.username ?? u.email } }}</p>
+          <div class="flex flex-wrap items-center gap-2">
+            <button class="btn" [disabled]="signingOut()" (click)="signOut()">{{ 'auth.signOut' | t }}</button>
+          </div>
+        } @else if (auth.isGuest()) {
+          <p class="text-text-2" style="margin-top: 0"><b>{{ 'auth.guestNoticeTitle' | t }}</b> {{ 'auth.guestNoticeText' | t }}</p>
+          <div class="flex flex-wrap items-center gap-2">
+            <a class="btn btn-primary" routerLink="/auth/sign-in">{{ 'auth.signIn' | t }}</a>
+            <a class="btn" routerLink="/auth/sign-up">{{ 'auth.signUp' | t }}</a>
+          </div>
+        }
+      </div>
+
       <div class="card">
         <div class="card-head"><h3><app-icon name="settings" /> {{ 'settings.profileAndTargets' | t }}</h3></div>
         <div class="grid grid-cols-4 items-start gap-3 tablet:grid-cols-2 phone:grid-cols-1 [&_[role=combobox]]:h-[42px] [&_input]:h-[42px]">
@@ -90,6 +109,8 @@ export class SettingsPage {
   private readonly ui = inject(UiService);
   private readonly toast = inject(ToastService);
   private readonly confirm = inject(ConfirmService);
+  protected readonly auth = inject(AuthStore);
+  protected readonly signingOut = signal(false);
 
   /** Editable draft, re-synced whenever the stored settings change. */
   protected readonly form = linkedSignal<Settings>(() => ({ ...this.store.settings() }));
@@ -145,6 +166,18 @@ export class SettingsPage {
     const k = this.ui.viewDate();
     if (!this.day.offerMenuRegeneration(before, this.store.settings(), k)) return;
     if (await this.confirm.ask(t('settings.regenerateSelectedDaysMenu'), { confirmLabel: t('settings.regenerate') })) this.day.regenerateMenu(k);
+  }
+
+  protected async signOut(): Promise<void> {
+    this.signingOut.set(true);
+    try {
+      await this.auth.signOut();
+      this.toast.show(t('auth.signedOut'));
+    } catch (e) {
+      this.toast.show(authErrorText(e));
+    } finally {
+      this.signingOut.set(false);
+    }
   }
 
   protected exportData(): void {

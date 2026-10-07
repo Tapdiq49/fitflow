@@ -1,6 +1,15 @@
 # Backend migration rules: Supabase first, NestJS-ready
 
-Status: decided 2026-10-07, **not started**. Until the user says to begin, the app stays on localStorage and no Supabase SDK, client or env config is added (see `AGENTS.md` → Policy).
+Status: decided 2026-10-07. **Phase 1, authentication: implemented 2026-10-07** (see "Authentication" below). **Phase 2, data migration (`StoreService` → Postgres): not started** — until the user says to begin, app data stays in localStorage (see `AGENTS.md` → Policy).
+
+## Authentication (phase 1, done)
+
+- Sign in with e-mail or username + password, Google, Apple; sign up with e-mail, username, e-mail preferences; forgot / reset password; username setup after a first OAuth sign-in. Login is optional: **guests keep using the app** and see a dismissible notice (back after 7 days, `Settings.guestNoticeDismissedAt`) that their data lives only in this browser.
+- Code: `core/auth/` (port `AuthService`, adapter `supabase-auth.service.ts`, `AuthStore`, guards, error mapping), `features/auth/` (pages), `supabase/` (migration, `login` Edge Function, setup README).
+- Username login: the Edge Function `login` resolves username → e-mail with the service role and signs in server side, so e-mails are never readable by the public; unknown user and wrong password answer the same; failures are throttled in `login_attempts`. NestJS equivalent: `POST /auth/login`.
+- With e-mail confirmation on, Supabase answers a sign-up for an existing address like a new one, so the UI cannot (and must not) say "email already registered".
+- Phase 2 must add: first sign-in import of the local data (rule 7), `AuthService.accessToken()` for the data API.
+- NestJS move for auth: implement `AuthService` over HTTP (`/auth/login`, `/auth/register`, …), port `profiles` to the new `users` table, keep `AuthStore` and the pages unchanged.
 
 ## Why a backend
 
@@ -20,7 +29,7 @@ Supabase free plan (checked 2026-10-07, <https://supabase.com/pricing>): 500 MB 
 3. **Keep the data shape.** Do not redesign `AppState`. Suggested tables: `settings` (one row per user), `days` (`user_id`, `date`, `record jsonb` = `DayRecord`), `weights`, `week_plans` and `workout_plans` (`week` Monday key + `plan jsonb`), `history` (`exercise_id`, `date`, `sets jsonb`). `jsonb` for the nested parts keeps `fitflow.v1` backups importable unchanged.
 4. **Auth behind an interface.** An `AuthService` exposes "current user id", "session token", sign in and sign out. Supabase Auth issues a JWT; a NestJS API can issue one too. UI code must not touch Supabase user objects or metadata.
 5. **Authorization as one rule.** Row Level Security policy: `user_id = auth.uid()` for select/insert/update/delete on every table. Put a comment above each policy: "NestJS equivalent: guard + `WHERE user_id = :currentUser`". Never rely on the client to filter by user.
-6. **Secrets.** Only the public (anon) key may be in the client. The service-role key and database password never go into the repo or the Angular bundle. Use environment config files that are not committed for keys.
+6. **Secrets.** Only the public (anon) key may be in the client. The service-role key and database password never go into the repo or the Angular bundle. The project URL and the publishable key live in `src/environments/environment*.ts` and are committed (they are public by design).
 7. **First sign-in import.** Existing browser data must be uploaded once: reuse the JSON import path (`StoreService.replace` → `normalize`) and the same `fitflow.v1` shape; keep the Export (JSON) button working as a manual backup.
 8. **Offline and conflicts.** Decide before building (open question below). Default proposal: write locally first, queue writes, send when online, last write wins per `days` row using `updated_at`.
 9. **Past days stay frozen.** The backend must not recompute stored past days when settings or plans change; keep the existing rule (`DayRecord.snap`, menus of past days untouched).
@@ -37,6 +46,6 @@ Supabase free plan (checked 2026-10-07, <https://supabase.com/pricing>): 500 MB 
 
 ## Open questions for the user
 
-- Login method: e-mail + password, Google, or both?
+- ~~Login method~~ — decided: e-mail/username + password, Google and Apple; offline is not needed for auth (needs a connection; guests keep working offline).
 - Is offline use needed (gym with weak signal), or can we assume a connection?
 - Create the Supabase project (free account) now or when the migration starts?
