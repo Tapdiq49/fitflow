@@ -82,6 +82,8 @@ import { t } from './core/i18n/translate';
               } @placeholder {
                 <span class="size-9 rounded-full bg-accent"></span>
               }
+            } @else if (auth.status() === 'loading') {
+              <span class="spinner mx-2 text-muted" aria-hidden="true"></span>
             } @else if (auth.isGuest()) {
               <a class="btn btn-sm btn-primary" routerLink="/auth/sign-in">{{ 'auth.signIn' | t }}</a>
             }
@@ -158,6 +160,7 @@ export class App {
     const path = this.url().split('?')[0];
     const page = NAV.find((n) => n.path !== '/' && path.startsWith(n.path));
     if (page) return t(page.label);
+    if (path.startsWith('/profile')) return t('profile.title');
     const k = this.ui.viewDate();
     const day = `${dayName(DateU.dow(k) - 1)}, ${DateU.short(k)}`;
     const relative = ({ [-1]: 'app.yesterday', 0: 'app.today', 1: 'app.tomorrow' } as Record<number, string>)[DateU.diffDays(this.ui.today(), k)];

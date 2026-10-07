@@ -25,7 +25,7 @@ export class FakeAuthService extends AuthService {
   }
 
   async signIn(input: SignInInput): Promise<AuthUser> {
-    return (this.stored = { id: 'u1', email: 'a@example.com', username: input.identifier, emailPreferences: false });
+    return (this.stored = { id: 'u1', email: 'a@example.com', username: input.identifier, emailPreferences: false, avatar: null, hasPassword: true });
   }
 
   async signUp(_input: SignUpInput): Promise<SignUpResult> {
@@ -50,4 +50,11 @@ export class FakeAuthService extends AuthService {
     if (!this.stored) throw new Error('not signed in');
     return (this.stored = { ...this.stored, username });
   }
+
+  async setAvatar(avatar: string | null): Promise<AuthUser> {
+    if (!this.stored) throw new Error('not signed in');
+    return (this.stored = { ...this.stored, avatar });
+  }
+
+  async changePassword(_current: string, _next: string): Promise<void> {}
 }

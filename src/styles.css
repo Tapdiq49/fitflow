@@ -379,6 +379,23 @@
   }
 }
 
+/* Busy indicator inside buttons: <span class="spinner"></span> */
+@keyframes ff-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@utility spinner {
+  display: inline-block;
+  flex: none;
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: ff-spin 0.7s linear infinite;
+}
+
 /* <label class="field">Caption<input /></label> */
 @utility field {
   display: flex;

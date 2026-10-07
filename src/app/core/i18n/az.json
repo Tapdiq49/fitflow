@@ -630,7 +630,6 @@
   "auth.productUpdates": "Ara-sıra məhsul yenilikləri və elanlar almaq istəyirəm",
   "auth.forgotPassword": "Parolu unutmusan?",
   "auth.continueWithGoogle": "Google ilə davam et",
-  "auth.continueWithApple": "Apple ilə davam et",
   "auth.or": "və ya",
   "auth.noAccount": "Hesabın yoxdur?",
   "auth.haveAccount": "Artıq hesabın var?",
@@ -669,5 +668,19 @@
   "auth.error.rate_limited": "Çox cəhd edildi. Bir az gözləyib yenidən cəhd et.",
   "auth.error.not_configured": "Hesab sistemi hələ qurulmayıb.",
   "auth.error.unknown": "Xəta baş verdi. Yenidən cəhd et.",
-  "auth.accountMenu": "Hesab menyusu"
+  "auth.accountMenu": "Hesab menyusu",
+  "auth.skipForNow": "İndi yox",
+  "auth.noUsernameYet": "İstifadəçi adın hələ yoxdur.",
+  "profile.title": "Profil",
+  "profile.menuProfile": "Profil",
+  "profile.changePhoto": "Şəkil seç",
+  "profile.removePhoto": "Şəkli sil",
+  "profile.photoHint": "Şəkil kvadrat kəsilir və kiçildilir. Hər növ şəkil olar (8 MB-a qədər).",
+  "profile.photoSaved": "Şəkil yadda saxlandı",
+  "profile.usernameSaved": "İstifadəçi adı yadda saxlandı",
+  "profile.password": "Parol",
+  "profile.currentPassword": "Cari parol",
+  "profile.currentPasswordWrong": "Cari parol səhvdir.",
+  "profile.providerAccount": "Google ilə daxil olursan, parolu Google idarə edir. Burada dəyişmək lazım deyil.",
+  "auth.error.invalid_image": "Şəkil oxuna bilmədi. Başqa şəkil seç (8 MB-dan kiçik)."
 }

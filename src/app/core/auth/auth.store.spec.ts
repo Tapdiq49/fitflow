@@ -4,7 +4,7 @@ import { AuthService } from './auth.service';
 import { AuthStore } from './auth.store';
 import { FakeAuthService } from './fake-auth.service';
 
-const user = (username: string | null): AuthUser => ({ id: 'u1', email: 'a@example.com', username, emailPreferences: false });
+const user = (username: string | null): AuthUser => ({ id: 'u1', email: 'a@example.com', username, emailPreferences: false, avatar: null, hasPassword: true });
 
 describe('AuthStore', () => {
   let fake: FakeAuthService;
@@ -59,6 +59,17 @@ describe('AuthStore', () => {
     expect(store.isAuthenticated()).toBe(true);
     fake.emit('signed_out', null);
     expect(store.isGuest()).toBe(true);
+  });
+
+  it('updates the picture and keeps the rest of the account', async () => {
+    const store = setup();
+    fake.stored = user('john');
+    await store.init();
+    await store.setAvatar('data:image/jpeg;base64,AAAA');
+    expect(store.user()?.avatar).toBe('data:image/jpeg;base64,AAAA');
+    expect(store.user()?.username).toBe('john');
+    await store.setAvatar(null);
+    expect(store.user()?.avatar).toBeNull();
   });
 
   it('starts only once', async () => {

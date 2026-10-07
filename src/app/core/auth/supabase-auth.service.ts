@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import type { AuthChangeEvent, SupabaseClient } from '@supabase/supabase-js';
+import type { AuthChangeEvent, SupabaseClient, User } from '@supabase/supabase-js';
 import { environment } from '../../../environments/environment';
 import { AuthError, AuthEvent, AuthUser, OAuthProvider, SignInInput, SignUpInput, SignUpResult } from './auth.models';
 import { normalizeUsername } from './auth-validation';
@@ -9,12 +9,14 @@ import { toAuthError } from './supabase-errors';
 
 type Client = SupabaseClient<Database>;
 
+/** How long a profile read is reused (sign-in / restore are followed at once by a session event). */
+const RECENT_MS = 30_000;
+
 const EVENTS: Partial<Record<AuthChangeEvent, AuthEvent>> = {
   SIGNED_IN: 'signed_in',
   SIGNED_OUT: 'signed_out',
   PASSWORD_RECOVERY: 'password_recovery',
   USER_UPDATED: 'user_updated',
-  TOKEN_REFRESHED: 'token_refreshed',
 };
 
 /**
@@ -24,6 +26,8 @@ const EVENTS: Partial<Record<AuthChangeEvent, AuthEvent>> = {
 @Injectable()
 export class SupabaseAuthService extends AuthService {
   private clientPromise: Promise<Client> | null = null;
+  /** The profile read of the last sign-in / restore, so the session event that follows it does not repeat the request. */
+  private recent: { id: string; at: number; user: Promise<AuthUser> } | null = null;
 
   private client(): Promise<Client> {
     if (!environment.supabaseUrl || !environment.supabasePublishableKey) return Promise.reject(new AuthError('not_configured'));
@@ -39,7 +43,7 @@ export class SupabaseAuthService extends AuthService {
     try {
       const client = await this.client();
       const { data } = await client.auth.getSession();
-      return data.session ? await this.loadUser(client, data.session.user.id, data.session.user.email) : null;
+      return data.session ? await this.loadUser(client, data.session.user) : null;
     } catch {
       return null;
     }
@@ -57,7 +61,7 @@ export class SupabaseAuthService extends AuthService {
           // Calling the SDK inside this callback can deadlock it, so the profile is read on the next tick.
           setTimeout(async () => {
             try {
-              listener(mapped, session ? await this.loadUser(client, session.user.id, session.user.email) : null);
+              listener(mapped, session ? await this.loadUser(client, session.user) : null);
             } catch {
               listener(mapped, null);
             }
@@ -92,6 +96,8 @@ export class SupabaseAuthService extends AuthService {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', apikey: environment.supabasePublishableKey },
         body: JSON.stringify({ identifier: input.identifier.trim(), password: input.password }),
+        // A hung request ends with the network message instead of spinning forever.
+        signal: AbortSignal.timeout(20_000),
       });
     } catch (e) {
       throw toAuthError(e);
@@ -101,7 +107,7 @@ export class SupabaseAuthService extends AuthService {
 
     const { data, error } = await client.auth.setSession({ access_token: body.access_token, refresh_token: body.refresh_token });
     if (error || !data.session) throw toAuthError(error);
-    return this.loadUser(client, data.session.user.id, data.session.user.email);
+    return this.loadUser(client, data.session.user);
   }
 
   async signUp(input: SignUpInput): Promise<SignUpResult> {
@@ -140,6 +146,7 @@ export class SupabaseAuthService extends AuthService {
       throw toAuthError(e);
     });
     // "local": ends this device's session only.
+    this.recent = null;
     const { error } = await client.auth.signOut({ scope: 'local' });
     if (error) throw toAuthError(error);
   }
@@ -181,11 +188,54 @@ export class SupabaseAuthService extends AuthService {
     if (!user) throw new AuthError('session_expired');
     const { error } = await client.from('profiles').update({ username: normalizeUsername(username) }).eq('id', user.id);
     if (error) throw toAuthError(error);
-    return this.loadUser(client, user.id, user.email);
+    return this.loadUser(client, user, true);
   }
 
-  private async loadUser(client: Client, id: string, email: string | undefined): Promise<AuthUser> {
-    const { data } = await client.from('profiles').select('username, email_preferences').eq('id', id).maybeSingle();
-    return { id, email: email ?? '', username: data?.username ?? null, emailPreferences: data?.email_preferences ?? false };
+  async setAvatar(avatar: string | null): Promise<AuthUser> {
+    const client = await this.client().catch((e: unknown) => {
+      throw toAuthError(e);
+    });
+    const { data: sessionData } = await client.auth.getSession();
+    const user = sessionData.session?.user;
+    if (!user) throw new AuthError('session_expired');
+    const { error } = await client.from('profiles').update({ avatar }).eq('id', user.id);
+    if (error) throw toAuthError(error);
+    return this.loadUser(client, user, true);
+  }
+
+  async changePassword(current: string, next: string): Promise<void> {
+    const client = await this.client().catch((e: unknown) => {
+      throw toAuthError(e);
+    });
+    const { data } = await client.auth.getSession();
+    const email = data.session?.user.email;
+    if (!email) throw new AuthError('session_expired');
+    // Proves the current password (same throttled path as sign-in) before the new one is accepted.
+    await this.signIn({ identifier: email, password: current });
+    await this.updatePassword(next);
+  }
+
+  private loadUser(client: Client, user: Pick<User, 'id' | 'email' | 'app_metadata'>, fresh = false): Promise<AuthUser> {
+    const now = Date.now();
+    if (!fresh && this.recent?.id === user.id && now - this.recent.at < RECENT_MS) return this.recent.user;
+    const read = this.readUser(client, user);
+    this.recent = { id: user.id, at: now, user: read };
+    // A failed read must not be served again.
+    read.catch(() => {
+      if (this.recent?.user === read) this.recent = null;
+    });
+    return read;
+  }
+
+  private async readUser(client: Client, user: Pick<User, 'id' | 'email' | 'app_metadata'>): Promise<AuthUser> {
+    const { data } = await client.from('profiles').select('username, email_preferences, avatar').eq('id', user.id).maybeSingle();
+    return {
+      id: user.id,
+      email: user.email ?? '',
+      username: data?.username ?? null,
+      emailPreferences: data?.email_preferences ?? false,
+      avatar: data?.avatar ?? null,
+      hasPassword: (user.app_metadata?.['providers'] as string[] | undefined)?.includes('email') ?? false,
+    };
   }
 }

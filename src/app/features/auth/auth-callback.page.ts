@@ -8,7 +8,7 @@ import { TPipe } from '../../shared/t.pipe';
 import { AuthShellComponent } from './auth-shell.component';
 
 /**
- * Where Google / Apple and the e-mail confirmation link send the browser back.
+ * Where Google and the e-mail confirmation link send the browser back.
  * The auth client exchanges the one-time code in the URL while the app starts; this page waits for that and moves on.
  */
 @Component({
@@ -39,8 +39,8 @@ export class AuthCallbackPage {
   private async finish(): Promise<void> {
     await this.store.init();
     if (this.store.isAuthenticated()) {
-      // The username guard sends a first-time provider user on to /auth/username.
-      await this.router.navigateByUrl('/', { replaceUrl: true });
+      // A first-time provider user is offered a username (they can skip it).
+      await this.router.navigateByUrl(this.store.needsUsername() ? '/auth/username' : '/', { replaceUrl: true });
       return;
     }
     const { queryParamMap, fragment } = this.route.snapshot;

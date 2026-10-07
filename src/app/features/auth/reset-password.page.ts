@@ -33,7 +33,7 @@ import { AuthShellComponent } from './auth-shell.component';
             @if (error(); as e) {
               <div class="alert alert-bad" role="alert">{{ e }}</div>
             }
-            <button type="submit" class="btn btn-primary w-full" [disabled]="busy()">{{ 'auth.savePassword' | t }}</button>
+            <button type="submit" class="btn btn-primary w-full" [disabled]="busy()">@if (busy()) { <span class="spinner"></span> }{{ 'auth.savePassword' | t }}</button>
           </form>
         </app-auth-shell>
       }

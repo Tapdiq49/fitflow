@@ -630,7 +630,6 @@
   "auth.productUpdates": "Получать время от времени новости и анонсы продукта",
   "auth.forgotPassword": "Забыли пароль?",
   "auth.continueWithGoogle": "Продолжить с Google",
-  "auth.continueWithApple": "Продолжить с Apple",
   "auth.or": "или",
   "auth.noAccount": "Нет аккаунта?",
   "auth.haveAccount": "Уже есть аккаунт?",
@@ -669,5 +668,19 @@
   "auth.error.rate_limited": "Слишком много попыток. Подождите немного и повторите.",
   "auth.error.not_configured": "Система аккаунтов ещё не настроена.",
   "auth.error.unknown": "Произошла ошибка. Попробуйте ещё раз.",
-  "auth.accountMenu": "Меню аккаунта"
+  "auth.accountMenu": "Меню аккаунта",
+  "auth.skipForNow": "Не сейчас",
+  "auth.noUsernameYet": "У вас ещё нет имени пользователя.",
+  "profile.title": "Профиль",
+  "profile.menuProfile": "Профиль",
+  "profile.changePhoto": "Выбрать фото",
+  "profile.removePhoto": "Удалить фото",
+  "profile.photoHint": "Фото обрезается до квадрата и уменьшается. Подойдёт любое изображение (до 8 МБ).",
+  "profile.photoSaved": "Фото сохранено",
+  "profile.usernameSaved": "Имя пользователя сохранено",
+  "profile.password": "Пароль",
+  "profile.currentPassword": "Текущий пароль",
+  "profile.currentPasswordWrong": "Текущий пароль неверный.",
+  "profile.providerAccount": "Вы входите через Google, поэтому паролем управляет Google. Здесь менять нечего.",
+  "auth.error.invalid_image": "Не удалось прочитать изображение. Выберите другое (меньше 8 МБ)."
 }

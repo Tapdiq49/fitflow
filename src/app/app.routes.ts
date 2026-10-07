@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { guestGuard, usernameGuard, usernameSetupGuard } from './core/auth/auth.guard';
+import { accountGuard, guestGuard, usernameSetupGuard } from './core/auth/auth.guard';
 
 export interface NavItem {
   path: string;
@@ -34,7 +34,6 @@ export const routes: Routes = [
   },
   {
     path: '',
-    canActivateChild: [usernameGuard],
     children: [
       { path: '', title: 'nav.today', loadComponent: () => import('./features/dashboard/dashboard.page').then((m) => m.DashboardPage) },
       { path: 'workout', title: 'nav.workout', loadComponent: () => import('./features/workout/workout.page').then((m) => m.WorkoutPage) },
@@ -49,6 +48,7 @@ export const routes: Routes = [
       { path: 'references', title: 'nav.references', loadComponent: () => import('./features/references/references.page').then((m) => m.ReferencesPage) },
       // One route per list in REFERENCE_LISTS (features/references/reference-lists.ts): path is 'references/<id>'.
       { path: 'references/foods', title: 'references.foods', loadComponent: () => import('./features/references/food-references.page').then((m) => m.FoodReferencesPage) },
+      { path: 'profile', title: 'profile.title', canActivate: [accountGuard], loadComponent: () => import('./features/profile/profile.page').then((m) => m.ProfilePage) },
       { path: 'settings', title: 'nav.settings', loadComponent: () => import('./features/settings/settings.page').then((m) => m.SettingsPage) },
     ],
   },

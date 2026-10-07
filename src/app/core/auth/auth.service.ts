@@ -28,4 +28,8 @@ export abstract class AuthService {
 
   abstract isUsernameAvailable(username: string): Promise<boolean>;
   abstract setUsername(username: string): Promise<AuthUser>;
+  /** A resized JPEG data URL, or null to remove the picture. */
+  abstract setAvatar(avatar: string | null): Promise<AuthUser>;
+  /** Checks the current password first (throws invalid_credentials), then sets the new one. */
+  abstract changePassword(current: string, next: string): Promise<void>;
 }

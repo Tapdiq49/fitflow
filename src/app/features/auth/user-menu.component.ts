@@ -1,10 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { CdkMenu, CdkMenuItem, CdkMenuTrigger } from '@angular/cdk/menu';
 import { ConnectedPosition } from '@angular/cdk/overlay';
+import { RouterLink } from '@angular/router';
 import { authErrorText } from '../../core/auth/auth-errors';
 import { AuthStore } from '../../core/auth/auth.store';
 import { t } from '../../core/i18n/translate';
 import { ToastService } from '../../core/services/toast.service';
+import { AvatarComponent } from './avatar.component';
 import { POPUP_PANEL } from '../../shared/forms/popup';
 import { IconComponent } from '../../shared/icon.component';
 import { TPipe } from '../../shared/t.pipe';
@@ -21,29 +23,39 @@ const MENU_POSITIONS: ConnectedPosition[] = [
  */
 @Component({
   selector: 'app-user-menu',
-  imports: [CdkMenu, CdkMenuItem, CdkMenuTrigger, IconComponent, TPipe],
+  imports: [CdkMenu, CdkMenuItem, CdkMenuTrigger, RouterLink, AvatarComponent, IconComponent, TPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (auth.user(); as u) {
       <button
         type="button"
-        class="grid size-9 cursor-pointer place-items-center rounded-full border-0 bg-accent text-[14px] font-extrabold text-accent-ink uppercase outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        class="cursor-pointer rounded-full border-0 bg-transparent p-0 outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         [cdkMenuTriggerFor]="menu"
         [cdkMenuPosition]="positions"
         [attr.aria-label]="'auth.accountMenu' | t"
         [title]="u.email"
       >
-        {{ initial() }}
+        <app-avatar [user]="u" />
       </button>
       <ng-template #menu>
         <div cdkMenu [class]="panel + ' min-w-[210px] max-w-[280px] p-1'" [attr.aria-label]="'auth.accountMenu' | t">
-          <div class="px-2.5 py-2">
+          <div class="flex items-center gap-2.5 px-2.5 py-2">
+            <app-avatar [user]="u" [size]="40" />
+            <div class="min-w-0">
             <div class="truncate font-semibold">{{ u.username ?? u.email }}</div>
             @if (u.username) {
               <div class="truncate text-[12px] text-muted">{{ u.email }}</div>
             }
+            </div>
           </div>
           <div class="my-1 h-px bg-border-soft" role="separator"></div>
+          <a
+            cdkMenuItem
+            routerLink="/profile"
+            class="flex w-full cursor-pointer items-center gap-2 rounded-[8px] px-2.5 py-2 text-[14px] text-text no-underline outline-none hover:bg-surface focus-visible:bg-surface focus-visible:outline focus-visible:outline-accent/60"
+          >
+            <app-icon name="settings" size="sm" />{{ 'profile.menuProfile' | t }}
+          </a>
           <button
             type="button"
             cdkMenuItem
@@ -65,10 +77,6 @@ export class UserMenuComponent {
   protected readonly panel = POPUP_PANEL;
   protected readonly positions = MENU_POSITIONS;
   protected readonly signingOut = signal(false);
-  protected readonly initial = computed(() => {
-    const u = this.auth.user();
-    return (u?.username ?? u?.email ?? '').charAt(0);
-  });
 
   protected async signOut(): Promise<void> {
     this.signingOut.set(true);

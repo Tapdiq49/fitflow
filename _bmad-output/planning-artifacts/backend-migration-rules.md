@@ -4,7 +4,7 @@ Status: decided 2026-10-07. **Phase 1, authentication: implemented 2026-10-07** 
 
 ## Authentication (phase 1, done)
 
-- Sign in with e-mail or username + password, Google, Apple; sign up with e-mail, username, e-mail preferences; forgot / reset password; username setup after a first OAuth sign-in. Login is optional: **guests keep using the app** and see a dismissible notice (back after 7 days, `Settings.guestNoticeDismissedAt`) that their data lives only in this browser.
+- Sign in with e-mail or username + password, Google; sign up with e-mail, username, e-mail preferences; forgot / reset password; username setup after a first OAuth sign-in. Login is optional: **guests keep using the app** and see a dismissible notice (back after 7 days, `Settings.guestNoticeDismissedAt`) that their data lives only in this browser.
 - Code: `core/auth/` (port `AuthService`, adapter `supabase-auth.service.ts`, `AuthStore`, guards, error mapping), `features/auth/` (pages), `supabase/` (migration, `login` Edge Function, setup README).
 - Username login: the Edge Function `login` resolves username → e-mail with the service role and signs in server side, so e-mails are never readable by the public; unknown user and wrong password answer the same; failures are throttled in `login_attempts`. NestJS equivalent: `POST /auth/login`.
 - With e-mail confirmation on, Supabase answers a sign-up for an existing address like a new one, so the UI cannot (and must not) say "email already registered".
@@ -46,6 +46,6 @@ Supabase free plan (checked 2026-10-07, <https://supabase.com/pricing>): 500 MB 
 
 ## Open questions for the user
 
-- ~~Login method~~ — decided: e-mail/username + password, Google and Apple; offline is not needed for auth (needs a connection; guests keep working offline).
+- ~~Login method~~ — decided: e-mail/username + password, Google; offline is not needed for auth (needs a connection; guests keep working offline).
 - Is offline use needed (gym with weak signal), or can we assume a connection?
 - Create the Supabase project (free account) now or when the migration starts?

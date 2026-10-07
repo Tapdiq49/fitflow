@@ -65,4 +65,12 @@ export class AuthStore {
   async setUsername(username: string): Promise<void> {
     this.apply(await this.auth.setUsername(username));
   }
+
+  async setAvatar(avatar: string | null): Promise<void> {
+    this.apply(await this.auth.setAvatar(avatar));
+  }
+
+  changePassword(current: string, next: string): Promise<void> {
+    return this.auth.changePassword(current, next);
+  }
 }

@@ -630,7 +630,6 @@
   "auth.productUpdates": "Receive occasional product updates and announcements",
   "auth.forgotPassword": "Forgot password?",
   "auth.continueWithGoogle": "Continue with Google",
-  "auth.continueWithApple": "Continue with Apple",
   "auth.or": "or",
   "auth.noAccount": "Don't have an account?",
   "auth.haveAccount": "Already have an account?",
@@ -669,5 +668,19 @@
   "auth.error.rate_limited": "Too many attempts. Wait a little and try again.",
   "auth.error.not_configured": "The account system is not set up yet.",
   "auth.error.unknown": "Something went wrong. Please try again.",
-  "auth.accountMenu": "Account menu"
+  "auth.accountMenu": "Account menu",
+  "auth.skipForNow": "Not now",
+  "auth.noUsernameYet": "You do not have a username yet.",
+  "profile.title": "Profile",
+  "profile.menuProfile": "Profile",
+  "profile.changePhoto": "Choose photo",
+  "profile.removePhoto": "Remove photo",
+  "profile.photoHint": "The photo is cropped square and shrunk. Any image works (up to 8 MB).",
+  "profile.photoSaved": "Photo saved",
+  "profile.usernameSaved": "Username saved",
+  "profile.password": "Password",
+  "profile.currentPassword": "Current password",
+  "profile.currentPasswordWrong": "The current password is incorrect.",
+  "profile.providerAccount": "You sign in with Google, so Google manages your password. There is nothing to change here.",
+  "auth.error.invalid_image": "The image could not be read. Pick another one (under 8 MB)."
 }

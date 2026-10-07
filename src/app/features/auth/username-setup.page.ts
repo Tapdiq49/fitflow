@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { AuthError } from '../../core/auth/auth.models';
 import { authErrorText } from '../../core/auth/auth-errors';
 import { isValidUsername, normalizeUsername } from '../../core/auth/auth-validation';
@@ -8,10 +8,10 @@ import { inputValue } from '../../core/utils';
 import { TPipe } from '../../shared/t.pipe';
 import { AuthShellComponent } from './auth-shell.component';
 
-/** First sign-in with Google / Apple: the account has no username yet. */
+/** First sign-in with Google: the account has no username yet. */
 @Component({
   selector: 'app-username-setup-page',
-  imports: [AuthShellComponent, TPipe],
+  imports: [RouterLink, AuthShellComponent, TPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-auth-shell [heading]="'auth.chooseUsernameTitle' | t" [subtitle]="'auth.chooseUsernameText' | t">
@@ -24,7 +24,8 @@ import { AuthShellComponent } from './auth-shell.component';
         @if (error(); as e) {
           <div class="alert alert-bad" role="alert">{{ e }}</div>
         }
-        <button type="submit" class="btn btn-primary w-full" [disabled]="busy()">{{ 'auth.continue' | t }}</button>
+        <button type="submit" class="btn btn-primary w-full" [disabled]="busy()">@if (busy()) { <span class="spinner"></span> }{{ 'auth.continue' | t }}</button>
+        <a class="btn w-full" routerLink="/">{{ 'auth.skipForNow' | t }}</a>
       </form>
     </app-auth-shell>
   `,

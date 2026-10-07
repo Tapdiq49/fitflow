@@ -8,6 +8,7 @@ export interface Database {
           username: string | null;
           email: string;
           email_preferences: boolean;
+          avatar: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -16,6 +17,7 @@ export interface Database {
         Update: {
           username?: string | null;
           email_preferences?: boolean;
+          avatar?: string | null;
         };
         Relationships: [];
       };

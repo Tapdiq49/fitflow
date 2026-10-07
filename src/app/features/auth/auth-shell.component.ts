@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { AuthStore } from '../../core/auth/auth.store';
 import { IconComponent } from '../../shared/icon.component';
 import { TPipe } from '../../shared/t.pipe';
 
@@ -24,14 +25,17 @@ import { TPipe } from '../../shared/t.pipe';
             <ng-content />
           </div>
         </div>
-        <div class="mt-4 text-center text-[13px]">
-          <a routerLink="/" class="text-muted">{{ 'auth.continueAsGuest' | t }}</a>
-        </div>
+        @if (!auth.isAuthenticated()) {
+          <div class="mt-4 text-center text-[13px]">
+            <a routerLink="/" class="text-muted">{{ 'auth.continueAsGuest' | t }}</a>
+          </div>
+        }
       </div>
     </div>
   `,
 })
 export class AuthShellComponent {
+  protected readonly auth = inject(AuthStore);
   readonly heading = input.required<string>();
   readonly subtitle = input('');
 }

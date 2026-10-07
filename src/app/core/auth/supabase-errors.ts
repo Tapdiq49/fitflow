@@ -45,7 +45,7 @@ export function toAuthError(error: unknown): AuthError {
 
   if (Object.hasOwn(BY_CODE, code)) return new AuthError(BY_CODE[code], { cause: error });
   if (Object.hasOwn(BY_SQLSTATE, code)) return new AuthError(BY_SQLSTATE[code], { cause: error });
-  if (name === 'AuthRetryableFetchError' || name === 'TypeError' || /failed to fetch|networkerror|load failed/i.test(message)) {
+  if (name === 'AuthRetryableFetchError' || name === 'TypeError' || name === 'TimeoutError' || name === 'AbortError' || /failed to fetch|networkerror|load failed/i.test(message)) {
     return new AuthError('network_error', { cause: error });
   }
   if (e.status === 429) return new AuthError('rate_limited', { cause: error });

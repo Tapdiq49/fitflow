@@ -5,12 +5,16 @@ export interface AuthUser {
   /** Null until the user picks one (first OAuth sign-in). */
   username: string | null;
   emailPreferences: boolean;
+  /** Small JPEG as a data URL; null = no picture. */
+  avatar: string | null;
+  /** False for an account that only signs in with a provider (Google): it has no password to change. */
+  hasPassword: boolean;
 }
 
 /** `unauthenticated` is also "guest": the app works without an account. */
 export type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated';
 
-export type OAuthProvider = 'google' | 'apple';
+export type OAuthProvider = 'google';
 
 export interface SignInInput {
   /** E-mail address or username. */
@@ -36,6 +40,7 @@ export type AuthErrorCode =
   | 'email_not_confirmed'
   | 'email_taken'
   | 'invalid_username'
+  | 'invalid_image'
   | 'username_taken'
   | 'oauth_failed'
   | 'network_error'

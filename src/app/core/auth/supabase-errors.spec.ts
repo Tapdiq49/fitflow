@@ -15,6 +15,7 @@ describe('toAuthError', () => {
     [{ status: 429 }, 'rate_limited'],
     [{ name: 'AuthRetryableFetchError', message: 'x' }, 'network_error'],
     [new TypeError('Failed to fetch'), 'network_error'],
+    [new DOMException('signal timed out', 'TimeoutError'), 'network_error'],
     [{ message: 'Password should be at least 10 characters' }, 'weak_password'],
     [{ code: 'something_new', message: 'Database error saving new user' }, 'unknown'],
     ['boom', 'unknown'],

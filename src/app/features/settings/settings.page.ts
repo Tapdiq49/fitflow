@@ -29,7 +29,11 @@ type TextField = 'workoutTime' | 'wakeTime' | 'sleepTime' | 'programStart';
         <div class="card-head"><h3><app-icon name="lock" /> {{ 'auth.account' | t }}</h3></div>
         @if (auth.user(); as u) {
           <p class="text-text-2" style="margin-top: 0">{{ 'auth.signedInAs' | t: { name: u.username ?? u.email } }}</p>
+          @if (!u.username) {
+            <p class="text-text-2">{{ 'auth.noUsernameYet' | t }} <a routerLink="/auth/username">{{ 'auth.chooseUsernameTitle' | t }}</a></p>
+          }
           <div class="flex flex-wrap items-center gap-2">
+            <a class="btn" routerLink="/profile">{{ 'profile.menuProfile' | t }}</a>
             <button class="btn" [disabled]="signingOut()" (click)="signOut()">{{ 'auth.signOut' | t }}</button>
           </div>
         } @else if (auth.isGuest()) {
