@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { StoreService } from '../../core/services/store.service';
-import { IconComponent } from '../../shared/icon.component';
-import { TPipe } from '../../shared/t.pipe';
+import { IconComponent } from '../../shared/icon/icon.component';
+import { TPipe } from '../../common/pipes/translate/t.pipe';
 import { BodyBasicsFormComponent } from '../profile/body-basics-form.component';
 import { BodyCardComponent } from './body-card.component';
 import { CardioCardComponent } from './cardio-card.component';

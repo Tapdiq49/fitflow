@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { AuthUser } from './auth.models';
+import { AuthUser } from '../../common/interfaces/auth/auth.models';
 import { AuthService } from './auth.service';
 import { AuthStore } from './auth.store';
 import { FakeAuthService } from './fake-auth.service';

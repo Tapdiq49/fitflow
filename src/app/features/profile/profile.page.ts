@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, linkedSignal, signal } from '@angular/core';
-import { AuthError } from '../../core/auth/auth.models';
+import { AuthError } from '../../common/interfaces/auth/auth.models';
 import { authErrorText } from '../../core/auth/auth-errors';
 import { isStrongPassword, isValidUsername, normalizeUsername } from '../../core/auth/auth-validation';
 import { imageToAvatarDataUrl } from '../../core/auth/avatar';
@@ -8,8 +8,8 @@ import { AuthStore } from '../../core/auth/auth.store';
 import { t } from '../../core/i18n/translate';
 import { ToastService } from '../../core/services/toast.service';
 import { inputValue } from '../../core/utils';
-import { IconComponent } from '../../shared/icon.component';
-import { TPipe } from '../../shared/t.pipe';
+import { IconComponent } from '../../shared/icon/icon.component';
+import { TPipe } from '../../common/pipes/translate/t.pipe';
 import { AvatarComponent } from '../auth/avatar.component';
 
 /** Account page: picture, username, password. Reached from the avatar menu; guests are sent to sign in. */

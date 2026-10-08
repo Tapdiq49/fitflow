@@ -3,8 +3,8 @@ import { Combobox, ComboboxPopup, ComboboxWidget } from '@angular/aria/combobox'
 import { Grid, GridCell, GridRow } from '@angular/aria/grid';
 import { CdkConnectedOverlay, CdkOverlayOrigin } from '@angular/cdk/overlay';
 import { DateU, dayShort, monthName } from '../../core/utils';
-import { IconComponent } from '../icon.component';
-import { TPipe } from '../t.pipe';
+import { IconComponent } from '../icon/icon.component';
+import { TPipe } from '../../common/pipes/translate/t.pipe';
 import { POPUP_PANEL, POPUP_POSITIONS } from './popup';
 
 const CELL =

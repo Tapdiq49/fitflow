@@ -1,4 +1,4 @@
-import { DayType, Exercise, Variant } from '../models';
+import { DayType, Exercise, Variant } from '../../common/interfaces';
 
 export const EXERCISES: Record<string, Exercise> = {
   legpress: { name: 'Leg Press', sets: 3, min: 8, max: 12, kind: 'lower', inc: 5, incEarly: 5, note: 'İtələyərkən nəfəs ver, nəfəsi saxlama. Dizləri tam kilidləmə.' },

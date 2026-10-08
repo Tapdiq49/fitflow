@@ -1,14 +1,14 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { SLOTS } from '../../core/data/meals';
-import { Meal } from '../../core/models';
+import { Meal } from '../../common/interfaces';
 import { itemAmount, itemMacros, itemName, mealMacros, menuTotals } from '../../core/nutrition';
 import { ConfirmService } from '../../core/services/confirm.service';
 import { DayService } from '../../core/services/day.service';
 import { StoreService } from '../../core/services/store.service';
 import { UiService } from '../../core/services/ui.service';
 import { F } from '../../core/utils';
-import { IconComponent } from '../../shared/icon.component';
-import { TPipe, TdPipe } from '../../shared/t.pipe';
+import { IconComponent } from '../../shared/icon/icon.component';
+import { TPipe, TdPipe } from '../../common/pipes/translate/t.pipe';
 import { t, td } from '../../core/i18n/translate';
 
 /** Today's meals as macro tables, with daily totals. */

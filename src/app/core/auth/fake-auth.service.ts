@@ -1,5 +1,5 @@
-import type { Sex } from '../models';
-import { AuthError, AuthEvent, AuthUser, OAuthProvider, SignInInput, SignUpInput, SignUpResult } from './auth.models';
+import type { Sex } from '../../common/interfaces';
+import { AuthError, AuthEvent, AuthUser, OAuthProvider, SignInInput, SignUpInput, SignUpResult } from '../../common/interfaces/auth/auth.models';
 import { AuthService } from './auth.service';
 
 /** In-memory AuthService for specs. Set `stored` before `initialize`, call `emit` to simulate session changes. */

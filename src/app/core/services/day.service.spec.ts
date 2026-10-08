@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { Settings } from '../models';
+import { Settings } from '../../common/interfaces';
 import { DateU } from '../utils';
 import { DayService } from './day.service';
 import { StoreService } from './store.service';

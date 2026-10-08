@@ -1,5 +1,5 @@
 import { Chart, ChartConfiguration, ChartDataset, registerables } from 'chart.js';
-import { WeekDay, WeightEntry } from './models';
+import { WeekDay, WeightEntry } from '../common/interfaces';
 import { DateU, rnd, weekdaysShort } from './utils';
 import { t } from './i18n/translate';
 

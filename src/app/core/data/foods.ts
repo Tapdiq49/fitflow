@@ -1,4 +1,4 @@
-import { Food } from '../models';
+import { Food } from '../../common/interfaces';
 
 export const FOODS: Record<string, Food> = {
   egg: { name: 'Yumurta', unit: 'ədəd', k: 78, p: 6.3, c: 0.6, f: 5.3, role: 'protein', step: 1, min: 1, max: 4 },

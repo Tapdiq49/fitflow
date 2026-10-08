@@ -1,7 +1,7 @@
 import { Injectable, computed, effect, inject, untracked } from '@angular/core';
 import { AuthStore } from '../auth/auth.store';
 import { t } from '../i18n/translate';
-import { WeekPlan, WorkoutWeekPlan } from '../models';
+import { WeekPlan, WorkoutWeekPlan } from '../../common/interfaces';
 import { PlanKind, PlanRepository, StoredPlans } from '../repositories/plan.repository';
 import { DayService } from './day.service';
 import { StoreService } from './store.service';

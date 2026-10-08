@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { authErrorText } from '../../core/auth/auth-errors';
-import { OAuthProvider } from '../../core/auth/auth.models';
+import { OAuthProvider } from '../../common/interfaces/auth/auth.models';
 import { AuthService } from '../../core/auth/auth.service';
-import { TPipe } from '../../shared/t.pipe';
+import { TPipe } from '../../common/pipes/translate/t.pipe';
 
 /** "Continue with Google". The browser leaves for the provider; it returns to /auth/callback. */
 @Component({

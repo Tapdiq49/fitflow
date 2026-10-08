@@ -1,11 +1,11 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { AuthError } from '../../core/auth/auth.models';
+import { AuthError } from '../../common/interfaces/auth/auth.models';
 import { authErrorText } from '../../core/auth/auth-errors';
 import { isValidUsername, normalizeUsername } from '../../core/auth/auth-validation';
 import { AuthStore } from '../../core/auth/auth.store';
 import { inputValue } from '../../core/utils';
-import { TPipe } from '../../shared/t.pipe';
+import { TPipe } from '../../common/pipes/translate/t.pipe';
 import { AuthShellComponent } from './auth-shell.component';
 
 /** First sign-in with Google: the account has no username yet. */

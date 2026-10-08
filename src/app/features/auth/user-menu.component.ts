@@ -9,8 +9,8 @@ import { SessionService } from '../../core/services/session.service';
 import { ToastService } from '../../core/services/toast.service';
 import { AvatarComponent } from './avatar.component';
 import { POPUP_PANEL } from '../../shared/forms/popup';
-import { IconComponent } from '../../shared/icon.component';
-import { TPipe } from '../../shared/t.pipe';
+import { IconComponent } from '../../shared/icon/icon.component';
+import { TPipe } from '../../common/pipes/translate/t.pipe';
 
 /** Below the avatar, right edges aligned (the avatar sits at the right end of the header). */
 const MENU_POSITIONS: ConnectedPosition[] = [

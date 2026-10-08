@@ -1,5 +1,5 @@
-import { AuthError } from '../auth/auth.models';
-import { WeekPlan, WorkoutWeekPlan } from '../models';
+import { AuthError } from '../../common/interfaces/auth/auth.models';
+import { WeekPlan, WorkoutWeekPlan } from '../../common/interfaces';
 import { PlanKind, PlanRepository, StoredPlans } from './plan.repository';
 
 /** In-memory PlanRepository for specs. `stored` is the table; set `failing` to simulate a backend that cannot be reached. */

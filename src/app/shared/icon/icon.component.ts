@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
-import { ICONS } from '../core/data/icons';
+import { ICONS } from '../../core/data/icons';
 
 /** Inline SVG icon. Paths come from the static ICONS table, so bypassing sanitization is safe. */
 @Component({

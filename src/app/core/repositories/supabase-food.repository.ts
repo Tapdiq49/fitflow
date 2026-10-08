@@ -1,11 +1,11 @@
 import { HttpHeaders, HttpResourceRequest } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { environment } from '../../../environments/environment';
-import { AuthError } from '../auth/auth.models';
+import { AuthError } from '../../common/interfaces/auth/auth.models';
 import { toAuthError } from '../auth/supabase-errors';
 import type { Database } from '../backend/database.types';
 import { Client, SupabaseClientProvider } from '../backend/supabase-client';
-import { Lang, Unit } from '../models';
+import { Lang, Unit } from '../../common/interfaces';
 import { Page, PageParams } from '../paging';
 import { FoodRepository, FoodRow, NewFoodRow } from './food.repository';
 

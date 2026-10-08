@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { TrainerExercise, WeekPlan, WorkoutWeekPlan } from '../models';
+import { TrainerExercise, WeekPlan, WorkoutWeekPlan } from '../../common/interfaces';
 import { StoreService } from './store.service';
 
 export const DEFAULT_GYM_DAYS: readonly number[] = [1, 3, 5];

@@ -1,4 +1,4 @@
-import { AuthError } from './auth.models';
+import { AuthError } from '../../common/interfaces/auth/auth.models';
 
 const MAX_INPUT_BYTES = 8 * 1024 * 1024;
 

@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { SLOTS, TEMPLATES } from '../data/meals';
 import { foodItem, foodOf } from '../food-book';
-import { DayType, FoodRole, Meal, MealItem, MealTemplate, SlotId, TemplateKey } from '../models';
+import { DayType, FoodRole, Meal, MealItem, MealTemplate, SlotId, TemplateKey } from '../../common/interfaces';
 import { itemMacros, menuTotals } from '../nutrition';
 import { DateU, clamp, fromMin, rnd, toMin, uid } from '../utils';
 import { ProgramService } from './program.service';

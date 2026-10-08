@@ -32,6 +32,12 @@ export class UiService {
     inject(DestroyRef).onDestroy(() => clearInterval(timer));
   }
 
+  readonly sidebarCollapsed = computed(() => this.store.settings().sidebarCollapsed);
+
+  toggleSidebar(): void {
+    this.store.mutate((s) => (s.settings.sidebarCollapsed = !s.settings.sidebarCollapsed));
+  }
+
   shift(n: number): void {
     this.viewDate.update((k) => DateU.add(k, n));
   }

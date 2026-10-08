@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, Injector, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { IconComponent } from '../../shared/icon.component';
-import { TPipe } from '../../shared/t.pipe';
+import { IconComponent } from '../../shared/icon/icon.component';
+import { TPipe } from '../../common/pipes/translate/t.pipe';
 import { REFERENCE_LISTS } from './reference-lists';
 
 /** Reference index: a grid with one card per list; a card opens that list's own page. */

@@ -1,5 +1,5 @@
 import { Injectable, computed, inject } from '@angular/core';
-import { Advice, BodyStats, Sex, WeightEntry } from '../models';
+import { Advice, BodyStats, Sex, WeightEntry } from '../../common/interfaces';
 import { bmiOf, plausibleBody } from '../targets';
 import { DateU, F, rnd } from '../utils';
 import { MAX_HEIGHT, MAX_WEIGHT, MIN_HEIGHT, MIN_WEIGHT, SETTINGS_RANGE, StoreService } from './store.service';

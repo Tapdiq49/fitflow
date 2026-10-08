@@ -1,0 +1,60 @@
+@use 'sass:list';
+@use 'sass:map';
+
+// Color skins (ThemeService sets data-skin on <html>). A skin only changes the accent tokens; the plain rule is its dark
+// variant, the `[data-theme='light']` one its light variant (higher specificity, so it wins whatever the order).
+// 'lime' is the base in styles.scss. A new skin = one entry here, its id in SKINS (common/interfaces/settings/settings.ts) and a `skin.<id>` text in the i18n files.
+
+// id: (dark: (accent, hover, ink, accent as "r g b", soft alpha, chart-dim alpha), light: (same))
+$skins: (
+  'ocean': (
+    'dark': (#38bdf8, #7dd3fc, #04202e, 56 189 248, 0.13, 0.45),
+    'light': (#0369a1, #075985, #ffffff, 3 105 161, 0.12, 0.4),
+  ),
+  'violet': (
+    'dark': (#a78bfa, #c4b5fd, #1a0f3d, 167 139 250, 0.14, 0.45),
+    'light': (#6d28d9, #5b21b6, #ffffff, 109 40 217, 0.12, 0.4),
+  ),
+  'rose': (
+    'dark': (#fb7185, #fda4af, #3b0612, 251 113 133, 0.14, 0.45),
+    'light': (#be123c, #9f1239, #ffffff, 190 18 60, 0.11, 0.4),
+  ),
+  'amber': (
+    'dark': (#fbbf24, #fcd34d, #2a1b00, 251 191 36, 0.14, 0.45),
+    'light': (#b45309, #92400e, #ffffff, 180 83 9, 0.12, 0.4),
+  ),
+  'teal': (
+    'dark': (#2dd4bf, #5eead4, #032a26, 45 212 191, 0.13, 0.45),
+    'light': (#0f766e, #115e59, #ffffff, 15 118 110, 0.12, 0.4),
+  ),
+  'orange': (
+    'dark': (#f97316, #fb923c, #2b1100, 249 115 22, 0.14, 0.45),
+    'light': (#c2410c, #9a3412, #ffffff, 194 65 12, 0.12, 0.4),
+  ),
+  'slate': (
+    'dark': (#cbd5e1, #e2e8f0, #0f172a, 203 213 225, 0.12, 0.4),
+    'light': (#334155, #1e293b, #ffffff, 51 65 85, 0.1, 0.4),
+  ),
+);
+
+@mixin accent($v) {
+  $rgb: list.nth($v, 4);
+  $r: list.nth($rgb, 1);
+  $g: list.nth($rgb, 2);
+  $b: list.nth($rgb, 3);
+  --accent: #{list.nth($v, 1)};
+  --accent-hover: #{list.nth($v, 2)};
+  --accent-ink: #{list.nth($v, 3)};
+  --accent-soft: rgba(#{$r}, #{$g}, #{$b}, #{list.nth($v, 5)});
+  --chart-accent-dim: rgba(#{$r}, #{$g}, #{$b}, #{list.nth($v, 6)});
+}
+
+@each $id, $modes in $skins {
+  :root[data-skin='#{$id}'] {
+    @include accent(map.get($modes, 'dark'));
+
+    &[data-theme='light'] {
+      @include accent(map.get($modes, 'light'));
+    }
+  }
+}

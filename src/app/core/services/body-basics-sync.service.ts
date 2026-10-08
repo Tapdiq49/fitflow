@@ -1,6 +1,6 @@
 import { Injectable, computed, effect, inject, untracked } from '@angular/core';
 import { AuthStore } from '../auth/auth.store';
-import { Sex } from '../models';
+import { Sex } from '../../common/interfaces';
 import { StoreService } from './store.service';
 
 /**

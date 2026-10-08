@@ -1,7 +1,7 @@
 import { signal } from '@angular/core';
 import { FOODS } from './data/foods';
 import { td } from './i18n/translate';
-import { FoodRole, MealItem, SystemFood, Unit } from './models';
+import { FoodRole, MealItem, SystemFood, Unit } from '../common/interfaces';
 import { activeLang } from './utils';
 
 /** What the menu generator and the macro math need to know about a system food. */

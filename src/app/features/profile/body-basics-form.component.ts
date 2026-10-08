@@ -1,10 +1,10 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { Sex } from '../../core/models';
+import { Sex } from '../../common/interfaces';
 import { BodyService } from '../../core/services/body.service';
 import { StoreService } from '../../core/services/store.service';
 import { parseNum } from '../../core/utils';
-import { IconComponent } from '../../shared/icon.component';
-import { TPipe } from '../../shared/t.pipe';
+import { IconComponent } from '../../shared/icon/icon.component';
+import { TPipe } from '../../common/pipes/translate/t.pipe';
 
 /**
  * Height, starting weight, age and sex with a save button; used by the sign-in dialog and in place of the numbers that depend on them.

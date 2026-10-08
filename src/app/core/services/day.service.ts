@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { SLOTS } from '../data/meals';
 import { TIPS } from '../data/program';
 import { foodItem } from '../food-book';
-import { Meal, Settings, TimelineItem, WeekDay, WeekPlan, newDay } from '../models';
+import { Meal, Settings, TimelineItem, WeekDay, WeekPlan, newDay } from '../../common/interfaces';
 import { mealMacros, menuTotals, sleepMinutes } from '../nutrition';
 import { DateU, F, clamp, fromMin, hashStr, nowHM, toMin, uid } from '../utils';
 import { KCAL_MAX, KCAL_MIN } from '../targets';

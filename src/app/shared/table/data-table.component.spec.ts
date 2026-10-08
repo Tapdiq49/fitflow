@@ -1,6 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { DataTableComponent, TableCellDirective, TableColumn } from './data-table.component';
+import { TableCellDirective } from '../../common/directives/table-cell/table-cell.directive';
+import { DataTableComponent, TableColumn } from './data-table.component';
 
 interface Row {
   id: number;

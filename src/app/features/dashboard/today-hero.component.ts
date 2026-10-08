@@ -6,9 +6,9 @@ import { StoreService } from '../../core/services/store.service';
 import { UiService } from '../../core/services/ui.service';
 import { WorkoutService } from '../../core/services/workout.service';
 import { F, fromMin, toMin } from '../../core/utils';
-import { IconComponent } from '../../shared/icon.component';
-import { TypeBadgeComponent } from '../../shared/type-badge.component';
-import { TPipe, TdPipe } from '../../shared/t.pipe';
+import { IconComponent } from '../../shared/icon/icon.component';
+import { TypeBadgeComponent } from '../../shared/type-badge/type-badge.component';
+import { TPipe, TdPipe } from '../../common/pipes/translate/t.pipe';
 import { t } from '../../core/i18n/translate';
 
 /** "BU GÜN NƏ ETMƏLİSƏN?" — the time-ordered checklist, score and tip of the day. */

@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { EXERCISES, PROGRAM } from '../data/program';
 import { TRAINER_EX_PREFIX } from '../data/trainer-plan';
-import { DayRecord, Exercise, HistoryEntry, Recommendation, WorkoutLog } from '../models';
+import { DayRecord, Exercise, HistoryEntry, Recommendation, WorkoutLog } from '../../common/interfaces';
 import { DateU, F, parseNum, rnd, toMin } from '../utils';
 import { ProgramService } from './program.service';
 import { StoreService } from './store.service';

@@ -1,6 +1,6 @@
 import { Injectable, computed, effect, inject, untracked } from '@angular/core';
 import { AuthStore } from '../auth/auth.store';
-import { Settings } from '../models';
+import { Settings } from '../../common/interfaces';
 import { DEFAULT_SETTINGS, StoreService } from './store.service';
 
 /** Not part of the synced document: the body data has its own profile columns, the notice is about guests. */

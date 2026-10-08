@@ -5,9 +5,9 @@ import { StoreService } from '../../core/services/store.service';
 import { ToastService } from '../../core/services/toast.service';
 import { UiService } from '../../core/services/ui.service';
 import { F, inputValue, parseNum } from '../../core/utils';
-import { IconComponent } from '../../shared/icon.component';
+import { IconComponent } from '../../shared/icon/icon.component';
 import { TimePickerComponent } from '../../shared/forms/time-picker.component';
-import { TPipe } from '../../shared/t.pipe';
+import { TPipe } from '../../common/pipes/translate/t.pipe';
 import { t } from '../../core/i18n/translate';
 
 /** The four headline cards: Calories, Protein, Water, Sleep. */

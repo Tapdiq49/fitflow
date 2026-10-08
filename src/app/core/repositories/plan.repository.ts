@@ -1,4 +1,4 @@
-import { WeekPlan, WorkoutWeekPlan } from '../models';
+import { WeekPlan, WorkoutWeekPlan } from '../../common/interfaces';
 
 export type PlanKind = 'meal' | 'workout';
 

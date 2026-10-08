@@ -1,4 +1,4 @@
-import { MealTemplate, SlotId, TemplateKey } from '../models';
+import { MealTemplate, SlotId, TemplateKey } from '../../common/interfaces';
 
 export const SLOTS: Record<SlotId, { label: string; pool?: TemplateKey }> = {
   breakfast: { label: 'Səhər yeməyi' },

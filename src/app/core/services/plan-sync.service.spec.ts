@@ -1,11 +1,11 @@
 import { TestBed } from '@angular/core/testing';
 import { AuthService } from '../auth/auth.service';
 import { AuthStore } from '../auth/auth.store';
-import { AuthUser } from '../auth/auth.models';
+import { AuthUser } from '../../common/interfaces/auth/auth.models';
 import { FakeAuthService } from '../auth/fake-auth.service';
 import { FakePlanRepository } from '../repositories/fake-plan.repository';
 import { PlanRepository } from '../repositories/plan.repository';
-import { TrainerMeal, WeekPlan } from '../models';
+import { TrainerMeal, WeekPlan } from '../../common/interfaces';
 import { PlanSyncService } from './plan-sync.service';
 import { StoreService } from './store.service';
 import { TrainerPlanService } from './trainer-plan.service';

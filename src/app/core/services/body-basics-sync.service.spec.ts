@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { AuthService } from '../auth/auth.service';
 import { AuthStore } from '../auth/auth.store';
 import { FakeAuthService } from '../auth/fake-auth.service';
-import { AuthUser } from '../auth/auth.models';
+import { AuthUser } from '../../common/interfaces/auth/auth.models';
 import { BodyBasicsSyncService } from './body-basics-sync.service';
 import { StoreService } from './store.service';
 

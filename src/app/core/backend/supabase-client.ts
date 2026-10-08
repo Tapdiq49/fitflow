@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { environment } from '../../../environments/environment';
-import { AuthError } from '../auth/auth.models';
+import { AuthError } from '../../common/interfaces/auth/auth.models';
 import type { Database } from './database.types';
 
 export type Client = SupabaseClient<Database>;

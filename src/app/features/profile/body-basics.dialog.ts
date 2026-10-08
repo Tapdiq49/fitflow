@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
-import { ModalComponent } from '../../shared/modal.component';
-import { TPipe } from '../../shared/t.pipe';
+import { ModalComponent } from '../../shared/modal/modal.component';
+import { TPipe } from '../../common/pipes/translate/t.pipe';
 import { BodyBasicsFormComponent } from './body-basics-form.component';
 
 /** Asks a signed-in user for height and weight (they differ per person); shown until both are entered and cannot be closed. */

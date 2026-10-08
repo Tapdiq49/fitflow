@@ -1,5 +1,5 @@
 import { Pipe, PipeTransform } from '@angular/core';
-import { t, td } from '../core/i18n/translate';
+import { t, td } from '../../../core/i18n/translate';
 
 /** {{ 'settings.title' | t }} — impure on purpose: it must re-run when the language signal changes. */
 @Pipe({ name: 't', pure: false })

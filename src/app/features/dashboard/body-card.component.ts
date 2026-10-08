@@ -6,10 +6,10 @@ import { DayService } from '../../core/services/day.service';
 import { StoreService } from '../../core/services/store.service';
 import { UiService } from '../../core/services/ui.service';
 import { F, parseNum } from '../../core/utils';
-import { ChartComponent } from '../../shared/chart.component';
-import { IconComponent } from '../../shared/icon.component';
+import { ChartComponent } from '../../shared/chart/chart.component';
+import { IconComponent } from '../../shared/icon/icon.component';
 import { BodyBasicsFormComponent } from '../profile/body-basics-form.component';
-import { TPipe } from '../../shared/t.pipe';
+import { TPipe } from '../../common/pipes/translate/t.pipe';
 
 @Component({
   selector: 'app-body-card',

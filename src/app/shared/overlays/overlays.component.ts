@@ -1,9 +1,9 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { RestTimerService } from '../core/services/rest-timer.service';
-import { ToastService } from '../core/services/toast.service';
-import { ConfirmDialogComponent } from './confirm-dialog.component';
-import { IconComponent } from './icon.component';
-import { TPipe } from './t.pipe';
+import { RestTimerService } from '../../core/services/rest-timer.service';
+import { ToastService } from '../../core/services/toast.service';
+import { ConfirmDialogComponent } from '../confirm-dialog/confirm-dialog.component';
+import { IconComponent } from '../icon/icon.component';
+import { TPipe } from '../../common/pipes/translate/t.pipe';
 
 /** Toast message and the floating rest-timer pill. */
 @Component({

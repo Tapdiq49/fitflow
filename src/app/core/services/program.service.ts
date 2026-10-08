@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { DayType, Phase, Variant } from '../models';
+import { DayType, Phase, Variant } from '../../common/interfaces';
 import { DateU } from '../utils';
 import { StoreService } from './store.service';
 import { DEFAULT_GYM_DAYS, TrainerPlanService } from './trainer-plan.service';

@@ -2,8 +2,8 @@ import { ChangeDetectionStrategy, Component, computed, input, output } from '@an
 import { PAGE_SIZES, lastPageOf } from '../../core/paging';
 import { t } from '../../core/i18n/translate';
 import { SelectComponent, SelectOption } from '../forms/select.component';
-import { IconComponent } from '../icon.component';
-import { TPipe } from '../t.pipe';
+import { IconComponent } from '../icon/icon.component';
+import { TPipe } from '../../common/pipes/translate/t.pipe';
 
 /**
  * Footer of a paged table: rows per page, "1–10 / 37", previous / next. It only shows and reports; the owner of the data

@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal, signal } from '@angular/core';
 import { SLOTS } from '../../core/data/meals';
 import { TRAINER_PLAN, TRAINER_SLOTS, trainerExId } from '../../core/data/trainer-plan';
-import { MealItem, SlotId, TrainerMeal, WeekPlan, WorkoutWeekPlan } from '../../core/models';
+import { MealItem, SlotId, TrainerMeal, WeekPlan, WorkoutWeekPlan } from '../../common/interfaces';
 import { DayService } from '../../core/services/day.service';
 import { StoreService } from '../../core/services/store.service';
 import { ToastService } from '../../core/services/toast.service';
@@ -10,10 +10,10 @@ import { DateU, clamp, dayName, fromMin, inputValue, parseNum, toMin } from '../
 import { RouterLink } from '@angular/router';
 import { Listbox, Option } from '@angular/aria/listbox';
 import { Tab, TabContent, TabList, TabPanel, Tabs } from '@angular/aria/tabs';
-import { IconComponent } from '../../shared/icon.component';
+import { IconComponent } from '../../shared/icon/icon.component';
 import { BodyBasicsFormComponent } from '../profile/body-basics-form.component';
 import { TimePickerComponent } from '../../shared/forms/time-picker.component';
-import { TPipe } from '../../shared/t.pipe';
+import { TPipe } from '../../common/pipes/translate/t.pipe';
 import { t, td } from '../../core/i18n/translate';
 
 interface ExRow {

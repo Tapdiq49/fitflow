@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
-import { ProgramService } from '../core/services/program.service';
-import { WorkoutService } from '../core/services/workout.service';
-import { IconComponent } from './icon.component';
+import { ProgramService } from '../../core/services/program.service';
+import { WorkoutService } from '../../core/services/workout.service';
+import { IconComponent } from '../icon/icon.component';
 
 @Component({
   selector: 'app-type-badge',

@@ -1,10 +1,10 @@
 import { Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
-import { AuthError } from '../auth/auth.models';
+import { AuthError } from '../../common/interfaces/auth/auth.models';
 import { AuthStore } from '../auth/auth.store';
 import { FOODS, FOOD_IDS } from '../data/foods';
 import { foodItem, foodOf, systemFoods } from '../food-book';
 import { td } from '../i18n/translate';
-import { Lang, MealItem, SystemFood, Unit } from '../models';
+import { Lang, MealItem, SystemFood, Unit } from '../../common/interfaces';
 import { FoodRepository, FoodRow, NewFoodRow } from '../repositories/food.repository';
 import { activeLang, clamp, rnd } from '../utils';
 import { StoreService } from './store.service';

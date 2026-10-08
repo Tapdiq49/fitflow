@@ -1,5 +1,5 @@
-import type { Sex } from '../models';
-import { AuthEvent, AuthUser, OAuthProvider, SignInInput, SignUpInput, SignUpResult } from './auth.models';
+import type { Sex } from '../../common/interfaces';
+import { AuthEvent, AuthUser, OAuthProvider, SignInInput, SignUpInput, SignUpResult } from '../../common/interfaces/auth/auth.models';
 
 /**
  * The one door to authentication. Supabase Auth implements it today (`supabase-auth.service.ts`); a NestJS

@@ -1,5 +1,5 @@
 import { signal } from '@angular/core';
-import { Lang } from './models';
+import { Lang } from '../common/interfaces';
 
 /** Active UI language. I18nService keeps it in sync with the settings; read it inside templates/computeds to stay reactive. */
 export const activeLang = signal<Lang>('az');

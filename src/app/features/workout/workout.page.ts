@@ -4,7 +4,7 @@ import { RouterLink } from '@angular/router';
 import { lineChart, lineSeries, ACCENT } from '../../core/charts';
 import { EXERCISES, HEAVY_LIFTS, PROGRAM, SAFETY } from '../../core/data/program';
 import { TRAINER_EX_PREFIX } from '../../core/data/trainer-plan';
-import { Variant } from '../../core/models';
+import { Variant } from '../../common/interfaces';
 import { ProgramService } from '../../core/services/program.service';
 import { RestTimerService } from '../../core/services/rest-timer.service';
 import { StoreService } from '../../core/services/store.service';
@@ -12,11 +12,11 @@ import { UiService } from '../../core/services/ui.service';
 import { WorkoutService } from '../../core/services/workout.service';
 import { DateU, F, dayName, inputValue } from '../../core/utils';
 import { CardioCardComponent } from '../dashboard/cardio-card.component';
-import { ChartComponent } from '../../shared/chart.component';
-import { IconComponent } from '../../shared/icon.component';
+import { ChartComponent } from '../../shared/chart/chart.component';
+import { IconComponent } from '../../shared/icon/icon.component';
 import { SelectComponent, SelectOption } from '../../shared/forms/select.component';
 import { TimePickerComponent } from '../../shared/forms/time-picker.component';
-import { TPipe, TdPipe } from '../../shared/t.pipe';
+import { TPipe, TdPipe } from '../../common/pipes/translate/t.pipe';
 import { t } from '../../core/i18n/translate';
 
 @Component({

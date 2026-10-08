@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, DOCUMENT, DestroyRef, inject, input, output } from '@angular/core';
-import { IconComponent } from './icon.component';
-import { TPipe } from './t.pipe';
+import { IconComponent } from '../icon/icon.component';
+import { TPipe } from '../../common/pipes/translate/t.pipe';
 
 /** Modals open right now; the page scrollbar comes back when the last one closes (confirm can stack on a dialog). */
 let openModals = 0;

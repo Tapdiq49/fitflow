@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, effect, input, model, signal, untra
 import { Combobox, ComboboxPopup, ComboboxWidget } from '@angular/aria/combobox';
 import { Listbox, Option } from '@angular/aria/listbox';
 import { CdkConnectedOverlay, CdkOverlayOrigin } from '@angular/cdk/overlay';
-import { IconComponent } from '../icon.component';
+import { IconComponent } from '../icon/icon.component';
 import { POPUP_PANEL, POPUP_POSITIONS } from './popup';
 
 export interface SelectOption<T> {
@@ -34,7 +34,7 @@ export interface SelectOption<T> {
       [(expanded)]="open"
       [disabled]="disabled()"
       [attr.aria-label]="label()"
-      class="flex h-full w-full cursor-pointer items-center justify-between gap-2 rounded-[9px] border bg-bg px-2.5 py-2 text-left text-[14px] font-medium text-text outline-none [transition:border-color_.2s] focus-visible:border-accent aria-disabled:cursor-default aria-disabled:opacity-55"
+      class="flex h-full w-full cursor-pointer items-center justify-between gap-2 rounded-[9px] border bg-bg px-2.5 py-2 text-left text-[14px] font-medium text-text outline-none [transition:border-color_.2s] focus-visible:border-accent aria-disabled:cursor-not-allowed aria-disabled:border-border-soft aria-disabled:bg-surface-2 aria-disabled:text-muted aria-disabled:opacity-70"
       [class]="open() ? 'border-accent' : 'border-border'"
     >
       <span class="truncate">{{ selectedLabel() }}</span><app-icon name="down" size="sm" />

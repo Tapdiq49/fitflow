@@ -1,12 +1,12 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
-import { newDay } from '../../core/models';
+import { newDay } from '../../common/interfaces';
 import { DayService } from '../../core/services/day.service';
 import { ProgramService } from '../../core/services/program.service';
 import { StoreService } from '../../core/services/store.service';
 import { UiService } from '../../core/services/ui.service';
 import { inputValue } from '../../core/utils';
-import { IconComponent } from '../../shared/icon.component';
-import { TPipe } from '../../shared/t.pipe';
+import { IconComponent } from '../../shared/icon/icon.component';
+import { TPipe } from '../../common/pipes/translate/t.pipe';
 
 @Component({
   selector: 'app-cardio-card',

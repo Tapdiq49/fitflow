@@ -1,8 +1,8 @@
 import { Injectable, inject } from '@angular/core';
-import { AuthError } from '../auth/auth.models';
+import { AuthError } from '../../common/interfaces/auth/auth.models';
 import { toAuthError } from '../auth/supabase-errors';
 import { Client, SupabaseClientProvider } from '../backend/supabase-client';
-import { WeekPlan, WorkoutWeekPlan } from '../models';
+import { WeekPlan, WorkoutWeekPlan } from '../../common/interfaces';
 import { PlanKind, PlanRepository, StoredPlans } from './plan.repository';
 
 /** The weekly plans in the Supabase table `trainer_plans` (see supabase/migrations). RLS lets everyone read and write only their own rows. */

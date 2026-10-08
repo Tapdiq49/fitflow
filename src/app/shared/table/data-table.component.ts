@@ -1,7 +1,8 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { CdkDrag, CdkDragDrop, CdkDragHandle, CdkDropList } from '@angular/cdk/drag-drop';
-import { ChangeDetectionStrategy, Component, Directive, TemplateRef, computed, contentChildren, inject, input, output } from '@angular/core';
-import { IconComponent } from '../icon.component';
+import { ChangeDetectionStrategy, Component, computed, contentChildren, input, output } from '@angular/core';
+import { TableCellDirective } from '../../common/directives/table-cell/table-cell.directive';
+import { IconComponent } from '../icon/icon.component';
 
 export interface TableColumn<T> {
   id: string;
@@ -17,13 +18,6 @@ export interface TableColumn<T> {
 export interface TableMove {
   from: number;
   to: number;
-}
-
-/** Marks a template as the content of one column's cell: `<ng-template appTableCell="actions" let-row>…</ng-template>`. */
-@Directive({ selector: 'ng-template[appTableCell]' })
-export class TableCellDirective {
-  readonly id = input.required<string>({ alias: 'appTableCell' });
-  readonly template = inject<TemplateRef<{ $implicit: unknown }>>(TemplateRef);
 }
 
 /**

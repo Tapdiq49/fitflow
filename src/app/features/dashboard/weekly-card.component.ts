@@ -3,9 +3,9 @@ import { weekScoreChart } from '../../core/charts';
 import { DayService } from '../../core/services/day.service';
 import { UiService } from '../../core/services/ui.service';
 import { F } from '../../core/utils';
-import { ChartComponent } from '../../shared/chart.component';
-import { IconComponent } from '../../shared/icon.component';
-import { TPipe } from '../../shared/t.pipe';
+import { ChartComponent } from '../../shared/chart/chart.component';
+import { IconComponent } from '../../shared/icon/icon.component';
+import { TPipe } from '../../common/pipes/translate/t.pipe';
 
 @Component({
   selector: 'app-weekly-card',

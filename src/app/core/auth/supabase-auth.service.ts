@@ -1,9 +1,9 @@
-import type { Sex } from '../models';
+import type { Sex } from '../../common/interfaces';
 import { Injectable, inject } from '@angular/core';
 import type { AuthChangeEvent, User } from '@supabase/supabase-js';
 import { environment } from '../../../environments/environment';
 import { Client, SupabaseClientProvider } from '../backend/supabase-client';
-import { AuthError, AuthEvent, AuthUser, OAuthProvider, SignInInput, SignUpInput, SignUpResult } from './auth.models';
+import { AuthError, AuthEvent, AuthUser, OAuthProvider, SignInInput, SignUpInput, SignUpResult } from '../../common/interfaces/auth/auth.models';
 import { normalizeUsername } from './auth-validation';
 import { AuthService } from './auth.service';
 import { toAuthError } from './supabase-errors';

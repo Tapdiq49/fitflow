@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, afterRenderEffect, inject, input, viewChild } from '@angular/core';
 import { Chart, ChartConfiguration } from 'chart.js';
-import { AnyChartConfig, applyChartTheme, resolveChartColors } from '../core/charts';
-import { ThemeService } from '../core/services/theme.service';
-import { TPipe } from './t.pipe';
+import { AnyChartConfig, applyChartTheme, resolveChartColors } from '../../core/charts';
+import { ThemeService } from '../../core/services/theme.service';
+import { TPipe } from '../../common/pipes/translate/t.pipe';
 
 /** Renders a Chart.js chart and rebuilds it whenever the config signal changes. */
 @Component({

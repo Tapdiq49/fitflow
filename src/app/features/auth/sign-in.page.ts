@@ -4,7 +4,7 @@ import { authErrorText } from '../../core/auth/auth-errors';
 import { AuthStore } from '../../core/auth/auth.store';
 import { inputValue } from '../../core/utils';
 import { t } from '../../core/i18n/translate';
-import { TPipe } from '../../shared/t.pipe';
+import { TPipe } from '../../common/pipes/translate/t.pipe';
 import { AuthShellComponent } from './auth-shell.component';
 import { OAuthButtonsComponent } from './oauth-buttons.component';
 

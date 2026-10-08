@@ -1,4 +1,4 @@
-import { AuthError } from './auth.models';
+import { AuthError } from '../../common/interfaces/auth/auth.models';
 import { toAuthError } from './supabase-errors';
 
 describe('toAuthError', () => {

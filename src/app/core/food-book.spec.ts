@@ -3,7 +3,7 @@ import { foodItem, foodNameOf, foodOf, systemFoods } from './food-book';
 import { itemAmount, itemMacros, itemName } from './nutrition';
 import { DayService } from './services/day.service';
 import { StoreService } from './services/store.service';
-import { MealItem, SystemFood } from './models';
+import { MealItem, SystemFood } from '../common/interfaces';
 import { DateU, activeLang } from './utils';
 
 const EGG: SystemFood = { code: 'egg', names: { az: 'Yumurta', en: 'Backend egg' }, unit: 'ədəd', k: 100, p: 7, c: 1, f: 6, role: 'protein', step: 1, min: 1, max: 4 };

@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { ConfirmService } from '../core/services/confirm.service';
-import { ModalComponent } from './modal.component';
-import { TPipe } from './t.pipe';
+import { ConfirmService } from '../../core/services/confirm.service';
+import { ModalComponent } from '../modal/modal.component';
+import { TPipe } from '../../common/pipes/translate/t.pipe';
 
 @Component({
   selector: 'app-confirm-dialog',

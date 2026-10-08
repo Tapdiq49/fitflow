@@ -1,5 +1,5 @@
 import { foodNameOf, foodOf } from './food-book';
-import { Macros, Meal, MealItem } from './models';
+import { Macros, Meal, MealItem } from '../common/interfaces';
 import { rnd, toMin } from './utils';
 import { td } from './i18n/translate';
 

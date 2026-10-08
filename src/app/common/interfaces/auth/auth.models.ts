@@ -1,4 +1,4 @@
-import type { Sex } from '../models';
+import type { Sex } from '../settings/settings';
 
 /** The app's own view of an account. UI code never sees a Supabase (or later NestJS) user object. */
 export interface AuthUser {

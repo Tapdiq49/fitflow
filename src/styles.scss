@@ -1,9 +1,19 @@
 /* FitFlow global styles — Tailwind v4 setup, design tokens and the shared primitives used by all views.
    Preflight is intentionally not imported: the UI was built on browser defaults (paragraph/list margins,
    heading sizes, inline SVG), so leaving it out keeps visual parity. */
+@use 'sass:meta';
+@use 'styles/skins'; // color skins: accent tokens per data-skin, dark and light variant
+
+// Sass moves plain CSS `@import`s above everything else, which would put them before the layer order below.
+// So the two Tailwind imports are written out: `@import '…/theme.css' layer(theme)` and
+// `@import '…/utilities.css' layer(utilities) source(none)` (utilities.css is just `@tailwind utilities`).
 @layer theme, base, components, utilities;
-@import 'tailwindcss/theme.css' layer(theme);
-@import 'tailwindcss/utilities.css' layer(utilities) source(none);
+@layer theme {
+  @include meta.load-css('tailwindcss/theme.css');
+}
+@layer utilities {
+  @tailwind utilities source(none);
+}
 @source './app';
 
 /* Breakpoints mirror the original max-width media queries; declared largest first so smaller ones win. */
@@ -82,7 +92,7 @@
 
 /* Only these tokens exist as Tailwind colors/radii, so every color resolves to a variable above. */
 @theme inline {
-  --color-*: initial;
+  --color-#{'*'}: initial;
   --color-bg: var(--bg);
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
@@ -109,7 +119,7 @@
   --color-backdrop: var(--backdrop);
   --color-shade: var(--shade);
 
-  --radius-*: initial;
+  --radius-#{'*'}: initial;
   --radius-card: var(--radius);
   --radius-control: var(--radius-sm);
   --shadow-card: var(--shadow);
@@ -184,6 +194,16 @@
   }
   select {
     cursor: pointer;
+  }
+  input:disabled,
+  select:disabled,
+  textarea:disabled {
+    background: var(--surface-2);
+    border-color: var(--border-soft);
+    color: var(--muted);
+    opacity: 0.7;
+    cursor: not-allowed;
+    -webkit-text-fill-color: var(--muted);
   }
 }
 

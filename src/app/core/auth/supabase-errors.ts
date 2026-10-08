@@ -1,4 +1,4 @@
-import { AuthError, AuthErrorCode } from './auth.models';
+import { AuthError, AuthErrorCode } from '../../common/interfaces/auth/auth.models';
 
 /** Supabase Auth `error.code` values (and the codes our `login` function returns) -> our codes. */
 const BY_CODE: Record<string, AuthErrorCode> = {

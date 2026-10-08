@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal, sig
 import { RouterLink } from '@angular/router';
 import { authErrorText } from '../../core/auth/auth-errors';
 import { AuthStore } from '../../core/auth/auth.store';
-import { Goal, MenuMode, Settings, Sex, TargetMode, ThemeMode, WorkoutMode } from '../../core/models';
+import { Goal, MenuMode, Settings, Sex, TargetMode, ThemeMode, WorkoutMode } from '../../common/interfaces';
 import { BodyIssue, OBESE_BMI, TargetSuggestion, bmiOf, bodyIssue, plausibleBody, suggestTargets } from '../../core/targets';
 import { BodyService } from '../../core/services/body.service';
 import { ConfirmService } from '../../core/services/confirm.service';
@@ -13,11 +13,11 @@ import { DEFAULT_SETTINGS, SETTINGS_RANGE, StoreService } from '../../core/servi
 import { ToastService } from '../../core/services/toast.service';
 import { UiService } from '../../core/services/ui.service';
 import { DateU, F, inputValue, parseNum } from '../../core/utils';
-import { IconComponent } from '../../shared/icon.component';
+import { IconComponent } from '../../shared/icon/icon.component';
 import { DatePickerComponent } from '../../shared/forms/date-picker.component';
 import { SelectComponent, SelectOption } from '../../shared/forms/select.component';
 import { TimePickerComponent } from '../../shared/forms/time-picker.component';
-import { TPipe } from '../../shared/t.pipe';
+import { TPipe } from '../../common/pipes/translate/t.pipe';
 import { t } from '../../core/i18n/translate';
 
 type NumField = 'height' | 'startWeight' | 'age' | 'kcalTarget' | 'proteinTarget';

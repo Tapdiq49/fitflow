@@ -1,5 +1,5 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { AppState, DayRecord, MenuMode, Settings, WorkoutMode, newDay } from '../models';
+import { AppState, DayRecord, MenuMode, Settings, WorkoutMode, newDay } from '../../common/interfaces';
 import { BodyIssue, KCAL_MAX, KCAL_MIN, PROTEIN_MAX, PROTEIN_MIN, bmiOf, bodyIssue } from '../targets';
 import { DateU, clamp } from '../utils';
 import { ToastService } from './toast.service';
@@ -36,6 +36,8 @@ export const DEFAULT_SETTINGS: Omit<Settings, 'programStart'> = {
   menuMode: 'auto',
   workoutMode: 'program',
   theme: 'system',
+  skin: 'lime',
+  sidebarCollapsed: false,
   lang: 'az',
   showCreatine: true,
   workoutTime: '18:00',

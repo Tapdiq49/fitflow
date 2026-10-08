@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { Router } from '@angular/router';
 import { SLOTS } from '../../core/data/meals';
-import { Meal } from '../../core/models';
+import { Meal } from '../../common/interfaces';
 import { mealMacros, menuTotals, sleepMinutes } from '../../core/nutrition';
 import { DayService } from '../../core/services/day.service';
 import { ProgramService } from '../../core/services/program.service';
@@ -9,9 +9,9 @@ import { StoreService } from '../../core/services/store.service';
 import { UiService } from '../../core/services/ui.service';
 import { WorkoutService } from '../../core/services/workout.service';
 import { F } from '../../core/utils';
-import { ModalComponent } from '../../shared/modal.component';
-import { TypeBadgeComponent } from '../../shared/type-badge.component';
-import { TPipe, TdPipe } from '../../shared/t.pipe';
+import { ModalComponent } from '../../shared/modal/modal.component';
+import { TypeBadgeComponent } from '../../shared/type-badge/type-badge.component';
+import { TPipe, TdPipe } from '../../common/pipes/translate/t.pipe';
 import { t, td } from '../../core/i18n/translate';
 
 /** Calendar day details: meals, workout, cardio, water, weight, sleep. */

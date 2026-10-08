@@ -1,6 +1,6 @@
 import { Injectable, effect, inject, untracked } from '@angular/core';
 import { loadLang } from '../i18n/translate';
-import { Lang } from '../models';
+import { Lang } from '../../common/interfaces';
 import { activeLang } from '../utils';
 import { StoreService } from './store.service';
 

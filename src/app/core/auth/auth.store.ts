@@ -1,8 +1,8 @@
-import type { Sex } from '../models';
+import type { Sex } from '../../common/interfaces';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { t } from '../i18n/translate';
 import { ToastService } from '../services/toast.service';
-import { AuthStatus, AuthUser, SignInInput } from './auth.models';
+import { AuthStatus, AuthUser, SignInInput } from '../../common/interfaces/auth/auth.models';
 import { AuthService } from './auth.service';
 
 /**

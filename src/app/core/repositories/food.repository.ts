@@ -1,5 +1,5 @@
 import { HttpHeaders, HttpResourceRequest } from '@angular/common/http';
-import { FoodRole, Lang, Unit } from '../models';
+import { FoodRole, Lang, Unit } from '../../common/interfaces';
 import { Page, PageParams, PageSource } from '../paging';
 
 /** One food of the reference list as the backend holds it. A system food has a `code` (the key saved menus use), a user food has none. */

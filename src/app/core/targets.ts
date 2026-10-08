@@ -1,4 +1,4 @@
-import { Goal, Sex } from './models';
+import { Goal, Sex } from '../common/interfaces';
 import { clamp } from './utils';
 
 /** Bounds of the daily targets the app accepts (also the bounds of the settings form). */

@@ -18,7 +18,7 @@ Status: decided 2026-10-07. **Phase 1, authentication: implemented 2026-10-07** 
 
 ## Why a backend
 
-All data (`AppState` in `core/models.ts`) lives in one browser's localStorage under `fitflow.v1`. Opening the app on another device shows nothing. The goal is per-user data: sign in anywhere and see your own settings, days, menus, weights, weekly meal/workout plans and history.
+All data (`AppState` in `common/interfaces/state/app-state.ts`) lives in one browser's localStorage under `fitflow.v1`. Opening the app on another device shows nothing. The goal is per-user data: sign in anywhere and see your own settings, days, menus, weights, weekly meal/workout plans and history.
 
 ## Decision
 

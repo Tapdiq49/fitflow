@@ -23,10 +23,10 @@ export class SessionService {
   async signOut(): Promise<boolean> {
     if (!(await this.confirm.ask(t('auth.signOutConfirm'), { confirmLabel: t('auth.signOut'), danger: true }))) return false;
     // Light / dark mode and the language belong to this device, not to the person: they stay as they were.
-    const { theme, lang } = this.store.settings();
+    const { theme, skin, lang } = this.store.settings();
     await this.auth.signOut();
     this.store.reset();
-    this.store.mutate((s) => Object.assign(s.settings, { theme, lang }));
+    this.store.mutate((s) => Object.assign(s.settings, { theme, skin, lang }));
     this.ui.goToday();
     this.day.ensureDay(this.ui.today());
     return true;

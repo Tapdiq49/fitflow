@@ -1,17 +1,17 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FOOD_IDS } from '../../core/data/foods';
-import { MealItem } from '../../core/models';
+import { MealItem } from '../../common/interfaces';
 import { itemAmount, itemMacros, itemName, sumMacros } from '../../core/nutrition';
 import { DayService } from '../../core/services/day.service';
 import { FoodCatalogService } from '../../core/services/food-catalog.service';
 import { ToastService } from '../../core/services/toast.service';
 import { UiService } from '../../core/services/ui.service';
 import { F, nowHM, parseNum } from '../../core/utils';
-import { IconComponent } from '../../shared/icon.component';
-import { ModalComponent } from '../../shared/modal.component';
+import { IconComponent } from '../../shared/icon/icon.component';
+import { ModalComponent } from '../../shared/modal/modal.component';
 import { SelectComponent, SelectOption } from '../../shared/forms/select.component';
 import { TimePickerComponent } from '../../shared/forms/time-picker.component';
-import { TPipe, TdPipe } from '../../shared/t.pipe';
+import { TPipe, TdPipe } from '../../common/pipes/translate/t.pipe';
 import { t, td } from '../../core/i18n/translate';
 
 @Component({

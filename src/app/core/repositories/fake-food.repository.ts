@@ -1,5 +1,5 @@
 import { HttpHeaders, HttpResourceRequest } from '@angular/common/http';
-import { AuthError } from '../auth/auth.models';
+import { AuthError } from '../../common/interfaces/auth/auth.models';
 import { Page, PageParams } from '../paging';
 import { FoodRepository, FoodRow, NewFoodRow } from './food.repository';
 

@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, ElementRef, computed, effect, inject, signal, untracked, viewChild } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AuthStore } from '../../core/auth/auth.store';
-import { Lang, Unit } from '../../core/models';
+import { Lang, Unit } from '../../common/interfaces';
 import { ConfirmService } from '../../core/services/confirm.service';
 import { MIN_SEARCH_LENGTH, Page, PagedQuery, pageSlice, pagedResource } from '../../core/paging';
 import { FoodRepository, FoodRow } from '../../core/repositories/food.repository';
@@ -9,10 +9,11 @@ import { FoodCatalogService, FoodEntry, foodEntryOf } from '../../core/services/
 import { ToastService } from '../../core/services/toast.service';
 import { F, inputValue, parseNum } from '../../core/utils';
 import { SelectComponent, SelectOption } from '../../shared/forms/select.component';
-import { IconComponent } from '../../shared/icon.component';
+import { IconComponent } from '../../shared/icon/icon.component';
 import { PaginationComponent } from '../../shared/pagination/pagination.component';
-import { DataTableComponent, TableCellDirective, TableColumn, TableMove } from '../../shared/table/data-table.component';
-import { TPipe } from '../../shared/t.pipe';
+import { TableCellDirective } from '../../common/directives/table-cell/table-cell.directive';
+import { DataTableComponent, TableColumn, TableMove } from '../../shared/table/data-table.component';
+import { TPipe } from '../../common/pipes/translate/t.pipe';
 import { t, td } from '../../core/i18n/translate';
 
 const BLANK = { az: '', en: '', ru: '', unit: 'q' as Unit, k: '', p: '', c: '', f: '' };

@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
-import { AuthUser } from '../../core/auth/auth.models';
+import { AuthUser } from '../../common/interfaces/auth/auth.models';
 
 /** The user's picture, or the first letter of their name on the accent color when there is none. */
 @Component({
