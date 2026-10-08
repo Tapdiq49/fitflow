@@ -40,6 +40,7 @@ export const DEFAULT_SETTINGS: Omit<Settings, 'programStart'> = {
   sidebarCollapsed: false,
   dir: 'ltr',
   navLayout: 'side',
+  headerMode: 'fixed',
   fontScale: 'md',
   corners: 'medium',
   highContrast: false,

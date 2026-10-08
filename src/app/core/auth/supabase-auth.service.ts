@@ -2,11 +2,18 @@ import type { Sex } from '../../common/interfaces';
 import { Injectable, inject } from '@angular/core';
 import type { AuthChangeEvent, User } from '@supabase/supabase-js';
 import { environment } from '../../../environments/environment';
+import type { Database } from '../backend/database.types';
 import { Client, SupabaseClientProvider } from '../backend/supabase-client';
 import { AuthError, AuthEvent, AuthUser, OAuthProvider, SignInInput, SignUpInput, SignUpResult } from '../../common/interfaces/auth/auth.models';
 import { normalizeUsername } from './auth-validation';
 import { AuthService } from './auth.service';
 import { toAuthError } from './supabase-errors';
+
+type ProfileTable = Database['public']['Tables']['profiles'];
+type ProfileRow = Pick<ProfileTable['Row'], 'username' | 'email_preferences' | 'avatar' | 'height_cm' | 'start_weight_kg' | 'age' | 'sex' | 'settings'>;
+type ProfilePatch = ProfileTable['Update'];
+/** The columns the app reads from a profile (one list for the read and for the row a write sends back). */
+const PROFILE_COLUMNS = 'username, email_preferences, avatar, height_cm, start_weight_kg, age, sex, settings';
 
 /** How long a profile read is reused (sign-in / restore are followed at once by a session event). */
 const RECENT_MS = 30_000;
@@ -173,51 +180,19 @@ export class SupabaseAuthService extends AuthService {
   }
 
   async setUsername(username: string): Promise<AuthUser> {
-    const client = await this.client().catch((e: unknown) => {
-      throw toAuthError(e);
-    });
-    const { data: sessionData } = await client.auth.getSession();
-    const user = sessionData.session?.user;
-    if (!user) throw new AuthError('session_expired');
-    const { error } = await client.from('profiles').update({ username: normalizeUsername(username) }).eq('id', user.id);
-    if (error) throw toAuthError(error);
-    return this.loadUser(client, user, true);
+    return this.updateProfile({ username: normalizeUsername(username) });
   }
 
   async setAvatar(avatar: string | null): Promise<AuthUser> {
-    const client = await this.client().catch((e: unknown) => {
-      throw toAuthError(e);
-    });
-    const { data: sessionData } = await client.auth.getSession();
-    const user = sessionData.session?.user;
-    if (!user) throw new AuthError('session_expired');
-    const { error } = await client.from('profiles').update({ avatar }).eq('id', user.id);
-    if (error) throw toAuthError(error);
-    return this.loadUser(client, user, true);
+    return this.updateProfile({ avatar });
   }
 
   async setBodyBasics(height: number, startWeight: number, age: number, sex: Sex): Promise<AuthUser> {
-    const client = await this.client().catch((e: unknown) => {
-      throw toAuthError(e);
-    });
-    const { data: sessionData } = await client.auth.getSession();
-    const user = sessionData.session?.user;
-    if (!user) throw new AuthError('session_expired');
-    const { error } = await client.from('profiles').update({ height_cm: height, start_weight_kg: startWeight, age, sex }).eq('id', user.id);
-    if (error) throw toAuthError(error);
-    return this.loadUser(client, user, true);
+    return this.updateProfile({ height_cm: height, start_weight_kg: startWeight, age, sex });
   }
 
   async setSettings(settings: Record<string, unknown>): Promise<AuthUser> {
-    const client = await this.client().catch((e: unknown) => {
-      throw toAuthError(e);
-    });
-    const { data: sessionData } = await client.auth.getSession();
-    const user = sessionData.session?.user;
-    if (!user) throw new AuthError('session_expired');
-    const { error } = await client.from('profiles').update({ settings }).eq('id', user.id);
-    if (error) throw toAuthError(error);
-    return this.loadUser(client, user, true);
+    return this.updateProfile({ settings });
   }
 
   async changePassword(current: string, next: string): Promise<void> {
@@ -230,6 +205,21 @@ export class SupabaseAuthService extends AuthService {
     // Proves the current password (same throttled path as sign-in) before the new one is accepted.
     await this.signIn({ identifier: email, password: current });
     await this.updatePassword(next);
+  }
+
+  /** Writes part of the signed-in user's profile row and gets the row back in the same request (no second read). */
+  private async updateProfile(patch: ProfilePatch): Promise<AuthUser> {
+    const client = await this.client().catch((e: unknown) => {
+      throw toAuthError(e);
+    });
+    const { data: sessionData } = await client.auth.getSession();
+    const user = sessionData.session?.user;
+    if (!user) throw new AuthError('session_expired');
+    const { data, error } = await client.from('profiles').update(patch).eq('id', user.id).select(PROFILE_COLUMNS).maybeSingle();
+    if (error) throw toAuthError(error);
+    const saved = Promise.resolve(this.toUser(user, data));
+    this.recent = { id: user.id, at: Date.now(), user: saved };
+    return saved;
   }
 
   private loadUser(client: Client, user: Pick<User, 'id' | 'email' | 'app_metadata'>, fresh = false): Promise<AuthUser> {
@@ -245,7 +235,11 @@ export class SupabaseAuthService extends AuthService {
   }
 
   private async readUser(client: Client, user: Pick<User, 'id' | 'email' | 'app_metadata'>): Promise<AuthUser> {
-    const { data } = await client.from('profiles').select('username, email_preferences, avatar, height_cm, start_weight_kg, age, sex, settings').eq('id', user.id).maybeSingle();
+    const { data } = await client.from('profiles').select(PROFILE_COLUMNS).eq('id', user.id).maybeSingle();
+    return this.toUser(user, data);
+  }
+
+  private toUser(user: Pick<User, 'id' | 'email' | 'app_metadata'>, data: ProfileRow | null): AuthUser {
     return {
       id: user.id,
       email: user.email ?? '',

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DOCUMENT, DestroyRef, ElementRef, afterNextRender, computed, inject, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DOCUMENT, DestroyRef, ElementRef, afterNextRender, computed, effect, inject, untracked, viewChild } from '@angular/core';
 import { Location, NgTemplateOutlet } from '@angular/common';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
@@ -59,7 +59,7 @@ import { t } from './core/i18n/translate';
         <header
           #header
           [style.display]="isAuthPage() ? 'none' : null"
-          class="sticky top-0 z-40 -mx-7 mb-5 flex flex-wrap items-center justify-between gap-4 border-b border-border-soft bg-bg/92 px-7 pt-[22px] pb-3 backdrop-blur-[10px] tablet:-mx-4 tablet:px-4 tablet:pt-4"
+          [class]="headerClass()"
         >
           <div class="flex items-center gap-3">
             @if (sidebarShown()) {
@@ -74,8 +74,10 @@ import { t } from './core/i18n/translate';
             </button>
             }
             <div>
-              <h2 class="text-[1.375rem] font-extrabold tracking-[-.02em]">{{ title() }}</h2>
-              <div class="text-[0.8125rem] text-muted">{{ 'app.naturalMuscleGrowthAthletic' | t }}</div>
+              <h2 class="font-extrabold tracking-[-.02em]" [class]="theme.headerMode() === 'compact' ? 'text-[1.125rem]' : 'text-[1.375rem]'">{{ title() }}</h2>
+              @if (theme.headerMode() !== 'compact') {
+                <div class="text-[0.8125rem] text-muted">{{ 'app.naturalMuscleGrowthAthletic' | t }}</div>
+              }
             </div>
           </div>
           <div class="flex items-center gap-1.5 rounded-[calc(var(--r)_*_12px)] border border-border-soft bg-surface p-1">
@@ -184,6 +186,17 @@ export class App {
   protected readonly theme = inject(ThemeService); // also applies data-theme and data-skin on <html>
   /** Classic and floating layouts have the sidebar; top and dock replace it. */
   protected readonly sidebarShown = computed(() => !this.isAuthPage() && (this.theme.layout() === 'side' || this.theme.layout() === 'floating'));
+  protected readonly headerClass = computed(() => {
+    const base = 'z-40 -mx-7 mb-5 flex flex-wrap items-center justify-between gap-4 border-b border-border-soft px-7 tablet:-mx-4 tablet:px-4 ';
+    switch (this.theme.headerMode()) {
+      case 'static':
+        return base + 'relative pt-[1.375rem] pb-3 tablet:pt-4';
+      case 'compact':
+        return base + 'sticky top-0 bg-bg/92 py-2 backdrop-blur-[10px]';
+      default:
+        return base + 'sticky top-0 bg-bg/92 pt-[1.375rem] pb-3 backdrop-blur-[10px] tablet:pt-4';
+    }
+  });
   protected readonly asideClass = computed(() => {
     const pad = this.ui.sidebarCollapsed() ? 'px-2.5' : 'px-3.5';
     const base = 'sticky flex flex-col gap-1.5 overflow-x-hidden py-[22px] tablet:hidden ' + pad;
@@ -195,17 +208,25 @@ export class App {
   private readonly location = inject(Location);
   protected readonly auth = inject(AuthStore);
   protected readonly store = inject(StoreService);
-  private readonly header = viewChild.required<ElementRef<HTMLElement>>('header');
+  private readonly header = viewChild<ElementRef<HTMLElement>>('header');
 
   constructor() {
     const root = inject(DOCUMENT).documentElement;
     const destroyRef = inject(DestroyRef);
+    // Bars that stick under the header read --header-h; a header that scrolls away leaves no gap (0).
+    const publish = (el: HTMLElement): void => root.style.setProperty('--header-h', this.theme.headerMode() === 'static' ? '0px' : `${el.offsetHeight}px`);
     afterNextRender(() => {
       if (typeof ResizeObserver === 'undefined') return;
-      const el = this.header().nativeElement;
-      const ro = new ResizeObserver(() => root.style.setProperty('--header-h', `${el.offsetHeight}px`));
+      const el = this.header()?.nativeElement;
+      if (!el) return;
+      const ro = new ResizeObserver(() => publish(el));
       ro.observe(el);
       destroyRef.onDestroy(() => ro.disconnect());
+    });
+    effect(() => {
+      this.theme.headerMode();
+      const el = this.header()?.nativeElement;
+      if (el) untracked(() => publish(el));
     });
   }
 

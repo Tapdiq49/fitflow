@@ -1,5 +1,5 @@
 import { Injectable, computed, effect, inject, signal } from '@angular/core';
-import { CORNERS, Corners, DATE_FORMATS, DateFormat, Direction, FONT_SCALES, FontScale, NAV_LAYOUTS, NavLayout, SKINS, SkinId, Settings, TIME_FORMATS, TimeFormat } from '../../common/interfaces';
+import { CORNERS, Corners, DATE_FORMATS, DateFormat, Direction, FONT_SCALES, FontScale, HEADER_MODES, HeaderMode, NAV_LAYOUTS, NavLayout, SKINS, SkinId, Settings, TIME_FORMATS, TimeFormat } from '../../common/interfaces';
 import { activeDateFormat, activeTimeFormat } from '../utils';
 import { DEFAULT_SETTINGS } from './store.service';
 import { StoreService } from './store.service';
@@ -33,6 +33,7 @@ export class ThemeService {
 
   /** Display options; an unknown value (older or newer backend data) falls back to the default. */
   readonly fontScale = computed<FontScale>(() => this.pick(FONT_SCALES, this.store.settings().fontScale, 'md'));
+  readonly headerMode = computed<HeaderMode>(() => this.pick(HEADER_MODES, this.store.settings().headerMode, 'fixed'));
   readonly corners = computed<Corners>(() => this.pick(CORNERS, this.store.settings().corners, 'medium'));
   readonly highContrast = computed(() => this.store.settings().highContrast === true);
   readonly timeFormat = computed<TimeFormat>(() => this.pick(TIME_FORMATS, this.store.settings().timeFormat, '24h'));
@@ -53,14 +54,14 @@ export class ThemeService {
   }
 
   /** Saves one display option. */
-  set<K extends 'fontScale' | 'corners' | 'highContrast' | 'timeFormat' | 'dateFormat'>(key: K, value: Settings[K]): void {
+  set<K extends 'headerMode' | 'fontScale' | 'corners' | 'highContrast' | 'timeFormat' | 'dateFormat'>(key: K, value: Settings[K]): void {
     this.store.mutate((s) => (s.settings[key] = value));
   }
 
   /** Puts every look option (theme, skin, direction, layout, sidebar, text size, corners, contrast, clock and date format) back to its default. */
   resetDisplay(): void {
-    const { theme, skin, dir, navLayout, sidebarCollapsed, fontScale, corners, highContrast, timeFormat, dateFormat } = DEFAULT_SETTINGS;
-    this.store.mutate((s) => Object.assign(s.settings, { theme, skin, dir, navLayout, sidebarCollapsed, fontScale, corners, highContrast, timeFormat, dateFormat }));
+    const { theme, skin, dir, navLayout, headerMode, sidebarCollapsed, fontScale, corners, highContrast, timeFormat, dateFormat } = DEFAULT_SETTINGS;
+    this.store.mutate((s) => Object.assign(s.settings, { theme, skin, dir, navLayout, headerMode, sidebarCollapsed, fontScale, corners, highContrast, timeFormat, dateFormat }));
   }
 
   setDir(dir: Direction): void {

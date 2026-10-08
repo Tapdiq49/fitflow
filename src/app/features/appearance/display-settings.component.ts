@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { CdkConnectedOverlay, CdkOverlayOrigin, ConnectedPosition } from '@angular/cdk/overlay';
-import { CORNERS, DATE_FORMATS, FONT_SCALES, NAV_LAYOUTS, NavLayout, SKINS, SkinId, TIME_FORMATS } from '../../common/interfaces';
+import { CORNERS, DATE_FORMATS, FONT_SCALES, HEADER_MODES, NAV_LAYOUTS, NavLayout, SKINS, SkinId, TIME_FORMATS } from '../../common/interfaces';
 import { TPipe } from '../../common/pipes/translate/t.pipe';
 import { t } from '../../core/i18n/translate';
 import { ThemeService } from '../../core/services/theme.service';
@@ -57,7 +57,7 @@ interface Choice {
       (overlayKeydown)="onKey($event)"
       (detach)="open.set(false)"
     >
-      <div role="dialog" [attr.aria-label]="'display.title' | t" [class]="panel + ' max-h-[calc(100vh-80px)] w-[17.5rem] max-w-[calc(100vw-16px)] p-3'">
+      <div role="dialog" [attr.aria-label]="'display.title' | t" [class]="panel + ' max-h-[calc(100vh-80px)] w-[19rem] p-3'">
         <div class="mb-1.5 text-[0.6875rem] font-bold tracking-[.06em] text-muted uppercase">{{ 'display.palette' | t }}</div>
         <div role="radiogroup" [attr.aria-label]="'display.palette' | t" class="mb-3 flex justify-between gap-1">
           @for (k of skins(); track k.value) {
@@ -173,6 +173,14 @@ export class DisplaySettingsComponent {
         { value: 'rtl', label: t('display.rtl') },
       ],
       set: (v) => this.theme.setDir(v as 'ltr' | 'rtl'),
+    },
+    {
+      id: 'header',
+      label: t('display.header'),
+      value: this.theme.headerMode(),
+      cols: 3,
+      options: HEADER_MODES.map((value) => ({ value, label: t('header.' + value) })),
+      set: (v) => this.theme.set('headerMode', v as (typeof HEADER_MODES)[number]),
     },
     {
       id: 'font',

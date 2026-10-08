@@ -1,6 +1,9 @@
 // Thin scrollbars that follow the skin: the thumb is the accent mixed into the border color, the track stays invisible.
-// Both properties are inherited, so setting them on <html> styles the page, panels, tables and popups alike.
+// `scrollbar-width` is not inherited, so it is set on every element; `scrollbar-color` is, so <html> carries it for the page,
+// panels, tables and popups alike.
 :root {
-  scrollbar-width: thin;
   scrollbar-color: color-mix(in srgb, var(--accent) 50%, var(--border-strong)) transparent;
+}
+* {
+  scrollbar-width: thin;
 }

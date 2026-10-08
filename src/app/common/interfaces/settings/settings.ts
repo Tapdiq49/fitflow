@@ -34,6 +34,10 @@ export type TimeFormat = (typeof TIME_FORMATS)[number];
 export const DATE_FORMATS = ['text', 'dmy', 'mdy'] as const;
 export type DateFormat = (typeof DATE_FORMATS)[number];
 
+/** The top bar: stays on screen (fixed), scrolls away with the page (static), or stays but is lower (compact). */
+export const HEADER_MODES = ['fixed', 'static', 'compact'] as const;
+export type HeaderMode = (typeof HEADER_MODES)[number];
+
 /** 'program' = built-in Full Body A/B with progression; 'trainer' = exercises the trainer gives, entered per week. */
 export type WorkoutMode = 'program' | 'trainer';
 
@@ -65,6 +69,7 @@ export interface Settings {
   sidebarCollapsed: boolean;
   dir: Direction;
   navLayout: NavLayout;
+  headerMode: HeaderMode;
   fontScale: FontScale;
   corners: Corners;
   highContrast: boolean;
