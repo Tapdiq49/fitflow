@@ -1,6 +1,16 @@
 import az from './az.json';
 import en from './en.json';
 import ru from './ru.json';
+import adminAz from './admin.az.json';
+import adminEn from './admin.en.json';
+import adminRu from './admin.ru.json';
+import planAz from './plan.az.json';
+import planEn from './plan.en.json';
+import planRu from './plan.ru.json';
+import suppAz from './supp.az.json';
+import suppEn from './supp.en.json';
+import suppRu from './supp.ru.json';
+import { PERMISSIONS } from '../../common/interfaces';
 import { activeLang } from '../utils';
 import { t, td } from './translate';
 
@@ -16,6 +26,32 @@ describe('translations', () => {
     const keys = Object.keys(AZ).sort();
     expect(Object.keys(EN).sort()).toEqual(keys);
     expect(Object.keys(RU).sort()).toEqual(keys);
+  });
+
+  it('has every key of each text pack in all three languages, with the same placeholders, and none of them in the main files', () => {
+    const packs: Record<string, [Record<string, string>, Record<string, string>, Record<string, string>]> = {
+      admin: [adminAz, adminEn, adminRu],
+      plan: [planAz, planEn, planRu],
+      supp: [suppAz, suppEn, suppRu],
+    };
+    for (const [name, [pAz, pEn, pRu]] of Object.entries(packs)) {
+      const keys = Object.keys(pAz).sort();
+      expect(Object.keys(pEn).sort(), `${name} en`).toEqual(keys);
+      expect(Object.keys(pRu).sort(), `${name} ru`).toEqual(keys);
+      for (const key of keys) {
+        expect(AZ[key], `${name} pack key ${key} is also in az.json`).toBeUndefined();
+        expect(placeholders(pEn[key]), `${name} en ${key}`).toEqual(placeholders(pAz[key]));
+        expect(placeholders(pRu[key]), `${name} ru ${key}`).toEqual(placeholders(pAz[key]));
+      }
+    }
+  });
+
+  it('has a text for every permission and module in the admin pack', () => {
+    const pack = adminAz as Record<string, string>;
+    for (const id of PERMISSIONS) {
+      expect(pack['perm.' + id], id).toBeTruthy();
+      expect(pack['perm.module.' + id.slice(0, id.indexOf('.'))], id).toBeTruthy();
+    }
   });
 
   it('keeps the same {placeholders} in every language', () => {

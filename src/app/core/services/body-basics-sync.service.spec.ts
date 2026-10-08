@@ -7,7 +7,7 @@ import { BodyBasicsSyncService } from './body-basics-sync.service';
 import { StoreService } from './store.service';
 import { ToastService } from './toast.service';
 
-const USER: AuthUser = { id: 'u1', email: 'a@example.com', username: 'john', emailPreferences: false, avatar: null, height: null, startWeight: null, age: null, sex: null, settings: null, hasPassword: true };
+const USER: AuthUser = { id: 'u1', email: 'a@example.com', username: 'john', emailPreferences: false, avatar: null, height: null, startWeight: null, age: null, sex: null, settings: null, roleId: 'user', permissions: null, hasPassword: true };
 
 describe('BodyBasicsSyncService', () => {
   let fake: FakeAuthService;

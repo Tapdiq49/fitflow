@@ -10,10 +10,13 @@ import { AuthService } from './auth.service';
 import { toAuthError } from './supabase-errors';
 
 type ProfileTable = Database['public']['Tables']['profiles'];
-type ProfileRow = Pick<ProfileTable['Row'], 'username' | 'email_preferences' | 'avatar' | 'height_cm' | 'start_weight_kg' | 'age' | 'sex' | 'settings'>;
+type ProfileRow = Pick<ProfileTable['Row'], 'username' | 'email_preferences' | 'avatar' | 'height_cm' | 'start_weight_kg' | 'age' | 'sex' | 'settings' | 'role_id'>;
 type ProfilePatch = ProfileTable['Update'];
 /** The columns the app reads from a profile (one list for the read and for the row a write sends back). */
-const PROFILE_COLUMNS = 'username, email_preferences, avatar, height_cm, start_weight_kg, age, sex, settings';
+const PROFILE_COLUMNS = 'username, email_preferences, avatar, height_cm, start_weight_kg, age, sex, settings, role_id';
+/** Postgres "undefined column": the roles migration has not been applied yet, so the profile is read without `role_id` (everybody is a plain user until it is). */
+const UNDEFINED_COLUMN = '42703';
+const PROFILE_COLUMNS_WITHOUT_ROLE = 'username, email_preferences, avatar, height_cm, start_weight_kg, age, sex, settings';
 
 /** How long a profile read is reused (sign-in / restore are followed at once by a session event). */
 const RECENT_MS = 30_000;
@@ -33,6 +36,7 @@ const EVENTS: Partial<Record<AuthChangeEvent, AuthEvent>> = {
 export class SupabaseAuthService extends AuthService {
   private readonly provider = inject(SupabaseClientProvider);
   /** The profile read of the last sign-in / restore, so the session event that follows it does not repeat the request. */
+  private rolePermissions: { roleId: string; permissions: string[] } | null = null;
   private recent: { id: string; at: number; user: Promise<AuthUser> } | null = null;
 
   private client(): Promise<Client> {
@@ -215,9 +219,14 @@ export class SupabaseAuthService extends AuthService {
     const { data: sessionData } = await client.auth.getSession();
     const user = sessionData.session?.user;
     if (!user) throw new AuthError('session_expired');
-    const { data, error } = await client.from('profiles').update(patch).eq('id', user.id).select(PROFILE_COLUMNS).maybeSingle();
+    let { data, error } = await client.from('profiles').update(patch).eq('id', user.id).select(PROFILE_COLUMNS).maybeSingle();
+    if (error?.code === UNDEFINED_COLUMN) {
+      const retry = await client.from('profiles').update(patch).eq('id', user.id).select(PROFILE_COLUMNS_WITHOUT_ROLE).maybeSingle();
+      data = retry.data as ProfileRow | null;
+      error = retry.error;
+    }
     if (error) throw toAuthError(error);
-    const saved = Promise.resolve(this.toUser(user, data));
+    const saved = Promise.resolve(this.toUser(user, data, await this.permissionsOf(client, data?.role_id ?? 'user', false)));
     this.recent = { id: user.id, at: Date.now(), user: saved };
     return saved;
   }
@@ -235,11 +244,30 @@ export class SupabaseAuthService extends AuthService {
   }
 
   private async readUser(client: Client, user: Pick<User, 'id' | 'email' | 'app_metadata'>): Promise<AuthUser> {
-    const { data } = await client.from('profiles').select(PROFILE_COLUMNS).eq('id', user.id).maybeSingle();
-    return this.toUser(user, data);
+    let { data, error } = await client.from('profiles').select(PROFILE_COLUMNS).eq('id', user.id).maybeSingle();
+    if (error?.code === UNDEFINED_COLUMN) {
+      const retry = await client.from('profiles').select(PROFILE_COLUMNS_WITHOUT_ROLE).eq('id', user.id).maybeSingle();
+      data = retry.data as ProfileRow | null;
+      error = retry.error;
+    }
+    return this.toUser(user, data, await this.permissionsOf(client, data?.role_id ?? 'user', true));
   }
 
-  private toUser(user: Pick<User, 'id' | 'email' | 'app_metadata'>, data: ProfileRow | null): AuthUser {
+  /**
+   * What the account's role may do (rows of `role_permissions`). Null when they cannot be read: the app then falls back to the default role
+   * (this is for showing pages and buttons; the server decides about administrative actions). A write that returns the profile row
+   * reuses the permissions read last time for the same role.
+   */
+  private async permissionsOf(client: Client, roleId: string, fresh: boolean): Promise<string[] | null> {
+    if (!fresh && this.rolePermissions?.roleId === roleId) return this.rolePermissions.permissions;
+    const { data, error } = await client.from('role_permissions').select('permission_id').eq('role_id', roleId);
+    if (error) return this.rolePermissions?.roleId === roleId ? this.rolePermissions.permissions : null;
+    const permissions = data.map((r) => r.permission_id);
+    this.rolePermissions = { roleId, permissions };
+    return permissions;
+  }
+
+  private toUser(user: Pick<User, 'id' | 'email' | 'app_metadata'>, data: ProfileRow | null, permissions: string[] | null): AuthUser {
     return {
       id: user.id,
       email: user.email ?? '',
@@ -251,6 +279,8 @@ export class SupabaseAuthService extends AuthService {
       age: data?.age == null ? null : Number(data.age),
       sex: data?.sex === 'male' || data?.sex === 'female' ? data.sex : null,
       settings: data?.settings && typeof data.settings === 'object' && !Array.isArray(data.settings) ? data.settings : null,
+      roleId: data?.role_id ?? 'user',
+      permissions,
       hasPassword: (user.app_metadata?.['providers'] as string[] | undefined)?.includes('email') ?? false,
     };
   }

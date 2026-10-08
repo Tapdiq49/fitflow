@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal, signal } from '@angular/core';
+import { RequiresPermissionDirective } from '../../common/directives/requires-permission/requires-permission.directive';
 import { RouterLink } from '@angular/router';
 import { authErrorText } from '../../core/auth/auth-errors';
 import { AuthStore } from '../../core/auth/auth.store';
@@ -26,7 +27,7 @@ type OptionField = 'mealsPerDay' | 'menuMode' | 'workoutMode' | 'theme' | 'goal'
 
 @Component({
   selector: 'app-settings-page',
-  imports: [RouterLink, IconComponent, DatePickerComponent, SelectComponent, TimePickerComponent, TPipe],
+  imports: [RouterLink, IconComponent, DatePickerComponent, SelectComponent, TimePickerComponent, RequiresPermissionDirective, TPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="flex flex-col gap-[18px]">
@@ -50,7 +51,7 @@ type OptionField = 'mealsPerDay' | 'menuMode' | 'workoutMode' | 'theme' | 'goal'
         }
       </div>
 
-      <div class="card">
+      <div class="card" appRequires="settings.edit">
         <div class="card-head"><h3><app-icon name="settings" /> {{ 'settings.profileAndTargets' | t }}</h3></div>
         <div class="grid grid-cols-4 items-start gap-3 tablet:grid-cols-2 phone:grid-cols-1 [&_[role=combobox]]:h-[2.625rem] [&_input]:h-[2.625rem]">
           <label class="field">{{ 'settings.heightCm' | t }}<input type="text" inputmode="numeric" [value]="form().height ?? ''" [attr.aria-invalid]="errors().height ? 'true' : null" (input)="setNum('height', $event)" />@if (errors().height; as e) { <small class="text-bad">{{ e }}</small> }</label>
@@ -153,9 +154,9 @@ type OptionField = 'mealsPerDay' | 'menuMode' | 'workoutMode' | 'theme' | 'goal'
           {{ 'settings.allDataStoredOnly' | t }}
         </p>
         <div class="flex flex-wrap items-center gap-2">
-          <button class="btn" (click)="exportData()"><app-icon name="download" size="sm" />{{ 'settings.exportJson' | t }}</button>
-          <button class="btn" (click)="file.click()"><app-icon name="upload" size="sm" />{{ 'settings.import' | t }}</button>
-          <button class="btn btn-danger" (click)="reset()"><app-icon name="trash" size="sm" />{{ 'settings.deleteAll' | t }}</button>
+          <button class="btn" appRequires="settings.export" (click)="exportData()"><app-icon name="download" size="sm" />{{ 'settings.exportJson' | t }}</button>
+          <button class="btn" appRequires="settings.import" (click)="file.click()"><app-icon name="upload" size="sm" />{{ 'settings.import' | t }}</button>
+          <button class="btn btn-danger" appRequires="settings.reset" (click)="reset()"><app-icon name="trash" size="sm" />{{ 'settings.deleteAll' | t }}</button>
           <input #file type="file" accept="application/json" hidden (change)="importData(file)" />
         </div>
       </div>

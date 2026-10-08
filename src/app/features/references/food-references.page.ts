@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, ElementRef, computed, effect, inject, signal, untracked, viewChild } from '@angular/core';
+import { RequiresPermissionDirective } from '../../common/directives/requires-permission/requires-permission.directive';
 import { RouterLink } from '@angular/router';
 import { AuthStore } from '../../core/auth/auth.store';
 import { Lang, Unit } from '../../common/interfaces';
@@ -23,14 +24,14 @@ type TextField = Exclude<keyof Draft, 'unit'>;
 /** The food database reference list: system foods (locked) and the user's own (they can be changed and deleted); every food can be put in the order the user likes. Opened from the reference index. */
 @Component({
   selector: 'app-food-references-page',
-  imports: [RouterLink, DataTableComponent, IconComponent, PaginationComponent, SelectComponent, TableCellDirective, TPipe],
+  imports: [RouterLink, DataTableComponent, IconComponent, PaginationComponent, SelectComponent, TableCellDirective, RequiresPermissionDirective, TPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="flex flex-col gap-[18px]">
       <div><a routerLink="/references" class="btn btn-ghost btn-sm"><app-icon name="left" size="sm" />{{ 'nav.references' | t }}</a></div>
 
       @if (auth.user()) {
-      <div class="card" #form>
+      <div class="card" #form appRequires="references.edit">
         <div class="card-head"><h3><app-icon [name]="editingId() ? 'edit' : 'plus'" /> {{ (editingId() ? 'references.editFood' : 'references.addFood') | t }}</h3></div>
         <div class="grid grid-cols-[repeat(auto-fit,minmax(170px,1fr))] items-start gap-3 [&_[role=combobox]]:h-[2.625rem] [&_input]:h-[2.625rem]">
           <label class="field">{{ 'references.nameAz' | t }}<input type="text" [value]="draft().az" (input)="set('az', $event)" (keydown.enter)="save()" /></label>
@@ -73,8 +74,8 @@ type TextField = Exclude<keyof Draft, 'unit'>;
             @if (e.isSystem) {
               <span class="badge" [title]="'references.systemLocked' | t"><app-icon name="lock" size="sm" />{{ 'references.system' | t }}</span>
             } @else {
-              <button class="btn btn-ghost btn-icon btn-sm" (click)="edit(e)" [attr.aria-label]="('references.edit' | t) + ': ' + e.name"><app-icon name="edit" size="sm" /></button>
-              <button class="btn btn-ghost btn-icon btn-sm" (click)="remove(e)" [attr.aria-label]="('common.delete' | t) + ': ' + e.name"><app-icon name="trash" size="sm" /></button>
+              <button class="btn btn-ghost btn-icon btn-sm" appRequires="references.edit" (click)="edit(e)" [attr.aria-label]="('references.edit' | t) + ': ' + e.name"><app-icon name="edit" size="sm" /></button>
+              <button class="btn btn-ghost btn-icon btn-sm" appRequires="references.edit" (click)="remove(e)" [attr.aria-label]="('common.delete' | t) + ': ' + e.name"><app-icon name="trash" size="sm" /></button>
             }
           </ng-template>
         </app-data-table>

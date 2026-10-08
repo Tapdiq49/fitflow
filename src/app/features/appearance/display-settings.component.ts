@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { CdkConnectedOverlay, CdkOverlayOrigin, ConnectedPosition } from '@angular/cdk/overlay';
 import { CORNERS, DATE_FORMATS, FONT_SCALES, HEADER_MODES, NAV_LAYOUTS, NavLayout, SKINS, SkinId, TIME_FORMATS } from '../../common/interfaces';
+import { RequiresPermissionDirective } from '../../common/directives/requires-permission/requires-permission.directive';
 import { TPipe } from '../../common/pipes/translate/t.pipe';
 import { t } from '../../core/i18n/translate';
 import { ThemeService } from '../../core/services/theme.service';
@@ -30,7 +31,7 @@ interface Choice {
  */
 @Component({
   selector: 'app-display-settings',
-  imports: [CdkConnectedOverlay, CdkOverlayOrigin, IconComponent, TPipe],
+  imports: [CdkConnectedOverlay, CdkOverlayOrigin, IconComponent, RequiresPermissionDirective, TPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <button
@@ -57,7 +58,7 @@ interface Choice {
       (overlayKeydown)="onKey($event)"
       (detach)="open.set(false)"
     >
-      <div role="dialog" [attr.aria-label]="'display.title' | t" [class]="panel + ' max-h-[calc(100vh-80px)] w-[19rem] p-3'">
+      <div role="dialog" appRequires="display.edit" [attr.aria-label]="'display.title' | t" [class]="panel + ' max-h-[calc(100vh-80px)] w-[19rem] p-3'">
         <div class="mb-1.5 text-[0.6875rem] font-bold tracking-[.06em] text-muted uppercase">{{ 'display.palette' | t }}</div>
         <div role="radiogroup" [attr.aria-label]="'display.palette' | t" class="mb-3 flex justify-between gap-1">
           @for (k of skins(); track k.value) {

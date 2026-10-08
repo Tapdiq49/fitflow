@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, linkedSignal, signal } from '@angular/core';
+import { RequiresPermissionDirective } from '../../common/directives/requires-permission/requires-permission.directive';
 import { AuthError } from '../../common/interfaces/auth/auth.models';
 import { authErrorText } from '../../core/auth/auth-errors';
 import { isStrongPassword, isValidUsername, normalizeUsername } from '../../core/auth/auth-validation';
@@ -15,12 +16,12 @@ import { AvatarComponent } from '../auth/avatar.component';
 /** Account page: picture, username, password. Reached from the avatar menu; guests are sent to sign in. */
 @Component({
   selector: 'app-profile-page',
-  imports: [AvatarComponent, IconComponent, TPipe],
+  imports: [AvatarComponent, IconComponent, RequiresPermissionDirective, TPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (auth.user(); as u) {
       <div class="mx-auto flex max-w-[40rem] flex-col gap-[18px]">
-        <div class="card">
+        <div class="card" appRequires="profile.edit">
           <div class="card-head"><h3><app-icon name="heart" /> {{ 'profile.title' | t }}</h3></div>
 
           <div class="flex flex-wrap items-center gap-4">
@@ -58,7 +59,7 @@ import { AvatarComponent } from '../auth/avatar.component';
           </form>
         </div>
 
-        <div class="card">
+        <div class="card" appRequires="profile.edit">
           <div class="card-head"><h3><app-icon name="lock" /> {{ 'profile.password' | t }}</h3></div>
           @if (u.hasPassword) {
             <form class="flex flex-col gap-3" (submit)="savePassword($event)" novalidate>

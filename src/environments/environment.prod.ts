@@ -10,5 +10,7 @@ export const environment = {
   /** Where the browser returns to after OAuth / e-mail links. Must be in Supabase → Authentication → URL Configuration. */
   /** Slug of the login Edge Function (the last part of its URL in the Supabase dashboard). */
   loginFunction: 'login',
+  /** Slug of the admin-users Edge Function (user management for administrators). */
+  adminUsersFunction: 'admin-users',
   siteUrl: 'https://YOUR-DOMAIN',
 };

@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { RequiresPermissionDirective } from '../../common/directives/requires-permission/requires-permission.directive';
 import { menuTotals } from '../../core/nutrition';
 import { DayService } from '../../core/services/day.service';
 import { StoreService } from '../../core/services/store.service';
@@ -11,13 +12,13 @@ import { t } from '../../core/i18n/translate';
 
 @Component({
   selector: 'app-supplements-page',
-  imports: [IconComponent, TPipe],
+  imports: [IconComponent, RequiresPermissionDirective, TPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="flex flex-col gap-[18px]">
       <div class="grid grid-cols-2 gap-4 tablet:grid-cols-1">
         @if (store.settings().showCreatine) {
-        <div class="card">
+        <div class="card" appRequires="supplements.edit">
           <div class="card-head">
             <h3><app-icon name="pill" /> {{ 'supp.creatineMonohydrate' | t }}</h3>
             <span class="badge badge-training">{{ 'supp.recommended' | t }}</span>
@@ -40,7 +41,7 @@ import { t } from '../../core/i18n/translate';
         </div>
         }
 
-        <div class="card">
+        <div class="card" appRequires="supplements.edit">
           <div class="card-head">
             <h3><app-icon name="zap" /> {{ 'supp.wheyProtein' | t }}</h3>
             <span class="badge">{{ 'supp.optional' | t }}</span>

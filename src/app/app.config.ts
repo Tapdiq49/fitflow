@@ -16,6 +16,8 @@ import { SettingsSyncService } from './core/services/settings-sync.service';
 import { TargetSyncService } from './core/services/target-sync.service';
 import { FoodRepository } from './core/repositories/food.repository';
 import { PlanRepository } from './core/repositories/plan.repository';
+import { AdminUsersRepository } from './core/repositories/admin-users.repository';
+import { SupabaseAdminUsersRepository } from './core/repositories/supabase-admin-users.repository';
 import { SupabasePlanRepository } from './core/repositories/supabase-plan.repository';
 import { SupabaseFoodRepository } from './core/repositories/supabase-food.repository';
 
@@ -29,6 +31,7 @@ export const appConfig: ApplicationConfig = {
     { provide: AuthService, useClass: SupabaseAuthService },
     { provide: FoodRepository, useClass: SupabaseFoodRepository },
     { provide: PlanRepository, useClass: SupabasePlanRepository },
+    { provide: AdminUsersRepository, useClass: SupabaseAdminUsersRepository },
     // The texts of the saved language are loaded before the first screen (Azerbaijani is built in; English and Russian load on demand).
     provideAppInitializer(() => loadLang(inject(StoreService).settings().lang)),
     // Not awaited: the app opens at once as a guest and updates when the stored session is restored.

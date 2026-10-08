@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal, signal } from '@angular/core';
+import { RequiresPermissionDirective } from '../../common/directives/requires-permission/requires-permission.directive';
 import { SLOTS } from '../../core/data/meals';
 import { TRAINER_PLAN, TRAINER_SLOTS, trainerExId } from '../../core/data/trainer-plan';
 import { MealItem, SlotId, TrainerMeal, WeekPlan, WorkoutWeekPlan } from '../../common/interfaces';
@@ -37,7 +38,7 @@ interface Row {
 
 @Component({
   selector: 'app-week-plan-page',
-  imports: [RouterLink, BodyBasicsFormComponent, Tabs, TabList, Tab, TabPanel, TabContent, Listbox, Option, IconComponent, TimePickerComponent, TPipe, TimePipe],
+  imports: [RouterLink, BodyBasicsFormComponent, Tabs, TabList, Tab, TabPanel, TabContent, Listbox, Option, IconComponent, TimePickerComponent, RequiresPermissionDirective, TPipe, TimePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div ngTabs class="flex flex-col gap-[18px]">
@@ -78,12 +79,15 @@ interface Row {
             {{ 'plan.enterExercisesTrainerGave' | t }}
           </p>
           @if (store.effectiveWorkoutMode() !== 'trainer') {
-            <p class="mt-2 mb-0 text-[0.75rem] text-warn">{{ 'plan.workoutModeCurrentlyBuilt' | t }}</p>
+            <div class="alert alert-info mt-3" role="status">
+              <app-icon name="info" />
+              <div>{{ 'plan.workoutModeCurrentlyBuilt' | t }} <a routerLink="/settings">{{ 'nav.settings' | t }}</a></div>
+            </div>
           }
         }
       </div>
 
-      <div ngTabPanel value="meal" class="flex flex-col gap-[18px] inert:hidden">
+      <div ngTabPanel value="meal" appRequires="plan.edit" class="flex flex-col gap-[18px] inert:hidden">
       <ng-template ngTabContent>
       @for (day of days; track day) {
         <div class="card">
@@ -132,7 +136,7 @@ interface Row {
       </ng-template>
       </div>
 
-      <div ngTabPanel value="workout" class="flex flex-col gap-[18px] inert:hidden">
+      <div ngTabPanel value="workout" appRequires="plan.edit" class="flex flex-col gap-[18px] inert:hidden">
       <ng-template ngTabContent>
         <div class="card">
           <div class="card-head"><h3 id="gym-days-title"><app-icon name="calendar" /> {{ 'plan.gymDays' | t }}</h3></div>

@@ -16,6 +16,9 @@ export interface AuthUser {
   sex: Sex | null;
   /** The app settings the person changed (only those that differ from the defaults); null = nothing saved yet. */
   settings: Record<string, unknown> | null;
+  /** The account's role and what it may do (ids from `PERMISSIONS`). Null = could not be read: the app then falls back to the default role. The server checks every administrative call again; this only shows or hides pages and buttons. */
+  roleId: string;
+  permissions: string[] | null;
   /** False for an account that only signs in with a provider (Google): it has no password to change. */
   hasPassword: boolean;
 }
@@ -56,6 +59,12 @@ export type AuthErrorCode =
   | 'session_expired'
   | 'link_expired'
   | 'rate_limited'
+  | 'forbidden'
+  | 'system_role'
+  | 'role_in_use'
+  | 'invalid_role'
+  | 'self_action'
+  | 'not_found'
   | 'not_configured'
   | 'unknown';
 

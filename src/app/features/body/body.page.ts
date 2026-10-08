@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal } from '@angular/core';
+import { RequiresPermissionDirective } from '../../common/directives/requires-permission/requires-permission.directive';
 import { WATER, lineChart, lineSeries, weightChart } from '../../core/charts';
 import { BodyService } from '../../core/services/body.service';
 import { ConfirmService } from '../../core/services/confirm.service';
@@ -15,7 +16,7 @@ import { t } from '../../core/i18n/translate';
 
 @Component({
   selector: 'app-body-page',
-  imports: [IconComponent, ChartComponent, DatePickerComponent, BodyBasicsFormComponent, TPipe],
+  imports: [IconComponent, ChartComponent, DatePickerComponent, BodyBasicsFormComponent, RequiresPermissionDirective, TPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @let st = stats();
@@ -24,7 +25,7 @@ import { t } from '../../core/i18n/translate';
       @if (!store.bodyBasicsKnown()) {
         <div class="alert alert-info" style="margin-bottom: 14px"><app-icon name="info" /><div class="w-full"><p style="margin: 0 0 10px"><b>{{ 'bodyBasics.title' | t }}</b> {{ 'bodyBasics.why' | t }}</p><app-body-basics-form /></div></div>
       }
-      <div class="card">
+      <div class="card" appRequires="body.edit">
         <div class="card-head"><h3><app-icon name="plus" /> {{ 'body.addWeightAndWaist' | t }}</h3></div>
         <div class="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-3">
           <div class="field">{{ 'body.date' | t }}<app-date-picker [label]="'body.date' | t" [(value)]="date" [max]="ui.today()" /></div>
@@ -91,7 +92,7 @@ import { t } from '../../core/i18n/translate';
                     <td class="tbl-num">{{ 'common.nKg' | t: { a: F.kg(w.kg) } }}</td>
                     <td class="tbl-num">{{ w.waist ? F.kg(w.waist) + ' sm' : '—' }}</td>
                     <td class="tbl-num">
-                      <button class="btn btn-ghost btn-icon btn-sm btn-danger" (click)="remove(w.date)" [attr.aria-label]="'common.delete' | t"><app-icon name="trash" size="sm" /></button>
+                      <button class="btn btn-ghost btn-icon btn-sm btn-danger" appRequires="body.edit" (click)="remove(w.date)" [attr.aria-label]="'common.delete' | t"><app-icon name="trash" size="sm" /></button>
                     </td>
                   </tr>
                 }

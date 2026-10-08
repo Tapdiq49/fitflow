@@ -6,3 +6,5 @@ export * from './day/day';
 export * from './body/body';
 export * from './state/app-state';
 export * from './auth/auth.models';
+export * from './admin/admin-user';
+export * from './permissions/permissions';

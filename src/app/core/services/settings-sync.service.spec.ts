@@ -6,7 +6,7 @@ import { FakeAuthService } from '../auth/fake-auth.service';
 import { SettingsSyncService, settingsSnapshot } from './settings-sync.service';
 import { StoreService } from './store.service';
 
-const USER: AuthUser = { id: 'u1', email: 'a@example.com', username: 'john', emailPreferences: false, avatar: null, height: null, startWeight: null, age: null, sex: null, settings: null, hasPassword: true };
+const USER: AuthUser = { id: 'u1', email: 'a@example.com', username: 'john', emailPreferences: false, avatar: null, height: null, startWeight: null, age: null, sex: null, settings: null, roleId: 'user', permissions: null, hasPassword: true };
 
 describe('settingsSnapshot', () => {
   it('holds every synced setting, not only the changed ones, and none of the body data or guest notice', () => {

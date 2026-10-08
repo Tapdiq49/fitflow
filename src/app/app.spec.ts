@@ -32,7 +32,7 @@ describe('App', () => {
   });
 
   it('asks a signed-in user for height, weight, age and sex until all are entered, and then goes away', async () => {
-    (TestBed.inject(AuthService) as FakeAuthService).stored = { id: 'u1', email: 'a@example.com', username: 'john', emailPreferences: false, avatar: null, height: null, startWeight: null, age: null, sex: null, settings: null, hasPassword: true };
+    (TestBed.inject(AuthService) as FakeAuthService).stored = { id: 'u1', email: 'a@example.com', username: 'john', emailPreferences: false, avatar: null, height: null, startWeight: null, age: null, sex: null, settings: null, roleId: 'user', permissions: null, hasPassword: true };
     await TestBed.inject(AuthStore).init();
     const fixture = TestBed.createComponent(App);
     await fixture.whenStable();

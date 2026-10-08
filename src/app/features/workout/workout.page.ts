@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { RequiresPermissionDirective } from '../../common/directives/requires-permission/requires-permission.directive';
 import { NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { lineChart, lineSeries, ACCENT } from '../../core/charts';
@@ -21,7 +22,7 @@ import { t } from '../../core/i18n/translate';
 
 @Component({
   selector: 'app-workout-page',
-  imports: [IconComponent, SelectComponent, TimePickerComponent, ChartComponent, CardioCardComponent, NgTemplateOutlet, RouterLink, TPipe, TdPipe],
+  imports: [IconComponent, SelectComponent, TimePickerComponent, ChartComponent, CardioCardComponent, NgTemplateOutlet, RouterLink, RequiresPermissionDirective, TPipe, TdPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="flex flex-col gap-[18px]">
@@ -51,9 +52,9 @@ import { t } from '../../core/i18n/translate';
             } @else if (log().startedAt) {
               <span class="text-[1.375rem] font-extrabold text-accent tabular-nums">{{ elapsed() }}</span>
             } @else if (!workout.isTrainer()) {
-              <button class="btn btn-primary" (click)="workout.start(k())"><app-icon name="play" size="sm" />{{ 'common.startWorkout' | t }}</button>
+              <button class="btn btn-primary" appRequires="workout.edit" (click)="workout.start(k())"><app-icon name="play" size="sm" />{{ 'common.startWorkout' | t }}</button>
             }
-            <button class="btn" [class.btn-primary]="!log().savedAt" (click)="workout.save(k())">
+            <button class="btn" appRequires="workout.edit" [class.btn-primary]="!log().savedAt" (click)="workout.save(k())">
               <app-icon name="save" size="sm" />{{ log().savedAt ? ('workout.saveAgain' | t) : ('workout.saveWorkout' | t) }}
             </button>
           </div>
@@ -73,7 +74,7 @@ import { t } from '../../core/i18n/translate';
 
         <div class="grid grid-cols-2 gap-4 tablet:grid-cols-1">
           @for (c of cards(); track c.id; let idx = $index) {
-            <div class="rounded-card border bg-surface p-4 [transition:border-color_.2s]" [class]="c.done ? 'border-good/40' : 'border-border-soft'">
+            <div class="rounded-card border bg-surface p-4 [transition:border-color_.2s]" appRequires="workout.edit" [class]="c.done ? 'border-good/40' : 'border-border-soft'">
               <div class="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <span class="eyebrow">{{ idx + 1 }} / {{ cards().length }}</span>

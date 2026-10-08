@@ -16,6 +16,8 @@ export interface Database {
           sex: 'male' | 'female' | null;
           /** The settings that differ from the app's defaults; null = nothing saved yet. */
           settings: Record<string, unknown> | null;
+          /** Changed by the admin-users Edge Function only (no column grant for users). */
+          role_id: string;
           created_at: string;
           updated_at: string;
         };
@@ -31,6 +33,24 @@ export interface Database {
           sex?: 'male' | 'female' | null;
           settings?: Record<string, unknown> | null;
         };
+        Relationships: [];
+      };
+      permissions: {
+        Row: { id: string; module: string; action: string; sort: number };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      roles: {
+        Row: { id: string; name: string; description: string; is_system: boolean; created_at: string };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      role_permissions: {
+        Row: { role_id: string; permission_id: string };
+        Insert: never;
+        Update: never;
         Relationships: [];
       };
       trainer_plans: {

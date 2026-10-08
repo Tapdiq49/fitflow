@@ -14,7 +14,7 @@ describe('SessionService', () => {
   beforeEach(async () => {
     localStorage.clear();
     TestBed.configureTestingModule({ providers: [{ provide: AuthService, useClass: FakeAuthService }] });
-    (TestBed.inject(AuthService) as FakeAuthService).stored = { id: 'u1', email: 'a@example.com', username: 'john', emailPreferences: false, avatar: null, height: null, startWeight: null, age: null, sex: null, settings: null, hasPassword: true };
+    (TestBed.inject(AuthService) as FakeAuthService).stored = { id: 'u1', email: 'a@example.com', username: 'john', emailPreferences: false, avatar: null, height: null, startWeight: null, age: null, sex: null, settings: null, roleId: 'user', permissions: null, hasPassword: true };
     await TestBed.inject(AuthStore).init();
     store = TestBed.inject(StoreService);
     confirm = TestBed.inject(ConfirmService);

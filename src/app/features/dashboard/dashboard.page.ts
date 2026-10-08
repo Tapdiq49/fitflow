@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { RequiresPermissionDirective } from '../../common/directives/requires-permission/requires-permission.directive';
 import { RouterLink } from '@angular/router';
 import { StoreService } from '../../core/services/store.service';
 import { IconComponent } from '../../shared/icon/icon.component';
@@ -25,6 +26,7 @@ import { WorkoutSummaryComponent } from './workout-summary.component';
     WeeklyCardComponent,
     SuppQuickComponent,
     BodyBasicsFormComponent,
+    RequiresPermissionDirective,
     RouterLink,
     IconComponent,
     TPipe,
@@ -33,7 +35,7 @@ import { WorkoutSummaryComponent } from './workout-summary.component';
   template: `
     <div class="flex flex-col gap-[18px]">
       <app-today-hero />
-      <app-stat-cards />
+      <app-stat-cards appRequires="today.edit" />
       @if (store.bodySafetyIssue(); as issue) {
         <!-- A minor, or a BMI that needs a doctor: no generated menu or program; their own trainer plan is used. -->
         <div class="alert alert-bad" role="alert">
@@ -42,7 +44,7 @@ import { WorkoutSummaryComponent } from './workout-summary.component';
         </div>
       }
       @if (store.bodyBasicsKnown()) {
-        <app-meals-card />
+        <app-meals-card appRequires="today.edit" />
       } @else {
         <!-- What to eat depends on height and weight, so no menu is shown before they are entered. -->
         <div class="card">
@@ -50,9 +52,9 @@ import { WorkoutSummaryComponent } from './workout-summary.component';
           <div class="alert alert-info"><app-icon name="info" /><div class="w-full"><p style="margin: 0 0 10px"><b>{{ 'bodyBasics.title' | t }}</b> {{ 'bodyBasics.menuNeeds' | t }}</p><app-body-basics-form /></div></div>
         </div>
       }
-      <section class="grid grid-cols-2 gap-4 tablet:grid-cols-1"><app-workout-summary /><app-cardio-card /></section>
+      <section class="grid grid-cols-2 gap-4 tablet:grid-cols-1"><app-workout-summary /><app-cardio-card appRequires="today.edit" /></section>
       <section class="grid grid-cols-2 gap-4 tablet:grid-cols-1"><app-body-card /><app-weekly-card /></section>
-      <section class="grid gap-4"><app-supp-quick /></section>
+      <section class="grid gap-4"><app-supp-quick appRequires="today.edit" /></section>
     </div>
   `,
 })

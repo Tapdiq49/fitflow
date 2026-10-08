@@ -5,8 +5,9 @@ import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } fro
 import { filter, map } from 'rxjs';
 import { AuthStore } from './core/auth/auth.store';
 import { Lang } from './common/interfaces';
-import { NAV } from './app.routes';
+import { NAV } from './app.nav';
 import { I18nService } from './core/services/i18n.service';
+import { PermissionService } from './core/services/permission.service';
 import { ThemeService } from './core/services/theme.service';
 import { UiService } from './core/services/ui.service';
 import { DateU, dayName, dayShort } from './core/utils';
@@ -142,7 +143,7 @@ import { t } from './core/i18n/translate';
     </nav>
 
     <ng-template #navLinks let-bottom="bottom" let-rail="rail">
-      @for (n of nav; track n.path) {
+      @for (n of nav(); track n.path) {
         <a
           class="nav-btn"
           [class.nav-btn-bottom]="bottom"
@@ -172,14 +173,17 @@ import { t } from './core/i18n/translate';
         <app-day-detail-dialog [date]="d" />
       }
     }
-    @if (auth.user() && auth.user()?.height == null && !isAuthPage() && !store.bodyBasicsKnown()) {
-      <app-body-basics-dialog />
+    @defer (when auth.user() && auth.user()?.height == null && !isAuthPage() && !store.bodyBasicsKnown(); prefetch on idle) {
+      @if (auth.user() && auth.user()?.height == null && !isAuthPage() && !store.bodyBasicsKnown()) {
+        <app-body-basics-dialog />
+      }
     }
     <app-overlays />
   `,
 })
 export class App {
-  protected readonly nav = NAV;
+  private readonly perms = inject(PermissionService);
+  protected readonly nav = computed(() => NAV.filter((n) => this.perms.can(n.permission)));
   protected readonly ui = inject(UiService);
   protected readonly i18n = inject(I18nService);
   protected readonly langOptions: SelectOption<Lang>[] = this.i18n.langs.map((l) => ({ value: l.id, label: l.label }));

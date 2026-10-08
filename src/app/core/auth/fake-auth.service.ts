@@ -26,7 +26,7 @@ export class FakeAuthService extends AuthService {
   }
 
   async signIn(input: SignInInput): Promise<AuthUser> {
-    return (this.stored = { id: 'u1', email: 'a@example.com', username: input.identifier, emailPreferences: false, avatar: null, height: null, startWeight: null, age: null, sex: null, settings: null, hasPassword: true });
+    return (this.stored = { id: 'u1', email: 'a@example.com', username: input.identifier, emailPreferences: false, avatar: null, height: null, startWeight: null, age: null, sex: null, settings: null, roleId: 'user', permissions: null, hasPassword: true });
   }
 
   async signUp(_input: SignUpInput): Promise<SignUpResult> {
