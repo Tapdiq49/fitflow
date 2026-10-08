@@ -1,5 +1,5 @@
 import { Injectable, computed, inject } from '@angular/core';
-import { Advice, BodyStats, Sex, WeightEntry } from '../../common/interfaces';
+import { Advice, BodyBasics, BodyStats, Sex, WeightEntry } from '../../common/interfaces';
 import { bmiOf, plausibleBody } from '../targets';
 import { DateU, F, rnd } from '../utils';
 import { MAX_HEIGHT, MAX_WEIGHT, MIN_HEIGHT, MIN_WEIGHT, SETTINGS_RANGE, StoreService } from './store.service';
@@ -69,8 +69,11 @@ export class BodyService {
     return { level: 'good', text: t('bodySvc.paceFineNKg', { r: F.signed(st.rate) }) };
   }
 
-  /** Saves the height (cm), starting weight (kg), age and sex the user typed; false (with a message) when they are not usable. */
-  saveBasics(height: number, weight: number, age: number, sex: Sex | null): boolean {
+  /**
+ * Saves the height (cm), starting weight (kg), age and sex the user typed; false (with a message) when they are not usable.
+ * `remote` (signed-in users) stores them in the account first; they are written locally only when it says yes.
+ */
+  async saveBasics(height: number, weight: number, age: number, sex: Sex | null, remote?: (b: BodyBasics) => Promise<boolean>): Promise<boolean> {
     const { min, max } = SETTINGS_RANGE.age;
     if (!(height >= MIN_HEIGHT && height <= MAX_HEIGHT) || !(weight >= MIN_WEIGHT && weight <= MAX_WEIGHT) || !(age >= min && age <= max) || !sex) {
       this.toast.show(t('bodyBasics.invalid', { h1: MIN_HEIGHT, h2: MAX_HEIGHT, w1: MIN_WEIGHT, w2: MAX_WEIGHT, a1: min, a2: max }));
@@ -80,12 +83,9 @@ export class BodyService {
       this.toast.show(t('bodyBasics.implausible', { bmi: Math.round(bmiOf(height, weight)) }));
       return false;
     }
-    this.store.mutate((s) => {
-      s.settings.height = rnd(height, 0);
-      s.settings.startWeight = rnd(weight, 1);
-      s.settings.age = Math.round(age);
-      s.settings.sex = sex;
-    });
+    const basics: BodyBasics = { height: rnd(height, 0), startWeight: rnd(weight, 1), age: Math.round(age), sex };
+    if (remote && !(await remote(basics))) return false; // the account did not take it: nothing is written here either
+    this.store.mutate((s) => Object.assign(s.settings, basics));
     return true;
   }
 

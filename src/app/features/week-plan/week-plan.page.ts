@@ -2,6 +2,8 @@ import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal, sig
 import { SLOTS } from '../../core/data/meals';
 import { TRAINER_PLAN, TRAINER_SLOTS, trainerExId } from '../../core/data/trainer-plan';
 import { MealItem, SlotId, TrainerMeal, WeekPlan, WorkoutWeekPlan } from '../../common/interfaces';
+import { PlanKind } from '../../core/repositories/plan.repository';
+import { PlanSyncService } from '../../core/services/plan-sync.service';
 import { DayService } from '../../core/services/day.service';
 import { StoreService } from '../../core/services/store.service';
 import { ToastService } from '../../core/services/toast.service';
@@ -122,9 +124,9 @@ interface Row {
       }
 
       <div class="flex flex-wrap items-center gap-2">
-        <button class="btn btn-primary" (click)="save()"><app-icon name="save" size="sm" />{{ 'plan.savePlan' | t }}</button>
+        <button class="btn btn-primary" [disabled]="saving()" (click)="save()"><app-icon name="save" size="sm" />{{ 'plan.savePlan' | t }}</button>
         @if (own()) {
-          <button class="btn btn-danger" (click)="clear()"><app-icon name="trash" size="sm" />{{ 'plan.revertToPreviousWeeksPlan' | t }}</button>
+          <button class="btn btn-danger" [disabled]="saving()" (click)="clear()"><app-icon name="trash" size="sm" />{{ 'plan.revertToPreviousWeeksPlan' | t }}</button>
         }
       </div>
       </ng-template>
@@ -167,9 +169,9 @@ interface Row {
           </div>
         }
         <div class="flex flex-wrap items-center gap-2">
-          <button class="btn btn-primary" (click)="saveWorkout()"><app-icon name="save" size="sm" />{{ 'plan.saveWorkoutPlan' | t }}</button>
+          <button class="btn btn-primary" [disabled]="saving()" (click)="saveWorkout()"><app-icon name="save" size="sm" />{{ 'plan.saveWorkoutPlan' | t }}</button>
           @if (wOwn()) {
-            <button class="btn btn-danger" (click)="clearWorkout()"><app-icon name="trash" size="sm" />{{ 'plan.revertToPreviousWeeks' | t }}</button>
+            <button class="btn btn-danger" [disabled]="saving()" (click)="clearWorkout()"><app-icon name="trash" size="sm" />{{ 'plan.revertToPreviousWeeks' | t }}</button>
           }
         </div>
       </ng-template>
@@ -179,6 +181,9 @@ interface Row {
 })
 export class WeekPlanPage {
   private readonly plans = inject(TrainerPlanService);
+  private readonly planSync = inject(PlanSyncService);
+  /** A save or clear is on its way to the account; the buttons wait for it. */
+  protected readonly saving = signal(false);
   private readonly day = inject(DayService);
   private readonly toast = inject(ToastService);
 
@@ -273,7 +278,17 @@ export class WeekPlanPage {
     if (time) this.patch(day, i, { time });
   }
 
-  protected save(): void {
+  /** Account first: false (with a message) when the backend did not take it, so nothing is written locally. */
+  private async remote(kind: PlanKind, plan: WeekPlan | WorkoutWeekPlan | null): Promise<boolean> {
+    this.saving.set(true);
+    try {
+      return await this.planSync.persist(kind, this.week(), plan);
+    } finally {
+      this.saving.set(false);
+    }
+  }
+
+  protected async save(): Promise<void> {
     const plan: WeekPlan = {};
     for (const d of this.days) {
       plan[d] = this.draft()[d]
@@ -285,6 +300,7 @@ export class WeekPlanPage {
         })
         .sort((a, b) => a.time.localeCompare(b.time));
     }
+    if (!(await this.remote('meal', plan))) return;
     this.day.setWeekPlan(this.week(), plan);
     this.toast.show(t('plan.weeklyPlanSaved'));
   }
@@ -306,7 +322,7 @@ export class WeekPlanPage {
     this.wDays.set([...days].sort((a, b) => a - b));
   }
 
-  protected saveWorkout(): void {
+  protected async saveWorkout(): Promise<void> {
     if (!this.wDays().length) {
       this.toast.show(t('plan.chooseAtLeastOneGymDay'));
       return;
@@ -324,16 +340,19 @@ export class WeekPlanPage {
         plan[d].push({ id, name, sets: clamp(Math.round(parseNum(r.sets)) || 3, 1, 10), min, max: Math.max(min, Math.round(parseNum(r.max)) || 12) });
       }
     }
+    if (!(await this.remote('workout', plan))) return;
     this.plans.saveWorkout(this.week(), plan);
     this.toast.show(t('plan.workoutPlanSaved'));
   }
 
-  protected clearWorkout(): void {
+  protected async clearWorkout(): Promise<void> {
+    if (!(await this.remote('workout', null))) return;
     this.plans.clearWorkout(this.week());
     this.toast.show(t('plan.previousWeeksWorkoutRestored'));
   }
 
-  protected clear(): void {
+  protected async clear(): Promise<void> {
+    if (!(await this.remote('meal', null))) return;
     this.day.setWeekPlan(this.week(), null);
     this.toast.show(t('plan.previousWeeksPlanRestored'));
   }

@@ -10,7 +10,7 @@ import { TPipe } from '../../common/pipes/translate/t.pipe';
   template: `
     @if (confirm.request(); as r) {
       <app-modal [heading]="'common.confirm' | t" (closed)="confirm.answer(false)">
-        <p class="m-0 mb-5 text-text-2">{{ r.message }}</p>
+        <p class="m-0 mb-5 text-[0.875rem] leading-relaxed whitespace-pre-line text-text-2">{{ r.message }}</p>
         <div class="flex justify-end gap-2">
           <button class="btn" (click)="confirm.answer(false)">{{ 'common.cancel' | t }}</button>
           <button class="btn" [class]="r.danger ? 'btn btn-danger' : 'btn btn-primary'" (click)="confirm.answer(true)">{{ r.confirmLabel }}</button>

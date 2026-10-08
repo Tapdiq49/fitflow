@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 import { authErrorText } from '../../core/auth/auth-errors';
 import { AuthStore } from '../../core/auth/auth.store';
 import { Goal, MenuMode, Settings, Sex, TargetMode, ThemeMode, WorkoutMode } from '../../common/interfaces';
+import { BodyBasicsSyncService } from '../../core/services/body-basics-sync.service';
 import { BodyIssue, OBESE_BMI, TargetSuggestion, bmiOf, bodyIssue, plausibleBody, suggestTargets } from '../../core/targets';
 import { BodyService } from '../../core/services/body.service';
 import { ConfirmService } from '../../core/services/confirm.service';
@@ -182,6 +183,7 @@ export class SettingsPage {
   protected readonly F = F;
   private readonly body = inject(BodyService);
   private readonly plans = inject(TrainerPlanService);
+  private readonly basicsSync = inject(BodyBasicsSyncService);
 
   /** Meals a day in the trainer plan of this week, fewest and most over the 7 days: in trainer mode the plan decides, not a setting. */
   protected readonly planMeals = computed(() => {
@@ -354,6 +356,11 @@ export class SettingsPage {
     if (this.targetAuto() && sug) this.form.update((x) => ({ ...x, kcalTarget: sug.kcal, proteinTarget: sug.protein }));
     const f = this.form();
     const before = this.store.settings();
+    // Height, weight, age and sex live in the account: it takes them first, and nothing is saved here if it refuses.
+    const bodyChanged = f.height !== before.height || f.startWeight !== before.startWeight || f.age !== before.age || f.sex !== before.sex;
+    if (bodyChanged && f.height != null && f.startWeight != null && f.age != null && f.sex != null) {
+      if (!(await this.basicsSync.persist({ height: f.height, startWeight: f.startWeight, age: f.age, sex: f.sex }))) return;
+    }
     this.store.updateSettings(f);
     for (const k of Object.keys(this.typed) as (keyof typeof this.typed)[]) delete this.typed[k];
     this.toast.show(t('settings.settingsSaved'));
@@ -400,7 +407,8 @@ export class SettingsPage {
   }
 
   protected async reset(): Promise<void> {
-    if (!(await this.confirm.ask(t('settings.deleteAllDataThis'), { confirmLabel: t('settings.deleteAll'), danger: true }))) return;
+    const message = t('settings.deleteAllDataThis') + (this.auth.user() ? '\n\n' + t('settings.deleteAllAccountNote') : '');
+    if (!(await this.confirm.ask(message, { confirmLabel: t('settings.deleteAll'), danger: true }))) return;
     this.store.reset();
     this.ui.goToday();
     this.day.ensureDay(this.ui.today());

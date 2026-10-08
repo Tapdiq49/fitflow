@@ -1,3 +1,5 @@
+import type { Sex } from '../settings/settings';
+
 export interface WeightEntry {
   date: string;
   kg: number;
@@ -19,4 +21,12 @@ export interface Advice {
   level: 'info' | 'warn' | 'good';
   text: string;
   delta?: number;
+}
+
+/** Height (cm), starting weight (kg), age (years) and sex, all entered. */
+export interface BodyBasics {
+  height: number;
+  startWeight: number;
+  age: number;
+  sex: Sex;
 }

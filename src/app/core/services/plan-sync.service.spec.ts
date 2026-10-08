@@ -8,6 +8,7 @@ import { PlanRepository } from '../repositories/plan.repository';
 import { TrainerMeal, WeekPlan } from '../../common/interfaces';
 import { PlanSyncService } from './plan-sync.service';
 import { StoreService } from './store.service';
+import { ToastService } from './toast.service';
 import { TrainerPlanService } from './trainer-plan.service';
 
 const USER: AuthUser = { id: 'u1', email: 'a@example.com', username: 'john', emailPreferences: false, avatar: null, height: null, startWeight: null, age: null, sex: null, settings: null, hasPassword: true };
@@ -18,13 +19,16 @@ const WEEK = '2026-10-05';
 describe('PlanSyncService', () => {
   let fake: FakeAuthService;
   let repo: FakePlanRepository;
-  let store: StoreService;
   let plans: TrainerPlanService;
+  let sync: PlanSyncService;
   const flush = async (): Promise<void> => {
     for (let i = 0; i < 4; i++) {
       TestBed.tick();
       await Promise.resolve();
     }
+  };
+  const setOnline = (online: boolean): void => {
+    Object.defineProperty(navigator, 'onLine', { value: online, configurable: true });
   };
 
   beforeEach(() => {
@@ -32,10 +36,12 @@ describe('PlanSyncService', () => {
     TestBed.configureTestingModule({ providers: [{ provide: AuthService, useClass: FakeAuthService }, { provide: PlanRepository, useClass: FakePlanRepository }] });
     fake = TestBed.inject(AuthService) as FakeAuthService;
     repo = TestBed.inject(PlanRepository) as FakePlanRepository;
-    store = TestBed.inject(StoreService);
+    TestBed.inject(StoreService);
     plans = TestBed.inject(TrainerPlanService);
-    TestBed.inject(PlanSyncService);
+    sync = TestBed.inject(PlanSyncService);
   });
+
+  afterEach(() => setOnline(true));
 
   const signIn = async (): Promise<void> => {
     fake.stored = { ...USER };
@@ -43,11 +49,10 @@ describe('PlanSyncService', () => {
     await flush();
   };
 
-  it('keeps a guest\'s plans in this browser only', async () => {
-    plans.save(WEEK, plan('Yumurta'));
-    await flush();
+  it('lets a guest save without any request: the plans stay in this browser', async () => {
+    await TestBed.inject(AuthStore).init(); // no session: a guest
+    expect(await sync.persist('meal', WEEK, plan('Yumurta'))).toBe(true);
     expect(repo.calls).toEqual([]);
-    expect(plans.hasOwn(WEEK)).toBe(true);
   });
 
   it('replaces the plans of this browser with the account\'s at sign-in, and does not upload the guest\'s', async () => {
@@ -59,32 +64,40 @@ describe('PlanSyncService', () => {
     expect(repo.calls).toEqual([]);
   });
 
-  it('sends a saved plan, a changed one, a workout plan and a cleared one to the account', async () => {
+  it('sends a saved plan, a workout plan and a cleared one to the account before the caller writes them locally', async () => {
     await signIn();
-    plans.save(WEEK, plan('Birinci'));
-    await flush();
+    expect(await sync.persist('meal', WEEK, plan('Birinci'))).toBe(true);
     expect(repo.stored.meal[WEEK][1][0].name).toBe('Birinci');
+    expect(plans.hasOwn(WEEK)).toBe(false); // the caller writes locally only after it got the yes
 
-    plans.save(WEEK, plan('İkinci'));
-    plans.saveWorkout(WEEK, { 1: [{ id: 't:squat', name: 'Squat', sets: 3, min: 8, max: 12 }] });
-    await flush();
-    expect(repo.stored.meal[WEEK][1][0].name).toBe('İkinci');
+    expect(await sync.persist('workout', WEEK, { 1: [{ id: 't:squat', name: 'Squat', sets: 3, min: 8, max: 12 }] })).toBe(true);
     expect(repo.stored.workout[WEEK][1][0].name).toBe('Squat');
 
-    plans.clear(WEEK);
-    await flush();
+    expect(await sync.persist('meal', WEEK, null)).toBe(true);
     expect(repo.stored.meal[WEEK]).toBeUndefined();
-    expect(repo.calls.filter((c) => c === `save meal ${WEEK}`)).toHaveLength(2); // the unchanged workout save did not resend the meal plan
   });
 
-  it('sends nothing when the account could not be read, so plans that were never read are not overwritten', async () => {
-    repo.failing = true;
-    plans.save(WEEK, plan('Yerli'));
+  it('says no and tells the user when the backend cannot be reached, so nothing is written locally', async () => {
     await signIn();
-    repo.failing = false;
-    plans.save(WEEK, plan('Yerli 2'));
-    await flush();
+    repo.failing = true;
+    expect(await sync.persist('meal', WEEK, plan('Yeni'))).toBe(false);
+    expect(TestBed.inject(ToastService).message()).toBeTruthy();
+    expect(repo.stored.meal[WEEK]).toBeUndefined();
+    expect(plans.hasOwn(WEEK)).toBe(false);
+  });
+
+  it('does not even try while the browser is offline', async () => {
+    await signIn();
+    setOnline(false);
+    expect(await sync.persist('meal', WEEK, plan('Yeni'))).toBe(false);
     expect(repo.calls).toEqual([]);
-    expect(store.state().weekPlans[WEEK]).toBeDefined();
+    expect(TestBed.inject(ToastService).message()).toBeTruthy();
+  });
+
+  it('keeps the local plans when the account could not be read at sign-in', async () => {
+    plans.save(WEEK, plan('Yerli'));
+    repo.failing = true;
+    await signIn();
+    expect(plans.planFor(WEEK)[1][0].name).toBe('Yerli');
   });
 });

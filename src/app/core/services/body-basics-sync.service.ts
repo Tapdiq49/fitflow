@@ -1,27 +1,28 @@
 import { Injectable, computed, effect, inject, untracked } from '@angular/core';
 import { AuthStore } from '../auth/auth.store';
-import { Sex } from '../../common/interfaces';
+import { BodyBasics } from '../../common/interfaces';
+import { assertOnline, saveErrorText } from '../auth/auth-errors';
+import { t } from '../i18n/translate';
+import { ToastService } from './toast.service';
 import { StoreService } from './store.service';
 
 /**
  * Keeps height, starting weight, age and sex in the account of a signed-in user (`profiles`), the first app data that is not only local.
  * - Signing in: the account wins; when it has none yet, the values of this browser are dropped and the app asks.
- * - Later edits (dialog, settings) go up as soon as they change.
- * Guests keep them in localStorage only. A failed upload is silent: the local value stays and the next change tries again.
+ * - Saving (dialog, form, settings) goes to the account FIRST (`persist`); the caller writes the values locally only when the backend
+ *   accepted them. A failed save (offline, server error) writes nothing locally, so this browser never holds values the account does not.
+ * Guests keep them in localStorage only.
  */
 @Injectable({ providedIn: 'root' })
 export class BodyBasicsSyncService {
   private readonly auth = inject(AuthStore);
   private readonly store = inject(StoreService);
+  private readonly toast = inject(ToastService);
 
   constructor() {
     const userId = computed(() => this.auth.user()?.id ?? null);
     effect(() => {
       if (userId()) untracked(() => this.reconcile());
-    });
-    effect(() => {
-      const { height, startWeight, age, sex } = this.store.settings();
-      untracked(() => void this.push(height, startWeight, age, sex));
     });
   }
 
@@ -39,14 +40,25 @@ export class BodyBasicsSyncService {
     });
   }
 
-  private async push(height: number | null, startWeight: number | null, age: number | null, sex: Sex | null): Promise<void> {
+  /**
+   * Sends the values to the account. True when they may be written locally too: the backend accepted them, they are what the account
+   * already holds, or the user is a guest. False (the user has been told why) when nothing may be written.
+   */
+  async persist(b: BodyBasics): Promise<boolean> {
+    if (this.auth.status() === 'loading') {
+      this.toast.show(t('save.notReady'));
+      return false;
+    }
     const user = this.auth.user();
-    if (!user || height == null || startWeight == null || age == null || sex == null) return;
-    if (user.height === height && user.startWeight === startWeight && user.age === age && user.sex === sex) return;
+    if (!user) return true;
+    if (user.height === b.height && user.startWeight === b.startWeight && user.age === b.age && user.sex === b.sex) return true;
     try {
-      await this.auth.setBodyBasics(height, startWeight, age, sex);
-    } catch {
-      // Stays local; the next edit or sign-in tries again.
+      assertOnline();
+      await this.auth.setBodyBasics(b.height, b.startWeight, b.age, b.sex);
+      return true;
+    } catch (e) {
+      this.toast.show(saveErrorText(e));
+      return false;
     }
   }
 }

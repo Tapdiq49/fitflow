@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { Sex } from '../../common/interfaces';
+import { BodyBasicsSyncService } from '../../core/services/body-basics-sync.service';
 import { BodyService } from '../../core/services/body.service';
 import { StoreService } from '../../core/services/store.service';
 import { parseNum } from '../../core/utils';
@@ -34,6 +35,7 @@ import { TPipe } from '../../common/pipes/translate/t.pipe';
 })
 export class BodyBasicsFormComponent {
   private readonly body = inject(BodyService);
+  private readonly sync = inject(BodyBasicsSyncService);
   protected readonly known = inject(StoreService).settings();
   protected readonly sex = signal<Sex | null>(this.known.sex);
   protected readonly sexes: { value: Sex; label: string }[] = [
@@ -41,7 +43,7 @@ export class BodyBasicsFormComponent {
     { value: 'female', label: 'settings.sexFemale' },
   ];
 
-  protected save(height: string, weight: string, age: string): void {
-    this.body.saveBasics(parseNum(height), parseNum(weight), parseNum(age), this.sex());
+  protected async save(height: string, weight: string, age: string): Promise<void> {
+    await this.body.saveBasics(parseNum(height), parseNum(weight), parseNum(age), this.sex(), (b) => this.sync.persist(b));
   }
 }
