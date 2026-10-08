@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, effect, input, model, sig
 import { Combobox, ComboboxPopup, ComboboxWidget } from '@angular/aria/combobox';
 import { Grid, GridCell, GridRow } from '@angular/aria/grid';
 import { CdkConnectedOverlay, CdkOverlayOrigin } from '@angular/cdk/overlay';
-import { fromMin, toMin } from '../../core/utils';
+import { activeTimeFormat, fmtTime, fromMin, toMin } from '../../core/utils';
 import { IconComponent } from '../icon/icon.component';
 import { TPipe } from '../../common/pipes/translate/t.pipe';
 import { POPUP_PANEL, POPUP_POSITIONS } from './popup';
@@ -11,7 +11,7 @@ const HOURS = Array.from({ length: 24 }, (_, i) => i);
 const COLS = 6;
 
 const CELL =
-  'cursor-pointer rounded-[8px] border py-1.5 text-center text-[13px] font-semibold tabular-nums hover:border-accent data-[active=true]:outline-2 data-[active=true]:outline-offset-1 data-[active=true]:outline-accent';
+  'cursor-pointer rounded-[calc(var(--r)_*_8px)] border py-1.5 text-center text-[0.8125rem] font-semibold tabular-nums hover:border-accent data-[active=true]:outline-2 data-[active=true]:outline-offset-1 data-[active=true]:outline-accent';
 const CELL_OFF = `${CELL} border-border-soft bg-bg`;
 const CELL_ON = `${CELL} border-accent bg-accent text-accent-ink`;
 
@@ -20,7 +20,7 @@ let nextId = 0;
 const rows = (list: number[]): number[][] => Array.from({ length: Math.ceil(list.length / COLS) }, (_, i) => list.slice(i * COLS, i * COLS + COLS));
 
 /**
- * Time field ("HH:MM", 24 h) on Angular Aria: an `ngCombobox` trigger with one `ngGrid` popup holding the hours,
+ * Time field ("HH:MM" stored; shown as 24 h or AM/PM by the settings) on Angular Aria: an `ngCombobox` trigger with one `ngGrid` popup holding the hours,
  * then the minutes (5-minute steps). Arrow keys move in 2D across both, Enter / Space / click picks; picking a
  * minute closes the popup.
  *
@@ -40,10 +40,10 @@ const rows = (list: number[]): number[][] => Array.from({ length: Math.ceil(list
       #origin="cdkOverlayOrigin"
       [(expanded)]="open"
       [attr.aria-label]="label()"
-      class="flex w-full cursor-pointer items-center justify-between gap-2 rounded-[9px] border bg-bg px-2.5 py-2 text-left text-[14px] font-medium text-text tabular-nums outline-none [transition:border-color_.2s] focus-visible:border-accent"
+      class="flex w-full cursor-pointer items-center justify-between gap-2 rounded-[calc(var(--r)_*_9px)] border bg-bg px-2.5 py-2 text-left text-[0.875rem] font-medium text-text tabular-nums outline-none [transition:border-color_.2s] focus-visible:border-accent"
       [class]="open() ? 'border-accent' : 'border-border'"
     >
-      <span>{{ value() || '--:--' }}</span><app-icon name="clock" size="sm" />
+      <span>{{ value() ? fmt(value()) : '--:--' }}</span><app-icon name="clock" size="sm" />
     </div>
     <ng-template ngComboboxPopup [combobox]="combobox" popupType="grid">
       <ng-template
@@ -64,14 +64,14 @@ const rows = (list: number[]): number[][] => Array.from({ length: Math.ceil(list
           [multi]="true"
           [attr.aria-label]="label()"
           (keydown)="onGridKeydown($event, grid)"
-          [class]="panel + ' max-h-[300px] w-[264px] p-3'"
+          [class]="panel + ' max-h-[18.75rem] w-[16.5rem] p-3'"
         >
           <div role="rowgroup" [attr.aria-label]="'common.time' | t">
             <div class="eyebrow mb-1.5" aria-hidden="true">{{ 'common.time' | t }}</div>
             @for (row of hourRows; track $index) {
               <div ngGridRow class="mb-1 grid grid-cols-6 gap-1">
                 @for (h of row; track h) {
-                  <div ngGridCell [id]="cellId('h', h)" (click)="pick('h', h)" [class]="h === hour() ? cellOn : cellOff">{{ pad(h) }}</div>
+                  <div ngGridCell [id]="cellId('h', h)" (click)="pick('h', h)" [class]="h === hour() ? cellOn : cellOff"><span [class]="twelveHour() ? 'text-[0.6875rem]' : ''">{{ hourLabel(h) }}</span></div>
                 }
               </div>
             }
@@ -103,6 +103,12 @@ export class TimePickerComponent {
   protected readonly cellOn = CELL_ON;
   protected readonly cellOff = CELL_OFF;
   protected readonly pad = (n: number): string => String(n).padStart(2, '0');
+  protected readonly fmt = fmtTime;
+  protected readonly twelveHour = computed(() => activeTimeFormat() === '12h');
+  /** Hour cell text: 07 in 24 h, 7 AM in 12 h. */
+  protected hourLabel(h: number): string {
+    return this.twelveHour() ? `${h % 12 || 12} ${h < 12 ? 'AM' : 'PM'}` : this.pad(h);
+  }
   private readonly combobox = viewChild.required<Combobox>('combobox');
   private readonly cells = viewChildren(GridCell);
   private readonly uid = `tp${nextId++}`;

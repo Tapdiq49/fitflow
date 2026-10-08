@@ -32,24 +32,24 @@ import { t } from '../../core/i18n/translate';
         <div class="flex flex-wrap items-center justify-between gap-3 rounded-card border border-border bg-surface px-[18px] py-3.5">
           <div>
             <div class="eyebrow">{{ F.long(k()) }}</div>
-            <h3 style="font-size: 20px">{{ workout.title(k()) }}</h3>
+            <h3 style="font-size: 1.25rem">{{ workout.title(k()) }}</h3>
             <span class="text-muted">{{ 'workout.nPerNExercises' | t: { a: doneCount(), b: cards().length } }}</span>
           </div>
           <!-- Trainer mode: bottom-aligned so the button sits on the same line as the captioned time fields. -->
           <div class="flex flex-wrap gap-2" [class]="workout.isTrainer() ? 'items-end [&_.btn]:h-10 [&_[role=combobox]]:h-10' : 'items-center'">
             @if (workout.isTrainer()) {
               <div class="flex flex-wrap items-end gap-2">
-                <div class="field w-[120px]">{{ 'workout.started' | t }}<app-time-picker [label]="'workout.started' | t" [value]="log().startTime ?? ''" (valueChange)="workout.setTime(k(), 'startTime', $event)" /></div>
-                <div class="field w-[120px]">{{ 'workout.finished' | t }}<app-time-picker [label]="'workout.finished' | t" [value]="log().endTime ?? ''" (valueChange)="workout.setTime(k(), 'endTime', $event)" /></div>
+                <div class="field w-[7.5rem]">{{ 'workout.started' | t }}<app-time-picker [label]="'workout.started' | t" [value]="log().startTime ?? ''" (valueChange)="workout.setTime(k(), 'startTime', $event)" /></div>
+                <div class="field w-[7.5rem]">{{ 'workout.finished' | t }}<app-time-picker [label]="'workout.finished' | t" [value]="log().endTime ?? ''" (valueChange)="workout.setTime(k(), 'endTime', $event)" /></div>
                 @if (duration() != null) {
-                  <span class="pb-2 text-[15px] font-bold text-accent tabular-nums">{{ 'workout.nMin' | t: { n: duration()! } }}</span>
+                  <span class="pb-2 text-[0.9375rem] font-bold text-accent tabular-nums">{{ 'workout.nMin' | t: { n: duration()! } }}</span>
                 }
               </div>
             }
             @if (log().savedAt) {
               <span class="badge badge-training" [class.mb-2]="workout.isTrainer()"><app-icon name="check" size="sm" />{{ 'workout.saved' | t }}</span>
             } @else if (log().startedAt) {
-              <span class="text-[22px] font-extrabold text-accent tabular-nums">{{ elapsed() }}</span>
+              <span class="text-[1.375rem] font-extrabold text-accent tabular-nums">{{ elapsed() }}</span>
             } @else if (!workout.isTrainer()) {
               <button class="btn btn-primary" (click)="workout.start(k())"><app-icon name="play" size="sm" />{{ 'common.startWorkout' | t }}</button>
             }
@@ -77,24 +77,24 @@ import { t } from '../../core/i18n/translate';
               <div class="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <span class="eyebrow">{{ idx + 1 }} / {{ cards().length }}</span>
-                  <h4 class="text-[16px] font-bold">{{ c.ex.name }}</h4>
-                  <div class="mt-1 text-[12px] text-muted">{{ c.ex.note | td }}</div>
+                  <h4 class="text-[1rem] font-bold">{{ c.ex.name }}</h4>
+                  <div class="mt-1 text-[0.75rem] text-muted">{{ c.ex.note | td }}</div>
                 </div>
                 <button class="btn btn-sm" [class.btn-done]="c.done" (click)="workout.toggleExercise(k(), c.id)">
                   <app-icon name="check" size="sm" />{{ c.done ? ('common.completed' | t) : ('workout.completeExercise' | t) }}
                 </button>
               </div>
               <div class="my-3 grid grid-cols-3 gap-2 phone:grid-cols-[1fr]">
-                <div class="rounded-[10px] bg-surface-2 px-2.5 py-2 text-[12.5px]"><span class="text-muted">{{ 'workout.target' | t }}</span><b class="block text-[14px]">{{ 'workout.nSetsNN' | t: { a: c.ex.sets, b: c.ex.min, c: c.ex.max, d: c.timed ? ' ' + ('common.sec' | t) : '' } }}</b></div>
-                <div class="rounded-[10px] bg-surface-2 px-2.5 py-2 text-[12.5px]">
+                <div class="rounded-[calc(var(--r)_*_10px)] bg-surface-2 px-2.5 py-2 text-[0.7813rem]"><span class="text-muted">{{ 'workout.target' | t }}</span><b class="block text-[0.875rem]">{{ 'workout.nSetsNN' | t: { a: c.ex.sets, b: c.ex.min, c: c.ex.max, d: c.timed ? ' ' + ('common.sec' | t) : '' } }}</b></div>
+                <div class="rounded-[calc(var(--r)_*_10px)] bg-surface-2 px-2.5 py-2 text-[0.7813rem]">
                   <span class="text-muted">{{ 'workout.lastWorkoutN' | t: { a: c.rec.last ? ' (' + F.short(c.rec.last.date) + ')' : '' } }}</span>
-                  <b class="block text-[14px]">{{ workout.lastStr(c.rec.last, c.ex) }}</b>
+                  <b class="block text-[0.875rem]">{{ workout.lastStr(c.rec.last, c.ex) }}</b>
                 </div>
-                <div class="rounded-[10px] bg-surface-2 px-2.5 py-2 text-[12.5px]"><span class="text-muted">{{ 'workout.nextSuggestion' | t }}</span><b class="block text-[14px] text-accent">{{ c.recLabel }}</b></div>
+                <div class="rounded-[calc(var(--r)_*_10px)] bg-surface-2 px-2.5 py-2 text-[0.7813rem]"><span class="text-muted">{{ 'workout.nextSuggestion' | t }}</span><b class="block text-[0.875rem] text-accent">{{ c.recLabel }}</b></div>
               </div>
-              <div class="mt-1 text-[12px] text-muted" style="margin-bottom: 8px">{{ c.rec.text }}</div>
+              <div class="mt-1 text-[0.75rem] text-muted" style="margin-bottom: 8px">{{ c.rec.text }}</div>
               <table
-                class="w-full border-separate [border-spacing:0_6px] [&_td]:px-1.5 [&_td]:py-0 [&_th]:px-1.5 [&_th]:py-0 [&_th]:text-left [&_th]:text-[11px] [&_th]:font-semibold [&_th]:tracking-[.06em] [&_th]:text-muted [&_th]:uppercase"
+                class="w-full border-separate [border-spacing:0_6px] [&_td]:px-1.5 [&_td]:py-0 [&_th]:px-1.5 [&_th]:py-0 [&_th]:text-left [&_th]:text-[0.6875rem] [&_th]:font-semibold [&_th]:tracking-[.06em] [&_th]:text-muted [&_th]:uppercase"
               >
                 <thead>
                   <tr>
@@ -110,7 +110,7 @@ import { t } from '../../core/i18n/translate';
                 <tbody>
                   @for (s of c.sets; track $index; let i = $index) {
                     <tr>
-                      <td class="w-[34px] font-bold text-muted">{{ i + 1 }}</td>
+                      <td class="w-[2.125rem] font-bold text-muted">{{ i + 1 }}</td>
                       @if (!c.timed) {
                         <td>
                           <input class="w-full text-center font-semibold" type="text" inputmode="decimal" [value]="s.w" [placeholder]="c.rec.w != null ? F.kg(c.rec.w) : ('common.kg' | t)" (input)="workout.setValue(k(), c.id, i, 'w', val($event))" />
@@ -155,7 +155,7 @@ import { t } from '../../core/i18n/translate';
         <div class="card-head">
           <h3><app-icon name="trend" /> {{ 'workout.progressChart' | t }}</h3>
           @if (historyIds().length) {
-            <app-select class="w-[220px] max-w-full" [label]="'workout.progressChart' | t" [options]="chartOptions()" [value]="chartId()!" (valueChange)="selectedChart.set($event)" />
+            <app-select class="w-[13.75rem] max-w-full" [label]="'workout.progressChart' | t" [options]="chartOptions()" [value]="chartId()!" (valueChange)="selectedChart.set($event)" />
           }
         </div>
         @if (historyIds().length) {
@@ -172,7 +172,7 @@ import { t } from '../../core/i18n/translate';
               <div class="card-head"><h3>{{ d.label }}</h3></div>
               <div class="flex flex-col gap-2">
                 @for (e of d.exercises; track e.id) {
-                  <div class="flex justify-between gap-2.5 rounded-[10px] bg-surface-2 px-3 py-[9px] text-[13px] [&_span:last-child]:text-right [&_span:last-child]:text-text-2">
+                  <div class="flex justify-between gap-2.5 rounded-[calc(var(--r)_*_10px)] bg-surface-2 px-3 py-[9px] text-[0.8125rem] [&_span:last-child]:text-right [&_span:last-child]:text-text-2">
                     <span>{{ e.ex.name }}</span><span>{{ e.ex.sets }}×{{ e.ex.min }}–{{ e.ex.max }}</span>
                   </div>
                 } @empty {
@@ -187,7 +187,7 @@ import { t } from '../../core/i18n/translate';
             <div class="card-head"><h3>{{ 'workout.fullBodyN' | t: { a: v } }}</h3></div>
             <div class="flex flex-col gap-2">
               @for (id of program_[v]; track id) {
-                <div class="flex justify-between gap-2.5 rounded-[10px] bg-surface-2 px-3 py-[9px] text-[13px] [&_span:last-child]:text-right [&_span:last-child]:text-text-2">
+                <div class="flex justify-between gap-2.5 rounded-[calc(var(--r)_*_10px)] bg-surface-2 px-3 py-[9px] text-[0.8125rem] [&_span:last-child]:text-right [&_span:last-child]:text-text-2">
                   <span>{{ exName(id) }}</span><span>{{ targetOf(id) }}</span>
                 </div>
               }

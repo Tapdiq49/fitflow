@@ -27,7 +27,7 @@ import { t, td } from '../../core/i18n/translate';
 
       <div class="section-title" style="margin-top: 16px">{{ 'addMeal.addFoodFromDatabase' | t }}</div>
       <div class="flex flex-wrap items-center gap-2">
-        <app-select class="min-w-[180px] flex-1" [label]="'addMeal.addFoodFromDatabase' | t" [options]="foodOptions()" [(value)]="foodId" />
+        <app-select class="min-w-[11.25rem] flex-1" [label]="'addMeal.addFoodFromDatabase' | t" [options]="foodOptions()" [(value)]="foodId" />
         <input #amt type="text" inputmode="decimal" style="width: 90px" [value]="defaultAmount()" />
         <span class="text-muted">{{ foodUnit() | td }}</span>
         <button class="btn btn-sm" (click)="addFood(amt.value)" [attr.aria-label]="'addMeal.add' | t"><app-icon name="plus" size="sm" /></button>

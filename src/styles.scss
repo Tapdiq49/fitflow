@@ -3,6 +3,8 @@
    heading sizes, inline SVG), so leaving it out keeps visual parity. */
 @use 'sass:meta';
 @use 'styles/skins'; // color skins: accent tokens per data-skin, dark and light variant
+@use 'styles/appearance'; // text size, corner radius and high contrast per data-* attribute on <html>
+@use 'styles/scrollbar'; // thin scrollbars in the accent color
 
 // Sass moves plain CSS `@import`s above everything else, which would put them before the layer order below.
 // So the two Tailwind imports are written out: `@import '…/theme.css' layer(theme)` and
@@ -35,9 +37,10 @@
   --text-2: #aab6c4;
   --muted: #738195;
   --accent: #b6f23f;
-  --accent-hover: #c6ff55;
+  --accent-hover: color-mix(in oklab, var(--accent) 80%, var(--hover-mix));
+  --hover-mix: #ffffff;
   --accent-ink: #0f1600;
-  --accent-soft: rgba(182, 242, 63, 0.12);
+  --accent-soft: color-mix(in srgb, var(--accent) 12%, transparent);
   --kcal: #ff9f43;
   --protein: #c084fc;
   --water: #38bdf8;
@@ -48,12 +51,13 @@
   --sidebar-top: #0d1218;
   --backdrop: #03060a;
   --shade: #000;
-  --radius: 16px;
-  --radius-sm: 10px;
+  --r: 1; /* corner scale: see _appearance.scss */
+  --radius: calc(16px * var(--r));
+  --radius-sm: calc(10px * var(--r));
   --shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
   --font: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --chart-grid: rgba(255, 255, 255, 0.06);
-  --chart-accent-dim: rgba(182, 242, 63, 0.45);
+  --chart-accent-dim: color-mix(in srgb, var(--accent) 45%, transparent);
   color-scheme: dark;
 }
 
@@ -71,9 +75,8 @@
   --text-2: #465467;
   --muted: #66758a;
   --accent: #4a8a07;
-  --accent-hover: #3d7305;
+  --hover-mix: #000000;
   --accent-ink: #ffffff;
-  --accent-soft: rgba(74, 138, 7, 0.12);
   --kcal: #d97706;
   --protein: #9333ea;
   --water: #0284c7;
@@ -86,7 +89,6 @@
   --shade: #000;
   --shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
   --chart-grid: rgba(15, 23, 42, 0.08);
-  --chart-accent-dim: rgba(74, 138, 7, 0.4);
   color-scheme: light;
 }
 
@@ -152,7 +154,7 @@
     background: var(--bg);
     color: var(--text);
     font-family: var(--font);
-    font-size: 14px;
+    font-size: 0.875rem;
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
     overflow-x: hidden;
@@ -181,7 +183,7 @@
   textarea {
     background: var(--bg);
     border: 1px solid var(--border);
-    border-radius: 9px;
+    border-radius: calc(var(--r) * 9px);
     padding: 8px 10px;
     outline: none;
     min-width: 0;
@@ -231,7 +233,7 @@
   align-items: center;
   gap: 12px;
   padding: 10px 12px;
-  border-radius: 10px;
+  border-radius: calc(var(--r) * 10px);
   border: 0;
   background: none;
   color: var(--text-2);
@@ -256,7 +258,7 @@
     flex: 1 0 auto;
     flex-direction: column;
     gap: 3px;
-    font-size: 10.5px;
+    font-size: 0.6563rem;
     padding: 7px 10px;
     min-width: 64px;
     align-items: center;
@@ -282,7 +284,7 @@
   flex-wrap: wrap;
   margin-bottom: 16px;
   & h3 {
-    font-size: 16px;
+    font-size: 1rem;
     font-weight: 700;
     display: flex;
     align-items: center;
@@ -291,7 +293,7 @@
 }
 
 @utility eyebrow {
-  font-size: 11px;
+  font-size: 0.6875rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--muted);
@@ -304,7 +306,7 @@
   justify-content: center;
   gap: 8px;
   padding: 9px 14px;
-  border-radius: 10px;
+  border-radius: calc(var(--r) * 10px);
   border: 1px solid var(--border);
   background: var(--surface-2);
   color: var(--text);
@@ -342,12 +344,12 @@
   }
   &.btn-sm {
     padding: 6px 10px;
-    font-size: 12.5px;
-    border-radius: 8px;
+    font-size: 0.7813rem;
+    border-radius: calc(var(--r) * 8px);
   }
   &.btn-icon {
     padding: 7px;
-    border-radius: 9px;
+    border-radius: calc(var(--r) * 9px);
   }
   &.btn-danger:hover {
     border-color: var(--bad);
@@ -371,8 +373,8 @@
   align-items: center;
   gap: 6px;
   padding: 4px 10px;
-  border-radius: 999px;
-  font-size: 12px;
+  border-radius: calc(var(--r) * 999px);
+  font-size: 0.75rem;
   font-weight: 600;
   background: var(--surface-2);
   border: 1px solid var(--border);
@@ -409,7 +411,7 @@ input[aria-invalid='true'] {
   place-items: center;
   padding: 4px;
   border: 0;
-  border-radius: 6px;
+  border-radius: calc(var(--r) * 6px);
   background: transparent;
   color: var(--muted);
   cursor: grab;
@@ -426,7 +428,7 @@ input[aria-invalid='true'] {
 .cdk-drag-preview.tbl-drag-preview {
   display: table;
   background: var(--surface-2);
-  border-radius: 8px;
+  border-radius: calc(var(--r) * 8px);
   box-shadow: var(--shadow);
   color: var(--text);
 }
@@ -460,13 +462,13 @@ input[aria-invalid='true'] {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--muted);
   font-weight: 600;
   & input,
   & select {
     color: var(--text);
-    font-size: 14px;
+    font-size: 0.875rem;
     font-weight: 500;
   }
 }
@@ -474,13 +476,13 @@ input[aria-invalid='true'] {
 /* Progress bar: <div class="bar"><i [style.width.%]="…"></i></div> */
 @utility bar {
   height: 8px;
-  border-radius: 99px;
+  border-radius: calc(var(--r) * 99px);
   background: var(--surface-3);
   overflow: hidden;
   & > i {
     display: block;
     height: 100%;
-    border-radius: 99px;
+    border-radius: calc(var(--r) * 99px);
     background: var(--accent);
     transition: width 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
   }
@@ -503,10 +505,10 @@ input[aria-invalid='true'] {
   gap: 10px;
   align-items: flex-start;
   padding: 12px 14px;
-  border-radius: 12px;
+  border-radius: calc(var(--r) * 12px);
   border: 1px solid var(--border);
   background: var(--surface-2);
-  font-size: 13px;
+  font-size: 0.8125rem;
   &.alert-warn {
     border-color: color-mix(in oklab, var(--warn) 35%, transparent);
     background: color-mix(in oklab, var(--warn) 7%, transparent);
@@ -542,14 +544,14 @@ input[aria-invalid='true'] {
   text-align: center;
   color: var(--muted);
   border: 1px dashed var(--border);
-  border-radius: 12px;
+  border-radius: calc(var(--r) * 12px);
 }
 
 /* Square checkbox button; `check-on` when ticked. */
 @utility check {
   width: 28px;
   height: 28px;
-  border-radius: 8px;
+  border-radius: calc(var(--r) * 8px);
   border: 2px solid var(--border);
   background: transparent;
   display: grid;
@@ -582,7 +584,7 @@ input[aria-invalid='true'] {
   justify-content: space-between;
   padding: 8px 0;
   border-bottom: 1px solid var(--border-soft);
-  font-size: 13px;
+  font-size: 0.8125rem;
   &:last-child {
     border-bottom: 0;
   }
@@ -598,20 +600,20 @@ input[aria-invalid='true'] {
 @utility sum-box {
   background: var(--surface-2);
   border: 1px solid var(--border-soft);
-  border-radius: 12px;
+  border-radius: calc(var(--r) * 12px);
   padding: 12px;
   & .eyebrow {
-    font-size: 10px;
+    font-size: 0.625rem;
   }
   & b {
     display: block;
-    font-size: 18px;
+    font-size: 1.125rem;
     font-variant-numeric: tabular-nums;
     margin-top: 2px;
   }
   & small {
     color: var(--muted);
-    font-size: 11.5px;
+    font-size: 0.7188rem;
   }
 }
 
@@ -619,10 +621,10 @@ input[aria-invalid='true'] {
 @utility tbl {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-variant-numeric: tabular-nums;
   & th {
-    font-size: 11px;
+    font-size: 0.6875rem;
     letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--muted);
@@ -653,11 +655,11 @@ input[aria-invalid='true'] {
 /* Toggle pill; `chip-on` when selected. */
 @utility chip {
   padding: 6px 11px;
-  border-radius: 999px;
+  border-radius: calc(var(--r) * 999px);
   border: 1px solid var(--border);
   background: var(--surface-2);
   cursor: pointer;
-  font-size: 12.5px;
+  font-size: 0.7813rem;
   color: var(--text-2);
   transition: all 0.15s;
   &:hover {
@@ -676,14 +678,14 @@ input[aria-invalid='true'] {
   overflow: auto;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 18px;
+  border-radius: calc(var(--r) * 18px);
   padding: 22px;
   box-shadow: var(--shadow);
   animation: rise 0.25s ease;
 }
 
 @utility section-title {
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 700;
   color: var(--text-2);
   margin: 4px 0 10px;

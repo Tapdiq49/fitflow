@@ -14,6 +14,7 @@ import { IconComponent } from '../../shared/icon/icon.component';
 import { BodyBasicsFormComponent } from '../profile/body-basics-form.component';
 import { TimePickerComponent } from '../../shared/forms/time-picker.component';
 import { TPipe } from '../../common/pipes/translate/t.pipe';
+import { TimePipe } from '../../common/pipes/format/time.pipe';
 import { t, td } from '../../core/i18n/translate';
 
 interface ExRow {
@@ -34,7 +35,7 @@ interface Row {
 
 @Component({
   selector: 'app-week-plan-page',
-  imports: [RouterLink, BodyBasicsFormComponent, Tabs, TabList, Tab, TabPanel, TabContent, Listbox, Option, IconComponent, TimePickerComponent, TPipe],
+  imports: [RouterLink, BodyBasicsFormComponent, Tabs, TabList, Tab, TabPanel, TabContent, Listbox, Option, IconComponent, TimePickerComponent, TPipe, TimePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div ngTabs class="flex flex-col gap-[18px]">
@@ -50,7 +51,7 @@ interface Row {
       </div>
       <div class="card">
         <div class="flex flex-wrap items-center justify-between gap-3">
-          <div class="flex items-center gap-1.5 rounded-[12px] border border-border-soft bg-surface p-1">
+          <div class="flex items-center gap-1.5 rounded-[calc(var(--r)_*_12px)] border border-border-soft bg-surface p-1">
             <button class="btn btn-ghost btn-icon" (click)="shift(-1)" [attr.aria-label]="'plan.previousWeek' | t"><app-icon name="left" /></button>
             <span class="px-2.5 font-semibold whitespace-nowrap">{{ label() }}</span>
             <button class="btn btn-ghost btn-icon" (click)="shift(1)" [attr.aria-label]="'plan.nextWeek' | t"><app-icon name="right" /></button>
@@ -58,7 +59,7 @@ interface Row {
           <span class="badge" [class.badge-training]="planState() === 'own'">{{ planStateLabel() }}</span>
         </div>
         @if (tab() === 'meal') {
-        <p class="text-muted" style="font-size: 12px; margin: 10px 0 0">
+        <p class="text-muted" style="font-size: 0.75rem; margin: 10px 0 0">
           {{ 'plan.leaveMealFieldEmpty' | t }}
         </p>
         @if (store.effectiveMenuMode() === 'auto') {
@@ -71,11 +72,11 @@ interface Row {
           <button class="btn btn-sm" style="margin-top: 10px" (click)="addSuggestionAll()"><app-icon name="plus" size="sm" />{{ 'plan.addSuggestionAll' | t }}</button>
         }
         } @else {
-          <p class="text-muted" style="font-size: 12px; margin: 10px 0 0">
+          <p class="text-muted" style="font-size: 0.75rem; margin: 10px 0 0">
             {{ 'plan.enterExercisesTrainerGave' | t }}
           </p>
           @if (store.effectiveWorkoutMode() !== 'trainer') {
-            <p class="mt-2 mb-0 text-[12px] text-warn">{{ 'plan.workoutModeCurrentlyBuilt' | t }}</p>
+            <p class="mt-2 mb-0 text-[0.75rem] text-warn">{{ 'plan.workoutModeCurrentlyBuilt' | t }}</p>
           }
         }
       </div>
@@ -86,10 +87,10 @@ interface Row {
         <div class="card">
           <div class="card-head"><h3>{{ dayLabel(day) }}</h3></div>
           <div class="flex flex-wrap items-start gap-4">
-          <div class="min-w-[300px] flex-1">
+          <div class="min-w-[18.75rem] flex-1">
           @for (r of draft()[day]; track r.slot; let i = $index) {
             <div class="mb-2 grid grid-cols-[110px_112px_1fr_36px] items-center gap-2 phone:grid-cols-[90px_1fr_36px]">
-              <span class="text-[13px] text-text-2">{{ slotLabel(r.slot) }}</span>
+              <span class="text-[0.8125rem] text-text-2">{{ slotLabel(r.slot) }}</span>
               <app-time-picker [label]="'common.time' | t" [value]="r.time" (valueChange)="setTime(day, i, $event)" />
               <input type="text" [value]="r.text" (input)="setText(day, i, $event)" [placeholder]="'plan.eGBuckwheat4' | t" class="phone:col-span-3" />
               <button class="btn btn-ghost btn-icon btn-sm" (click)="removeMeal(day, r.slot)" [attr.aria-label]="('common.delete' | t) + ': ' + slotLabel(r.slot)"><app-icon name="x" size="sm" /></button>
@@ -98,7 +99,7 @@ interface Row {
           @if (unusedSlots(day); as free) {
             @if (free.length) {
               <div class="mt-1 flex flex-wrap items-center gap-2">
-                <span class="text-[12px] text-muted">{{ 'plan.addMeal' | t }}:</span>
+                <span class="text-[0.75rem] text-muted">{{ 'plan.addMeal' | t }}:</span>
                 @for (slot of free; track slot) {
                   <button class="btn btn-ghost btn-sm" (click)="addMeal(day, slot)"><app-icon name="plus" size="sm" />{{ slotLabel(slot) }}</button>
                 }
@@ -107,11 +108,11 @@ interface Row {
           }
           </div>
           @if (suggestionFor(day); as suggested) {
-            <aside class="w-[300px] rounded-[12px] border border-dashed border-border bg-surface-2 p-3 phone:w-full">
-              <b class="text-[13px]">{{ 'plan.suggestion' | t }}</b>
-              <p class="text-muted" style="font-size: 12px; margin: 2px 0 8px">{{ 'plan.suggestionHint' | t }}</p>
+            <aside class="w-[18.75rem] rounded-[calc(var(--r)_*_12px)] border border-dashed border-border bg-surface-2 p-3 phone:w-full">
+              <b class="text-[0.8125rem]">{{ 'plan.suggestion' | t }}</b>
+              <p class="text-muted" style="font-size: 0.75rem; margin: 2px 0 8px">{{ 'plan.suggestionHint' | t }}</p>
               @for (m of suggested; track m.slot) {
-                <div class="text-[12px] text-text-2"><b class="tabular-nums">{{ m.time }}</b> {{ slotLabel(m.slot) }}: {{ m.name }}</div>
+                <div class="text-[0.75rem] text-text-2"><b class="tabular-nums">{{ m.time | time }}</b> {{ slotLabel(m.slot) }}: {{ m.name }}</div>
               }
               <button class="btn btn-sm" style="margin-top: 10px" (click)="addSuggestion(day)"><app-icon name="plus" size="sm" />{{ 'plan.addSuggestion' | t }}</button>
             </aside>
@@ -148,7 +149,7 @@ interface Row {
               <div ngOption [value]="d" [label]="dayName(d - 1)" class="btn btn-sm" [class.btn-primary]="wDays().includes(d)">{{ dayName(d - 1) }}</div>
             }
           </div>
-          <p class="text-muted" style="font-size: 12px; margin: 10px 0 0">{{ 'plan.gymDaysHint' | t }}</p>
+          <p class="text-muted" style="font-size: 0.75rem; margin: 10px 0 0">{{ 'plan.gymDaysHint' | t }}</p>
         </div>
         @for (day of wDays(); track day) {
           <div class="card">

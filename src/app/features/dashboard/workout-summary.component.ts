@@ -28,13 +28,13 @@ import { t } from '../../core/i18n/translate';
       </div>
       <div class="flex flex-col gap-2">
         @for (row of rows(); track row.id) {
-          <div class="flex justify-between gap-2.5 rounded-[10px] bg-surface-2 px-3 py-[9px] text-[13px] [&_span:last-child]:text-right [&_span:last-child]:text-text-2">
+          <div class="flex justify-between gap-2.5 rounded-[calc(var(--r)_*_10px)] bg-surface-2 px-3 py-[9px] text-[0.8125rem] [&_span:last-child]:text-right [&_span:last-child]:text-text-2">
             <span>{{ row.done ? '✓ ' : '' }}{{ row.name }} <span class="text-muted">{{ row.target }}</span></span>
             <span>{{ row.rec }}</span>
           </div>
         }
       </div>
-      <p class="text-muted" style="margin: 12px 0 0; font-size: 12px">
+      <p class="text-muted" style="margin: 12px 0 0; font-size: 0.75rem">
         {{ workout.isTrainer() ? ('dash.numberOnRightLast' | t) : ('dash.numberOnRightWeight' | t) }}
       </p>
     } @else {

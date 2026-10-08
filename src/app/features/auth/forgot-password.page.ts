@@ -29,7 +29,7 @@ import { AuthShellComponent } from './auth-shell.component';
           }
           <button type="submit" class="btn btn-primary w-full" [disabled]="busy()">@if (busy()) { <span class="spinner"></span> }{{ 'auth.sendResetLink' | t }}</button>
         </form>
-        <div class="text-center text-[13px]"><a routerLink="/auth/sign-in">{{ 'auth.backToSignIn' | t }}</a></div>
+        <div class="text-center text-[0.8125rem]"><a routerLink="/auth/sign-in">{{ 'auth.backToSignIn' | t }}</a></div>
       </app-auth-shell>
     }
   `,

@@ -47,7 +47,7 @@ import { TPipe } from '../../common/pipes/translate/t.pipe';
             <app-icon name="check" size="sm" />{{ cardio().done ? ('dash.done' | t) : ('dash.completeCardio' | t) }}
           </button>
         </div>
-        <p class="text-muted" style="margin: 10px 0 0; font-size: 12px">{{ 'dash.sinceMainGoalBuilding' | t }}</p>
+        <p class="text-muted" style="margin: 10px 0 0; font-size: 0.75rem">{{ 'dash.sinceMainGoalBuilding' | t }}</p>
       }
       @case ('rest') {
         <div class="card-head"><h3><app-icon name="moon" /> {{ 'dash.recoveryDay' | t }}</h3></div>

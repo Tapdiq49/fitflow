@@ -28,13 +28,13 @@ import { t } from '../../core/i18n/translate';
           <div class="kv"><span>{{ 'supp.last7Days' | t }}</span><b>{{ streak() }} / 7</b></div>
           <div class="flex flex-wrap items-center gap-2" style="gap: 4px; margin: 10px 0">
             @for (d of last7(); track d.k) {
-              <span [title]="F.short(d.k)" style="flex: 1; height: 8px; border-radius: 4px" [style.background]="d.on ? 'var(--accent)' : 'var(--surface-3)'"></span>
+              <span [title]="F.short(d.k)" style="flex: 1; height: 8px; border-radius: calc(var(--r) * 4px)" [style.background]="d.on ? 'var(--accent)' : 'var(--surface-3)'"></span>
             }
           </div>
           <button class="btn" style="width: 100%" [class.btn-done]="creatine()" [class.btn-primary]="!creatine()" (click)="day.toggle(k(), 'creatine')">
             <app-icon name="check" size="sm" />{{ creatine() ? ('supp.takenToday' | t) : ('supp.iTookToday' | t) }}
           </button>
-          <p class="text-muted" style="font-size: 12px; margin: 10px 0 0">
+          <p class="text-muted" style="font-size: 0.75rem; margin: 10px 0 0">
             {{ 'supp.creatineHoldsWaterIn' | t }}
           </p>
         </div>

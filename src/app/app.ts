@@ -4,7 +4,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter, map } from 'rxjs';
 import { AuthStore } from './core/auth/auth.store';
-import { Lang, SKINS, SkinId } from './common/interfaces';
+import { Lang } from './common/interfaces';
 import { NAV } from './app.routes';
 import { I18nService } from './core/services/i18n.service';
 import { ThemeService } from './core/services/theme.service';
@@ -16,6 +16,7 @@ import { BodyBasicsDialog } from './features/profile/body-basics.dialog';
 import { StoreService } from './core/services/store.service';
 import { GuestNoticeComponent } from './features/auth/guest-notice.component';
 import { UserMenuComponent } from './features/auth/user-menu.component';
+import { DisplaySettingsComponent } from './features/appearance/display-settings.component';
 import { SelectComponent } from './shared/forms/select.component';
 import type { SelectOption } from './shared/forms/select.component';
 import { IconComponent } from './shared/icon/icon.component';
@@ -25,31 +26,28 @@ import { t } from './core/i18n/translate';
 
 @Component({
   selector: 'app-root',
-  imports: [NgTemplateOutlet, RouterOutlet, RouterLink, RouterLinkActive, IconComponent, SelectComponent, OverlaysComponent, AddMealDialog, DayDetailDialog, BodyBasicsDialog, GuestNoticeComponent, UserMenuComponent, TPipe],
+  imports: [NgTemplateOutlet, RouterOutlet, RouterLink, RouterLinkActive, IconComponent, SelectComponent, OverlaysComponent, AddMealDialog, DayDetailDialog, BodyBasicsDialog, GuestNoticeComponent, UserMenuComponent, DisplaySettingsComponent, TPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <!-- On /auth pages the shell is only hidden, never removed: destroying the half-loaded deferred language select throws. -->
     <div
-      class="grid min-h-screen grid-cols-[232px_1fr] data-[collapsed=true]:grid-cols-[72px_1fr] tablet:grid-cols-[minmax(0,1fr)] tablet:data-[collapsed=true]:grid-cols-[minmax(0,1fr)]"
+      class="grid min-h-screen grid-cols-[232px_1fr] data-[collapsed=true]:grid-cols-[72px_1fr] tablet:grid-cols-[minmax(0,1fr)] tablet:data-[collapsed=true]:grid-cols-[minmax(0,1fr)] data-[layout=top]:grid-cols-[minmax(0,1fr)] data-[layout=dock]:grid-cols-[minmax(0,1fr)]"
       [attr.data-collapsed]="ui.sidebarCollapsed()"
+      [attr.data-layout]="theme.layout()"
       [style.display]="isAuthPage() ? 'block' : null"
     >
-      <aside
-        [style.display]="isAuthPage() ? 'none' : null"
-        class="sticky top-0 flex h-screen flex-col gap-1.5 overflow-x-hidden border-r border-border-soft bg-[linear-gradient(180deg,var(--color-sidebar-top),var(--color-bg))] py-[22px] tablet:hidden"
-        [class]="ui.sidebarCollapsed() ? 'px-2.5' : 'px-3.5'"
-      >
-        <a routerLink="/" class="flex items-center gap-2.5 pt-1 pb-5 text-[18px] font-extrabold tracking-[-.02em] text-inherit no-underline" [class]="ui.sidebarCollapsed() ? 'justify-center' : 'px-2.5'" [attr.aria-label]="'app.fitflowHomePage' | t">
-          <div class="grid size-[34px] shrink-0 place-items-center rounded-[10px] bg-accent text-accent-ink"><app-icon name="dumbbell" /></div>
+      <aside [style.display]="sidebarShown() ? null : 'none'" [class]="asideClass()">
+        <a routerLink="/" class="flex items-center gap-2.5 pt-1 pb-5 text-[1.125rem] font-extrabold tracking-[-.02em] text-inherit no-underline" [class]="ui.sidebarCollapsed() ? 'justify-center' : 'px-2.5'" [attr.aria-label]="'app.fitflowHomePage' | t">
+          <div class="grid size-[34px] shrink-0 place-items-center rounded-[calc(var(--r)_*_10px)] bg-accent text-accent-ink"><app-icon name="dumbbell" /></div>
           @if (!ui.sidebarCollapsed()) {
             {{ 'app.fitflow' | t }}
           }
         </a>
         <nav class="flex flex-col gap-1.5">
-          <ng-container *ngTemplateOutlet="navLinks; context: { bottom: false }" />
+          <ng-container *ngTemplateOutlet="navLinks; context: { bottom: false, rail: ui.sidebarCollapsed() }" />
         </nav>
         @if (!ui.sidebarCollapsed()) {
-          <div class="mt-auto rounded-[12px] bg-surface p-3 text-[12px] text-muted"><b class="text-text">{{ 'app.naturalWay' | t }}</b><br />{{ 'app.buildMuscleKeepFat' | t }}</div>
+          <div class="mt-auto rounded-[calc(var(--r)_*_12px)] bg-surface p-3 text-[0.75rem] text-muted"><b class="text-text">{{ 'app.naturalWay' | t }}</b><br />{{ 'app.buildMuscleKeepFat' | t }}</div>
         }
       </aside>
 
@@ -64,6 +62,7 @@ import { t } from './core/i18n/translate';
           class="sticky top-0 z-40 -mx-7 mb-5 flex flex-wrap items-center justify-between gap-4 border-b border-border-soft bg-bg/92 px-7 pt-[22px] pb-3 backdrop-blur-[10px] tablet:-mx-4 tablet:px-4 tablet:pt-4"
         >
           <div class="flex items-center gap-3">
+            @if (sidebarShown()) {
             <button
               class="btn btn-ghost btn-icon tablet:hidden"
               (click)="ui.toggleSidebar()"
@@ -73,26 +72,22 @@ import { t } from './core/i18n/translate';
             >
               <app-icon name="sidebar" />
             </button>
+            }
             <div>
-              <h2 class="text-[22px] font-extrabold tracking-[-.02em]">{{ title() }}</h2>
-              <div class="text-[13px] text-muted">{{ 'app.naturalMuscleGrowthAthletic' | t }}</div>
+              <h2 class="text-[1.375rem] font-extrabold tracking-[-.02em]">{{ title() }}</h2>
+              <div class="text-[0.8125rem] text-muted">{{ 'app.naturalMuscleGrowthAthletic' | t }}</div>
             </div>
           </div>
-          <div class="flex items-center gap-1.5 rounded-[12px] border border-border-soft bg-surface p-1">
+          <div class="flex items-center gap-1.5 rounded-[calc(var(--r)_*_12px)] border border-border-soft bg-surface p-1">
             <button class="btn btn-ghost btn-icon" (click)="ui.shift(-1)" [attr.aria-label]="'app.previousDay' | t"><app-icon name="left" /></button>
-            <span class="px-2.5 font-semibold whitespace-nowrap phone:px-1 phone:text-[13px]">{{ dateLabel() }}</span>
+            <span class="px-2.5 font-semibold whitespace-nowrap phone:px-1 phone:text-[0.8125rem]">{{ dateLabel() }}</span>
             <button class="btn btn-ghost btn-icon" (click)="ui.shift(1)" [attr.aria-label]="'app.nextDay' | t"><app-icon name="right" /></button>
             <button class="btn btn-sm" (click)="ui.goToday()">{{ 'app.today' | t }}</button>
             <!-- Deferred: the dropdown (Aria + CDK overlay) stays out of the initial bundle. -->
             @defer (on idle) {
-              <app-select class="w-[78px] [&_[role=combobox]]:h-9 [&_[role=combobox]]:text-[13px] [&_[role=combobox]]:font-semibold" [label]="'app.language' | t" [options]="langOptions" [value]="i18n.lang()" (valueChange)="i18n.setLang($event)" />
+              <app-select class="w-[4.875rem] [&_[role=combobox]]:h-9 [&_[role=combobox]]:text-[0.8125rem] [&_[role=combobox]]:font-semibold" [label]="'app.language' | t" [options]="langOptions" [value]="i18n.lang()" (valueChange)="i18n.setLang($event)" />
             } @placeholder {
-              <span class="grid h-9 w-[78px] place-items-center rounded-[9px] border border-border text-[13px] font-semibold">{{ i18n.lang().toUpperCase() }}</span>
-            }
-            @defer (on idle) {
-              <app-select class="w-[112px] [&_[role=combobox]]:h-9 [&_[role=combobox]]:text-[13px] [&_[role=combobox]]:font-semibold" [label]="'app.skin' | t" [options]="skinOptions()" [value]="theme.skin()" (valueChange)="theme.setSkin($event)" />
-            } @placeholder {
-              <span class="h-9 w-[112px] rounded-[9px] border border-border"></span>
+              <span class="grid h-9 w-[4.875rem] place-items-center rounded-[calc(var(--r)_*_9px)] border border-border text-[0.8125rem] font-semibold">{{ i18n.lang().toUpperCase() }}</span>
             }
             <button
               class="btn btn-ghost btn-icon"
@@ -102,6 +97,12 @@ import { t } from './core/i18n/translate';
             >
               <app-icon [name]="theme.resolved() === 'dark' ? 'sun' : 'moon'" />
             </button>
+            <!-- Deferred: CDK overlay stays out of the initial bundle. -->
+            @defer (on idle) {
+              <app-display-settings />
+            } @placeholder {
+              <span class="size-9"></span>
+            }
             @if (auth.user()) {
               <!-- Deferred: CDK menu stays out of the initial bundle. -->
               @defer (on idle) {
@@ -116,30 +117,41 @@ import { t } from './core/i18n/translate';
             }
           </div>
         </header>
+        @if (theme.layout() === 'top' && !isAuthPage()) {
+          <nav class="mb-5 flex items-center gap-1.5 overflow-x-auto border-b border-border-soft pb-3 tablet:hidden">
+            <ng-container *ngTemplateOutlet="navLinks; context: { bottom: false, rail: false }" />
+          </nav>
+        }
         <router-outlet />
       </main>
     </div>
+
+    @if (theme.layout() === 'dock' && !isAuthPage()) {
+      <nav class="fixed start-1/2 bottom-4 z-50 flex max-w-[calc(100vw-32px)] -translate-x-1/2 gap-1 overflow-x-auto rounded-[calc(var(--r)_*_18px)] border border-border bg-surface/95 p-1.5 shadow-card backdrop-blur-[12px] rtl:translate-x-1/2 tablet:hidden">
+        <ng-container *ngTemplateOutlet="navLinks; context: { bottom: true, rail: false }" />
+      </nav>
+    }
 
     <nav
       [style.display]="isAuthPage() ? 'none' : null"
       class="fixed right-0 bottom-0 left-0 z-50 hidden overflow-x-auto border-t border-border-soft bg-bg/95 px-1.5 pt-1.5 pb-[calc(6px+env(safe-area-inset-bottom))] backdrop-blur-[12px] tablet:flex"
     >
-      <ng-container *ngTemplateOutlet="navLinks; context: { bottom: true }" />
+      <ng-container *ngTemplateOutlet="navLinks; context: { bottom: true, rail: false }" />
     </nav>
 
-    <ng-template #navLinks let-bottom="bottom">
+    <ng-template #navLinks let-bottom="bottom" let-rail="rail">
       @for (n of nav; track n.path) {
         <a
           class="nav-btn"
           [class.nav-btn-bottom]="bottom"
-          [class.justify-center]="!bottom && ui.sidebarCollapsed()"
-          [attr.title]="!bottom && ui.sidebarCollapsed() ? (n.label | t) : null"
-          [attr.aria-label]="!bottom && ui.sidebarCollapsed() ? (n.label | t) : null"
+          [class.justify-center]="rail"
+          [attr.title]="rail ? (n.label | t) : null"
+          [attr.aria-label]="rail ? (n.label | t) : null"
           [routerLink]="n.path"
           routerLinkActive="active"
           [routerLinkActiveOptions]="{ exact: n.path === '/' }"
         >
-          <app-icon [name]="n.icon" />@if (bottom || !ui.sidebarCollapsed()) {
+          <app-icon [name]="n.icon" />@if (!rail) {
             <span>{{ n.label | t }}</span>
           }
         </a>
@@ -152,8 +164,11 @@ import { t } from './core/i18n/translate';
         <app-add-meal-dialog />
       }
     }
-    @if (ui.detailDate(); as d) {
-      <app-day-detail-dialog [date]="d" />
+    <!-- Deferred like the add-meal dialog: only opened from the calendar and the weekly card. -->
+    @defer (when ui.detailDate(); prefetch on idle) {
+      @if (ui.detailDate(); as d) {
+        <app-day-detail-dialog [date]="d" />
+      }
     }
     @if (auth.user() && auth.user()?.height == null && !isAuthPage() && !store.bodyBasicsKnown()) {
       <app-body-basics-dialog />
@@ -167,7 +182,15 @@ export class App {
   protected readonly i18n = inject(I18nService);
   protected readonly langOptions: SelectOption<Lang>[] = this.i18n.langs.map((l) => ({ value: l.id, label: l.label }));
   protected readonly theme = inject(ThemeService); // also applies data-theme and data-skin on <html>
-  protected readonly skinOptions = computed<SelectOption<SkinId>[]>(() => SKINS.map((s) => ({ value: s, label: t('skin.' + s) })));
+  /** Classic and floating layouts have the sidebar; top and dock replace it. */
+  protected readonly sidebarShown = computed(() => !this.isAuthPage() && (this.theme.layout() === 'side' || this.theme.layout() === 'floating'));
+  protected readonly asideClass = computed(() => {
+    const pad = this.ui.sidebarCollapsed() ? 'px-2.5' : 'px-3.5';
+    const base = 'sticky flex flex-col gap-1.5 overflow-x-hidden py-[22px] tablet:hidden ' + pad;
+    return this.theme.layout() === 'floating'
+      ? base + ' top-3 m-3 h-[calc(100vh-24px)] rounded-[calc(var(--r)_*_18px)] border border-border bg-surface shadow-card'
+      : base + ' top-0 h-screen border-e border-border-soft bg-[linear-gradient(180deg,var(--color-sidebar-top),var(--color-bg))]';
+  });
   private readonly router = inject(Router);
   private readonly location = inject(Location);
   protected readonly auth = inject(AuthStore);

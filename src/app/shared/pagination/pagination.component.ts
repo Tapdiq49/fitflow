@@ -18,10 +18,10 @@ import { TPipe } from '../../common/pipes/translate/t.pipe';
   imports: [SelectComponent, IconComponent, TPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="mt-3 flex flex-wrap items-center justify-between gap-3 text-[13px]">
+    <div class="mt-3 flex flex-wrap items-center justify-between gap-3 text-[0.8125rem]">
       <label class="flex items-center gap-2 text-muted">
         {{ 'pagination.perPage' | t }}
-        <app-select class="w-[88px] [&_[role=combobox]]:h-9" [label]="'pagination.perPage' | t" [options]="sizeOptions()" [value]="pageSize()" (valueChange)="pageSizeChange.emit($event)" />
+        <app-select class="w-[5.5rem] [&_[role=combobox]]:h-9" [label]="'pagination.perPage' | t" [options]="sizeOptions()" [value]="pageSize()" (valueChange)="pageSizeChange.emit($event)" />
       </label>
       <span class="text-muted">{{ range() }}</span>
       <div class="flex items-center gap-1.5">

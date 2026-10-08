@@ -8,7 +8,7 @@ import { TPipe } from '../../common/pipes/translate/t.pipe';
 import { POPUP_PANEL, POPUP_POSITIONS } from './popup';
 
 const CELL =
-  'cursor-pointer rounded-[8px] border py-1.5 text-center text-[13px] font-semibold tabular-nums hover:border-accent data-[active=true]:outline-2 data-[active=true]:outline-offset-1 data-[active=true]:outline-accent aria-disabled:cursor-not-allowed aria-disabled:opacity-35 aria-disabled:hover:border-border-soft';
+  'cursor-pointer rounded-[calc(var(--r)_*_8px)] border py-1.5 text-center text-[0.8125rem] font-semibold tabular-nums hover:border-accent data-[active=true]:outline-2 data-[active=true]:outline-offset-1 data-[active=true]:outline-accent aria-disabled:cursor-not-allowed aria-disabled:opacity-35 aria-disabled:hover:border-border-soft';
 const CELL_DAY = `${CELL} border-border-soft bg-bg`;
 const CELL_OUTSIDE = `${CELL} border-transparent bg-transparent text-muted`;
 const CELL_TODAY = `${CELL} border-accent/60 bg-bg`;
@@ -48,7 +48,7 @@ interface Day {
       #origin="cdkOverlayOrigin"
       [(expanded)]="open"
       [attr.aria-label]="label()"
-      class="flex w-full cursor-pointer items-center justify-between gap-2 rounded-[9px] border bg-bg px-2.5 py-2 text-left text-[14px] font-medium text-text tabular-nums outline-none [transition:border-color_.2s] focus-visible:border-accent"
+      class="flex w-full cursor-pointer items-center justify-between gap-2 rounded-[calc(var(--r)_*_9px)] border bg-bg px-2.5 py-2 text-left text-[0.875rem] font-medium text-text tabular-nums outline-none [transition:border-color_.2s] focus-visible:border-accent"
       [class]="open() ? 'border-accent' : 'border-border'"
     >
       <span>{{ value() ? shown() : '--.--.----' }}</span><app-icon name="calendar" size="sm" />
@@ -72,11 +72,11 @@ interface Day {
           [multi]="true"
           [attr.aria-label]="label()"
           (keydown)="onGridKeydown($event, grid)"
-          [class]="panel + ' w-[296px] p-3'"
+          [class]="panel + ' w-[18.5rem] p-3'"
         >
           <div class="mb-2 flex items-center justify-between gap-2">
             <button type="button" class="btn btn-ghost btn-icon btn-sm" tabindex="-1" [disabled]="!canGo(-1)" (click)="shiftMonth(-1)" [attr.aria-label]="'common.previousMonth' | t"><app-icon name="left" size="sm" /></button>
-            <span class="text-[14px] font-bold" aria-live="polite">{{ title() }}</span>
+            <span class="text-[0.875rem] font-bold" aria-live="polite">{{ title() }}</span>
             <button type="button" class="btn btn-ghost btn-icon btn-sm" tabindex="-1" [disabled]="!canGo(1)" (click)="shiftMonth(1)" [attr.aria-label]="'common.nextMonth' | t"><app-icon name="right" size="sm" /></button>
           </div>
           <div class="mb-1 grid grid-cols-7 gap-1 text-center" aria-hidden="true">

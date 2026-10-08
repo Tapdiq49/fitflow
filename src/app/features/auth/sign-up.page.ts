@@ -47,7 +47,7 @@ import { OAuthButtonsComponent } from './oauth-buttons.component';
           <button type="submit" class="btn btn-primary w-full" [disabled]="busy()">@if (busy()) { <span class="spinner"></span> }{{ 'auth.signUp' | t }}</button>
         </form>
         <app-oauth-buttons />
-        <div class="text-center text-[13px] text-text-2">{{ 'auth.haveAccount' | t }} <a routerLink="/auth/sign-in">{{ 'auth.signIn' | t }}</a></div>
+        <div class="text-center text-[0.8125rem] text-text-2">{{ 'auth.haveAccount' | t }} <a routerLink="/auth/sign-in">{{ 'auth.signIn' | t }}</a></div>
       </app-auth-shell>
     }
   `,

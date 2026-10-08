@@ -9,12 +9,13 @@ import { UiService } from '../../core/services/ui.service';
 import { F } from '../../core/utils';
 import { IconComponent } from '../../shared/icon/icon.component';
 import { TPipe, TdPipe } from '../../common/pipes/translate/t.pipe';
+import { TimePipe } from '../../common/pipes/format/time.pipe';
 import { t, td } from '../../core/i18n/translate';
 
 /** Today's meals as macro tables, with daily totals. */
 @Component({
   selector: 'app-meals-card',
-  imports: [IconComponent, TPipe, TdPipe],
+  imports: [IconComponent, TPipe, TdPipe, TimePipe],
   host: { class: 'card' },
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -42,15 +43,15 @@ import { t, td } from '../../core/i18n/translate';
     @for (m of meals(); track m.id) {
       @let mm = macros(m);
       <div
-        class="mb-3 overflow-hidden rounded-[14px] border bg-surface-2 [transition:border-color_.2s,opacity_.2s]"
+        class="mb-3 overflow-hidden rounded-[calc(var(--r)_*_14px)] border bg-surface-2 [transition:border-color_.2s,opacity_.2s]"
         [class]="m.done ? 'border-good/35' : 'border-border-soft'"
       >
         <div class="flex flex-wrap items-center gap-3.5 px-3.5 py-3">
-          <span class="rounded-[8px] border border-border bg-bg px-2 py-1 text-[13px] font-extrabold tabular-nums">{{ m.time }}</span>
-          <div class="min-w-[160px] flex-1">
-            <span class="eyebrow">{{ slotLabel(m) }}</span><b class="block text-[15px]">{{ m.name | td }}</b>
+          <span class="rounded-[calc(var(--r)_*_8px)] border border-border bg-bg px-2 py-1 text-[0.8125rem] font-extrabold tabular-nums">{{ m.time | time }}</span>
+          <div class="min-w-[10rem] flex-1">
+            <span class="eyebrow">{{ slotLabel(m) }}</span><b class="block text-[0.9375rem]">{{ m.name | td }}</b>
           </div>
-          <span class="text-[13px] text-text-2 tabular-nums">{{ 'dash.nKcalNG' | t: { a: F.round(mm.k), b: F.round(mm.p) } }}</span>
+          <span class="text-[0.8125rem] text-text-2 tabular-nums">{{ 'dash.nKcalNG' | t: { a: F.round(mm.k), b: F.round(mm.p) } }}</span>
           <div class="flex gap-1.5">
             @if (!m.custom && !m.done) {
               <button class="btn btn-sm btn-icon" [title]="'dash.alternativeMeal' | t" (click)="day.swapMeal(k(), m.id)"><app-icon name="shuffle" size="sm" /></button>
@@ -81,7 +82,7 @@ import { t, td } from '../../core/i18n/translate';
                   <td class="tbl-text">
                     {{ itemName(it) }}
                     @if (it.note) {
-                      <div class="text-muted" style="font-size: 11px">{{ it.note | td }}</div>
+                      <div class="text-muted" style="font-size: 0.6875rem">{{ it.note | td }}</div>
                     }
                   </td>
                   <td class="tbl-num">{{ itemAmount(it) }}</td>

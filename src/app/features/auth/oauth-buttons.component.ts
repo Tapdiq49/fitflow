@@ -10,7 +10,7 @@ import { TPipe } from '../../common/pipes/translate/t.pipe';
   imports: [TPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="flex items-center gap-3 text-[12px] text-muted"><span class="h-px flex-1 bg-border-soft"></span>{{ 'auth.or' | t }}<span class="h-px flex-1 bg-border-soft"></span></div>
+    <div class="flex items-center gap-3 text-[0.75rem] text-muted"><span class="h-px flex-1 bg-border-soft"></span>{{ 'auth.or' | t }}<span class="h-px flex-1 bg-border-soft"></span></div>
     <button type="button" class="btn w-full" [disabled]="busy()" (click)="start('google')">@if (busy()) {
         <span class="spinner"></span>
       } @else {

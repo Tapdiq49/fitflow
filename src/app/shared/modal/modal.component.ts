@@ -12,7 +12,7 @@ let openModals = 0;
     <div class="fixed inset-0 z-100 grid place-items-center bg-backdrop/70 p-4 backdrop-blur-[4px]" role="dialog" aria-modal="true" (click)="onBackdrop($event)">
       <div class="modal-box">
         <div class="mb-4 flex items-center justify-between gap-3">
-          <h3 class="text-[18px]">{{ heading() }}</h3>
+          <h3 class="text-[1.125rem]">{{ heading() }}</h3>
           @if (dismissible()) {
             <button class="btn btn-ghost btn-icon" (click)="close()" [attr.aria-label]="'common.close' | t"><app-icon name="x" /></button>
           }

@@ -21,7 +21,7 @@ import { TPipe } from '../../common/pipes/translate/t.pipe';
       <button class="cursor-pointer rounded-full border-0 bg-shade/15 px-2 py-1 font-bold text-inherit" (click)="rest.stop()" [attr.aria-label]="'common.stopTimer' | t">✕</button>
     </div>
     <div
-      class="pointer-events-none fixed bottom-6 left-1/2 z-200 max-w-[calc(100%-32px)] rounded-[12px] border border-border bg-surface-3 px-4 py-2.5 font-semibold -translate-x-1/2 shadow-card [transition:all_.3s]"
+      class="pointer-events-none fixed bottom-6 left-1/2 z-200 max-w-[calc(100%-32px)] rounded-[calc(var(--r)_*_12px)] border border-border bg-surface-3 px-4 py-2.5 font-semibold -translate-x-1/2 shadow-card [transition:all_.3s]"
       [class]="toast.message() ? 'opacity-100' : 'translate-y-5 opacity-0'"
       role="status"
     >{{ toast.message() }}</div>

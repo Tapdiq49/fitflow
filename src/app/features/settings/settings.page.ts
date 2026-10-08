@@ -51,7 +51,7 @@ type OptionField = 'mealsPerDay' | 'menuMode' | 'workoutMode' | 'theme' | 'goal'
 
       <div class="card">
         <div class="card-head"><h3><app-icon name="settings" /> {{ 'settings.profileAndTargets' | t }}</h3></div>
-        <div class="grid grid-cols-4 items-start gap-3 tablet:grid-cols-2 phone:grid-cols-1 [&_[role=combobox]]:h-[42px] [&_input]:h-[42px]">
+        <div class="grid grid-cols-4 items-start gap-3 tablet:grid-cols-2 phone:grid-cols-1 [&_[role=combobox]]:h-[2.625rem] [&_input]:h-[2.625rem]">
           <label class="field">{{ 'settings.heightCm' | t }}<input type="text" inputmode="numeric" [value]="form().height ?? ''" [attr.aria-invalid]="errors().height ? 'true' : null" (input)="setNum('height', $event)" />@if (errors().height; as e) { <small class="text-bad">{{ e }}</small> }</label>
           <label class="field">{{ 'settings.startingWeightKg' | t }}<input type="text" inputmode="decimal" [value]="form().startWeight ?? ''" [attr.aria-invalid]="errors().startWeight ? 'true' : null" (input)="setNum('startWeight', $event)" />@if (errors().startWeight; as e) { <small class="text-bad">{{ e }}</small> }</label>
           @if (latestLog(); as log) {
@@ -66,7 +66,7 @@ type OptionField = 'mealsPerDay' | 'menuMode' | 'workoutMode' | 'theme' | 'goal'
             {{ 'settings.sex' | t }}
             <div class="flex gap-2">
               @for (o of sexes; track o.value) {
-                <button type="button" role="radio" class="btn h-[42px] flex-1" [class.btn-primary]="form().sex === o.value" [attr.aria-checked]="form().sex === o.value" (click)="setSex(o.value)">{{ o.label | t }}</button>
+                <button type="button" role="radio" class="btn h-[2.625rem] flex-1" [class.btn-primary]="form().sex === o.value" [attr.aria-checked]="form().sex === o.value" (click)="setSex(o.value)">{{ o.label | t }}</button>
               }
             </div>
             @if (errors().sex; as e) { <small class="text-bad">{{ e }}</small> }
@@ -127,7 +127,7 @@ type OptionField = 'mealsPerDay' | 'menuMode' | 'workoutMode' | 'theme' | 'goal'
               } @else if (sug.bmi >= obeseBmi && sug.goal !== 'lose') {
                 <div class="mt-1">{{ 'settings.highBmiHint' | t }}</div>
               }
-              <div class="text-muted mt-1" style="font-size: 12px">{{ 'settings.suggestedTargetsNote' | t }}</div>
+              <div class="text-muted mt-1" style="font-size: 0.75rem">{{ 'settings.suggestedTargetsNote' | t }}</div>
               @if (!targetAuto()) {
                 <button class="btn btn-sm mt-2" (click)="applySuggestion(sug)"><app-icon name="check" size="sm" />{{ 'settings.applyTargets' | t }}</button>
               }
@@ -142,7 +142,7 @@ type OptionField = 'mealsPerDay' | 'menuMode' | 'workoutMode' | 'theme' | 'goal'
         </label>
         <div class="flex flex-wrap items-center gap-2" style="margin-top: 16px">
           <button class="btn btn-primary" (click)="save()"><app-icon name="save" size="sm" />{{ 'common.save' | t }}</button>
-          <span class="text-muted" style="font-size: 12px">{{ 'settings.newTargetsApplyTo' | t }}</span>
+          <span class="text-muted" style="font-size: 0.75rem">{{ 'settings.newTargetsApplyTo' | t }}</span>
         </div>
       </div>
 

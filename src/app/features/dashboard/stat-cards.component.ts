@@ -19,15 +19,15 @@ import { t } from '../../core/i18n/translate';
   template: `
     @if (store.menuAllowed()) {
     <div class="card flex flex-col gap-3">
-      <div class="flex items-center justify-between"><span class="eyebrow">{{ 'dash.calories' | t }}</span><span class="grid size-9 place-items-center rounded-[10px] bg-kcal/14 text-kcal"><app-icon name="flame" /></span></div>
-      <div class="text-[28px] font-extrabold tracking-[-.02em] tabular-nums phone:text-[22px]">{{ F.round(eaten().k) }} <small class="text-[14px] font-semibold text-muted">{{ 'dash.perNKcal' | t: { a: s().kcalTarget } }}</small></div>
+      <div class="flex items-center justify-between"><span class="eyebrow">{{ 'dash.calories' | t }}</span><span class="grid size-9 place-items-center rounded-[calc(var(--r)_*_10px)] bg-kcal/14 text-kcal"><app-icon name="flame" /></span></div>
+      <div class="text-[1.75rem] font-extrabold tracking-[-.02em] tabular-nums phone:text-[1.375rem]">{{ F.round(eaten().k) }} <small class="text-[0.875rem] font-semibold text-muted">{{ 'dash.perNKcal' | t: { a: s().kcalTarget } }}</small></div>
       <div class="bar bar-kcal"><i [style.width.%]="F.pct(eaten().k, s().kcalTarget)"></i></div>
       <small class="text-muted">{{ 'dash.planNKcalN' | t: { a: F.round(plan().k), b: F.round(max0(s().kcalTarget - eaten().k)) } }}</small>
     </div>
 
     <div class="card flex flex-col gap-3">
-      <div class="flex items-center justify-between"><span class="eyebrow">{{ 'dash.protein' | t }}</span><span class="grid size-9 place-items-center rounded-[10px] bg-protein/14 text-protein"><app-icon name="zap" /></span></div>
-      <div class="text-[28px] font-extrabold tracking-[-.02em] tabular-nums phone:text-[22px]">{{ F.round(eaten().p) }} <small class="text-[14px] font-semibold text-muted">{{ 'dash.perNG' | t: { a: s().proteinTarget } }}</small></div>
+      <div class="flex items-center justify-between"><span class="eyebrow">{{ 'dash.protein' | t }}</span><span class="grid size-9 place-items-center rounded-[calc(var(--r)_*_10px)] bg-protein/14 text-protein"><app-icon name="zap" /></span></div>
+      <div class="text-[1.75rem] font-extrabold tracking-[-.02em] tabular-nums phone:text-[1.375rem]">{{ F.round(eaten().p) }} <small class="text-[0.875rem] font-semibold text-muted">{{ 'dash.perNG' | t: { a: s().proteinTarget } }}</small></div>
       <div class="bar bar-protein"><i [style.width.%]="F.pct(eaten().p, s().proteinTarget)"></i></div>
       <small class="text-muted">{{ 'dash.planNGN' | t: { a: F.round(plan().p), b: F.round(max0(s().proteinTarget - eaten().p)) } }}</small>
     </div>
@@ -35,12 +35,12 @@ import { t } from '../../core/i18n/translate';
     }
 
     <div class="card flex flex-col gap-3">
-      <div class="flex items-center justify-between"><span class="eyebrow">{{ 'dash.water' | t }}</span><span class="grid size-9 place-items-center rounded-[10px] bg-water/14 text-water"><app-icon name="droplet" /></span></div>
-      <div class="text-[28px] font-extrabold tracking-[-.02em] tabular-nums phone:text-[22px]">{{ F.liters(water()) }} <small class="text-[14px] font-semibold text-muted">{{ 'dash.perNL' | t: { a: F.liters(waterTarget()) } }}</small></div>
+      <div class="flex items-center justify-between"><span class="eyebrow">{{ 'dash.water' | t }}</span><span class="grid size-9 place-items-center rounded-[calc(var(--r)_*_10px)] bg-water/14 text-water"><app-icon name="droplet" /></span></div>
+      <div class="text-[1.75rem] font-extrabold tracking-[-.02em] tabular-nums phone:text-[1.375rem]">{{ F.liters(water()) }} <small class="text-[0.875rem] font-semibold text-muted">{{ 'dash.perNL' | t: { a: F.liters(waterTarget()) } }}</small></div>
       <div class="bar bar-water"><i [style.width.%]="F.pct(water(), waterTarget())"></i></div>
       <div class="grid grid-cols-[repeat(4,1fr)] gap-1.5 phone:grid-cols-[1fr_1fr]">
         @for (ml of waterSteps; track ml) {
-          <button class="btn btn-sm px-1! py-1.5! text-[12px]!" (click)="day.addWater(k(), ml)">+{{ ml }}</button>
+          <button class="btn btn-sm px-1! py-1.5! text-[0.75rem]!" (click)="day.addWater(k(), ml)">+{{ ml }}</button>
         }
       </div>
       <div class="grid grid-cols-[1fr_auto] gap-1.5">
@@ -60,8 +60,8 @@ import { t } from '../../core/i18n/translate';
     </div>
 
     <div class="card flex flex-col gap-3">
-      <div class="flex items-center justify-between"><span class="eyebrow">{{ 'dash.sleep' | t }}</span><span class="grid size-9 place-items-center rounded-[10px] bg-sleep/14 text-sleep"><app-icon name="moon" /></span></div>
-      <div class="text-[28px] font-extrabold tracking-[-.02em] tabular-nums phone:text-[22px]">{{ F.dur(sleep()) }} <small class="text-[14px] font-semibold text-muted">{{ 'dash.per79H' | t }}</small></div>
+      <div class="flex items-center justify-between"><span class="eyebrow">{{ 'dash.sleep' | t }}</span><span class="grid size-9 place-items-center rounded-[calc(var(--r)_*_10px)] bg-sleep/14 text-sleep"><app-icon name="moon" /></span></div>
+      <div class="text-[1.75rem] font-extrabold tracking-[-.02em] tabular-nums phone:text-[1.375rem]">{{ F.dur(sleep()) }} <small class="text-[0.875rem] font-semibold text-muted">{{ 'dash.per79H' | t }}</small></div>
       <div class="bar bar-sleep"><i [style.width.%]="sleep() ? F.pct(sleep()!, 480) : 0"></i></div>
       <div class="grid grid-cols-[1fr_1fr] gap-2">
         <div class="field">{{ 'dash.wentToBed' | t }}<app-time-picker [label]="'dash.wentToBed' | t" [value]="bed()" (valueChange)="day.setSleep(k(), 'bed', $event)" /></div>

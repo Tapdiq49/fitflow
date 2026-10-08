@@ -1,0 +1,37 @@
+// Appearance options chosen in the display settings panel (ThemeService sets the attributes on <html>).
+
+// Text size: every font size and most spacings are in rem, so the root font size scales them together.
+:root[data-font='sm'] {
+  font-size: 90%;
+}
+:root[data-font='lg'] {
+  font-size: 112.5%;
+}
+
+// Corner radius: `--r` multiplies every radius (see `rounded-[calc(var(--r)_*_Npx)]` and `border-radius` in styles.scss).
+:root[data-corners='sharp'] {
+  --r: 0.25;
+}
+:root[data-corners='round'] {
+  --r: 1.7;
+}
+
+// High contrast: stronger text and borders, per light / dark theme (the light rule is more specific, so it wins in light mode).
+:root[data-contrast='high'] {
+  --text: #ffffff;
+  --text-2: #e5ebf3;
+  --muted: #b9c5d4;
+  --border: #6c819a;
+  --border-soft: #4a5d74;
+  --border-strong: #8ea3bb;
+  --border-hover: #a9bbd0;
+}
+:root[data-contrast='high'][data-theme='light'] {
+  --text: #000000;
+  --text-2: #1b2430;
+  --muted: #334155;
+  --border: #5b6b80;
+  --border-soft: #8593a6;
+  --border-strong: #3f4d61;
+  --border-hover: #2f3b4d;
+}

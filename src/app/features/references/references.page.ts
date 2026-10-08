@@ -17,11 +17,11 @@ import { REFERENCE_LISTS } from './reference-lists';
           [routerLink]="['/references', l.id]"
         >
           <div class="flex items-center justify-between gap-2">
-            <span class="grid size-9 place-items-center rounded-[10px] bg-accent-soft text-accent"><app-icon [name]="l.icon" /></span>
+            <span class="grid size-9 place-items-center rounded-[calc(var(--r)_*_10px)] bg-accent-soft text-accent"><app-icon [name]="l.icon" /></span>
             <span class="badge">{{ 'references.nEntries' | t: { n: l.count } }}</span>
           </div>
-          <h3 class="text-[16px] font-bold">{{ l.label | t }}</h3>
-          <p class="m-0 text-[13px] text-muted">{{ l.summary | t }}</p>
+          <h3 class="text-[1rem] font-bold">{{ l.label | t }}</h3>
+          <p class="m-0 text-[0.8125rem] text-muted">{{ l.summary | t }}</p>
         </a>
       }
     </div>

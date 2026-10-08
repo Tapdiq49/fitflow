@@ -1,8 +1,12 @@
 import { signal } from '@angular/core';
-import { Lang } from '../common/interfaces';
+import { DateFormat, Lang, TimeFormat } from '../common/interfaces';
 
 /** Active UI language. I18nService keeps it in sync with the settings; read it inside templates/computeds to stay reactive. */
 export const activeLang = signal<Lang>('az');
+
+/** Clock and date formats; ThemeService keeps them in sync with the settings. Read them inside templates / computeds to stay reactive. */
+export const activeTimeFormat = signal<TimeFormat>('24h');
+export const activeDateFormat = signal<DateFormat>('text');
 
 interface Names {
   days: string[];
@@ -55,6 +59,14 @@ export const weekdaysShort = (): string[] => NAMES[activeLang()].short;
 
 const pad = (n: number): string => String(n).padStart(2, '0');
 
+/** 06.10.2026 (dmy) or 10/06/2026 (mdy); without the year 06.10 / 10/06. */
+const numericDate = (d: Date, f: DateFormat, year: boolean): string => {
+  const dd = pad(d.getDate());
+  const mm = pad(d.getMonth() + 1);
+  if (f === 'dmy') return `${dd}.${mm}${year ? '.' + d.getFullYear() : ''}`;
+  return `${mm}/${dd}${year ? '/' + d.getFullYear() : ''}`;
+};
+
 /** Date helpers working on local "YYYY-MM-DD" keys. Day of week: 1 = Monday … 7 = Sunday. */
 export const DateU = {
   key: (d: Date): string => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`,
@@ -76,10 +88,14 @@ export const DateU = {
   diffDays: (a: string, b: string): number => Math.round((DateU.parse(b).getTime() - DateU.parse(a).getTime()) / 86_400_000),
   long: (k: string): string => {
     const d = DateU.parse(k);
+    const f = activeDateFormat();
+    if (f !== 'text') return `${numericDate(d, f, true)}, ${dayName(DateU.dow(k) - 1)}`;
     return `${d.getDate()} ${NAMES[activeLang()].monthsOf[d.getMonth()]} ${d.getFullYear()}, ${dayName(DateU.dow(k) - 1)}`;
   },
   short: (k: string): string => {
     const d = DateU.parse(k);
+    const f = activeDateFormat();
+    if (f !== 'text') return numericDate(d, f, false);
     return `${d.getDate()} ${NAMES[activeLang()].monthsShort[d.getMonth()]}`;
   },
 };
@@ -104,6 +120,12 @@ export const toMin = (hm: string): number => {
 export const fromMin = (m: number): string => {
   const x = ((m % 1440) + 1440) % 1440;
   return `${pad(Math.floor(x / 60))}:${pad(x % 60)}`;
+};
+/** "HH:MM" as the user wants to read it: 13:30 or 1:30 PM. Stored times always stay 24 h. */
+export const fmtTime = (hm: string): string => {
+  if (!hm || activeTimeFormat() === '24h') return hm;
+  const [h, m] = hm.split(':').map(Number);
+  return `${h % 12 || 12}:${pad(m)} ${h < 12 ? 'AM' : 'PM'}`;
 };
 export const nowHM = (): string => {
   const d = new Date();

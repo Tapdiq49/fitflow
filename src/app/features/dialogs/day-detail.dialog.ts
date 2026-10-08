@@ -12,12 +12,13 @@ import { F } from '../../core/utils';
 import { ModalComponent } from '../../shared/modal/modal.component';
 import { TypeBadgeComponent } from '../../shared/type-badge/type-badge.component';
 import { TPipe, TdPipe } from '../../common/pipes/translate/t.pipe';
+import { TimePipe } from '../../common/pipes/format/time.pipe';
 import { t, td } from '../../core/i18n/translate';
 
 /** Calendar day details: meals, workout, cardio, water, weight, sleep. */
 @Component({
   selector: 'app-day-detail-dialog',
-  imports: [ModalComponent, TypeBadgeComponent, TPipe, TdPipe],
+  imports: [ModalComponent, TypeBadgeComponent, TPipe, TdPipe, TimePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-modal [heading]="F.long(date())" (closed)="close()">
@@ -33,7 +34,7 @@ import { t, td } from '../../core/i18n/translate';
         @for (m of menu; track m.id) {
           @let mm = macros(m);
           <div class="kv">
-            <span>{{ m.done ? '✅' : '⬜' }} {{ m.time }} · {{ slotLabel(m) }} — {{ m.name | td }}</span>
+            <span>{{ m.done ? '✅' : '⬜' }} {{ m.time | time }} · {{ slotLabel(m) }} — {{ m.name | td }}</span>
             <b>{{ 'dayDetail.nKcalNG' | t: { a: F.round(mm.k), b: F.round(mm.p) } }}</b>
           </div>
         }

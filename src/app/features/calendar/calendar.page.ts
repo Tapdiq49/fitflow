@@ -25,16 +25,16 @@ import { t } from '../../core/i18n/translate';
       </div>
       <div class="grid grid-cols-7 gap-1.5">
         @for (d of dows(); track d) {
-          <div class="py-1 text-center text-[11px] font-bold tracking-[.06em] text-muted">{{ d }}</div>
+          <div class="py-1 text-center text-[0.6875rem] font-bold tracking-[.06em] text-muted">{{ d }}</div>
         }
         @for (c of cells(); track c.k) {
           <button
-            class="flex min-h-[84px] cursor-pointer flex-col gap-1 rounded-[12px] border bg-surface-2 p-2 text-left text-text [transition:border-color_.15s,transform_.15s] hover:[transform:translateY(-1px)] phone:min-h-[58px] phone:p-[5px]"
+            class="flex min-h-[5.25rem] cursor-pointer flex-col gap-1 rounded-[calc(var(--r)_*_12px)] border bg-surface-2 p-2 text-left text-text [transition:border-color_.15s,transform_.15s] hover:[transform:translateY(-1px)] phone:min-h-[3.625rem] phone:p-[5px]"
             [class]="(c.today ? 'border-accent' : 'border-border-soft hover:border-border-hover') + (c.out ? ' opacity-35' : '')"
             (click)="ui.detailDate.set(c.k)"
           >
             <span class="font-extrabold">{{ c.day }}</span>
-            <span class="self-start rounded-[6px] px-1.5 py-0.5 text-[11px] font-semibold phone:px-1 phone:py-px phone:text-[9px]" [class]="tagClass[c.type]">{{ c.tag }}</span>
+            <span class="self-start rounded-[calc(var(--r)_*_6px)] px-1.5 py-0.5 text-[0.6875rem] font-semibold phone:px-1 phone:py-px phone:text-[0.5625rem]" [class]="tagClass[c.type]">{{ c.tag }}</span>
             <span class="mt-auto flex flex-wrap gap-1 [&>i]:size-[7px] [&>i]:rounded-full">
               @if (c.meals) {
                 <i style="background: var(--kcal)" [title]="'calendar.mealEntry' | t"></i>
@@ -52,7 +52,7 @@ import { t } from '../../core/i18n/translate';
           </button>
         }
       </div>
-      <div class="mt-3 flex flex-wrap gap-3.5 text-[12px] text-muted [&_i]:size-2 [&_i]:rounded-full [&>span]:flex [&>span]:items-center [&>span]:gap-1.5">
+      <div class="mt-3 flex flex-wrap gap-3.5 text-[0.75rem] text-muted [&_i]:size-2 [&_i]:rounded-full [&>span]:flex [&>span]:items-center [&>span]:gap-1.5">
         <span><i style="background: var(--kcal)"></i>{{ 'calendar.mealEntry' | t }}</span>
         <span><i style="background: var(--accent)"></i>{{ 'calendar.workoutPerCardioDone' | t }}</span>
         <span><i style="background: var(--water)"></i>{{ 'common.waterTarget' | t }}</span>

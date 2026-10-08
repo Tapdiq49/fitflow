@@ -14,7 +14,7 @@ import { TPipe } from '../../common/pipes/translate/t.pipe';
       <div class="alert alert-warn mt-4 !items-center" role="status">
         <app-icon name="alert" />
         <div class="flex min-w-0 flex-1 flex-wrap items-center gap-x-4 gap-y-2">
-          <div class="min-w-[220px] flex-1">
+          <div class="min-w-[13.75rem] flex-1">
             <b>{{ 'auth.guestNoticeTitle' | t }}</b> {{ 'auth.guestNoticeText' | t }}
           </div>
           <div class="flex flex-wrap items-center gap-2">

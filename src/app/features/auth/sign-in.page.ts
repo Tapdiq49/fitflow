@@ -23,14 +23,14 @@ import { OAuthButtonsComponent } from './oauth-buttons.component';
           {{ 'auth.password' | t }}
           <input type="password" name="password" autocomplete="current-password" [value]="password()" (input)="password.set(inputValue($event))" />
         </label>
-        <div class="text-right text-[13px]"><a routerLink="/auth/forgot-password">{{ 'auth.forgotPassword' | t }}</a></div>
+        <div class="text-right text-[0.8125rem]"><a routerLink="/auth/forgot-password">{{ 'auth.forgotPassword' | t }}</a></div>
         @if (error(); as e) {
           <div class="alert alert-bad" role="alert">{{ e }}</div>
         }
         <button type="submit" class="btn btn-primary w-full" [disabled]="busy()">@if (busy()) { <span class="spinner"></span> }{{ 'auth.signIn' | t }}</button>
       </form>
       <app-oauth-buttons />
-      <div class="text-center text-[13px] text-text-2">{{ 'auth.noAccount' | t }} <a routerLink="/auth/sign-up">{{ 'auth.signUp' | t }}</a></div>
+      <div class="text-center text-[0.8125rem] text-text-2">{{ 'auth.noAccount' | t }} <a routerLink="/auth/sign-up">{{ 'auth.signUp' | t }}</a></div>
     </app-auth-shell>
   `,
 })

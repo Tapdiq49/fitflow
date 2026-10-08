@@ -16,6 +16,11 @@
         document.documentElement.setAttribute('data-theme', t);
         var k = s && s.settings && s.settings.skin;
         if (k) document.documentElement.setAttribute('data-skin', k);
+        if (s && s.settings && s.settings.dir === 'rtl') document.documentElement.setAttribute('dir', 'rtl');
+        var o = (s && s.settings) || {};
+        if (o.fontScale) document.documentElement.setAttribute('data-font', o.fontScale);
+        if (o.corners) document.documentElement.setAttribute('data-corners', o.corners);
+        if (o.highContrast) document.documentElement.setAttribute('data-contrast', 'high');
       } catch (e) {}
     })();
   </script>

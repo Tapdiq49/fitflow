@@ -34,7 +34,7 @@ export interface SelectOption<T> {
       [(expanded)]="open"
       [disabled]="disabled()"
       [attr.aria-label]="label()"
-      class="flex h-full w-full cursor-pointer items-center justify-between gap-2 rounded-[9px] border bg-bg px-2.5 py-2 text-left text-[14px] font-medium text-text outline-none [transition:border-color_.2s] focus-visible:border-accent aria-disabled:cursor-not-allowed aria-disabled:border-border-soft aria-disabled:bg-surface-2 aria-disabled:text-muted aria-disabled:opacity-70"
+      class="flex h-full w-full cursor-pointer items-center justify-between gap-2 rounded-[calc(var(--r)_*_9px)] border bg-bg px-2.5 py-2 text-left text-[0.875rem] font-medium text-text outline-none [transition:border-color_.2s] focus-visible:border-accent aria-disabled:cursor-not-allowed aria-disabled:border-border-soft aria-disabled:bg-surface-2 aria-disabled:text-muted aria-disabled:opacity-70"
       [class]="open() ? 'border-accent' : 'border-border'"
     >
       <span class="truncate">{{ selectedLabel() }}</span><app-icon name="down" size="sm" />
@@ -59,14 +59,14 @@ export interface SelectOption<T> {
           [attr.aria-label]="label()"
           [value]="[value()]"
           (valueChange)="pick($event)"
-          [class]="panel + ' max-h-[280px] p-1'"
+          [class]="panel + ' max-h-[17.5rem] p-1'"
         >
           @for (o of options(); track o.value) {
             <div
               ngOption
               [value]="o.value"
               [label]="o.label"
-              class="flex cursor-pointer items-center justify-between gap-2 rounded-[8px] px-2.5 py-2 text-[14px] hover:bg-surface data-[active=true]:bg-surface data-[active=true]:outline data-[active=true]:outline-accent/60 aria-selected:font-semibold aria-selected:text-accent"
+              class="flex cursor-pointer items-center justify-between gap-2 rounded-[calc(var(--r)_*_8px)] px-2.5 py-2 text-[0.875rem] hover:bg-surface data-[active=true]:bg-surface data-[active=true]:outline data-[active=true]:outline-accent/60 aria-selected:font-semibold aria-selected:text-accent"
             >
               <span>{{ o.label }}</span>
               @if (o.value === value()) {

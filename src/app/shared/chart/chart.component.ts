@@ -9,11 +9,11 @@ import { TPipe } from '../../common/pipes/translate/t.pipe';
   selector: 'app-chart',
   imports: [TPipe],
   template: `
-    <div class="relative" [class]="small() ? 'h-[160px]' : 'h-[220px]'">
+    <div class="relative" [class]="small() ? 'h-[10rem]' : 'h-[13.75rem]'">
       @if (config()) {
         <canvas #canvas></canvas>
       } @else {
-        <div class="grid h-full place-items-center text-[13px] text-muted">{{ empty() ?? ('common.noData' | t) }}</div>
+        <div class="grid h-full place-items-center text-[0.8125rem] text-muted">{{ empty() ?? ('common.noData' | t) }}</div>
       }
     </div>
   `,

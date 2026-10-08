@@ -28,7 +28,7 @@ import { TPipe } from '../../common/pipes/translate/t.pipe';
       <span>{{ 'dash.wheyProteinOnlyTo' | t }}</span>
       <button class="btn btn-sm" (click)="day.addWhey(k())"><app-icon name="plus" size="sm" />{{ 'dash.1Scoop24G' | t }}</button>
     </div>
-    <p class="text-muted" style="font-size: 12px; margin: 8px 0 0">
+    <p class="text-muted" style="font-size: 0.75rem; margin: 8px 0 0">
       {{ 'dash.extraWheyTodayN' | t: { a: wheyScoops() } }}
     </p>
   `,

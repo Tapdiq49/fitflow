@@ -11,13 +11,13 @@ import { TPipe } from '../../common/pipes/translate/t.pipe';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="grid min-h-screen place-items-center px-4 py-8">
-      <div class="w-full max-w-[420px]">
-        <a routerLink="/" class="mb-5 flex items-center justify-center gap-2.5 text-[18px] font-extrabold tracking-[-.02em] text-inherit no-underline" [attr.aria-label]="'app.fitflowHomePage' | t">
-          <div class="grid size-[34px] place-items-center rounded-[10px] bg-accent text-accent-ink"><app-icon name="dumbbell" /></div>
+      <div class="w-full max-w-[26.25rem]">
+        <a routerLink="/" class="mb-5 flex items-center justify-center gap-2.5 text-[1.125rem] font-extrabold tracking-[-.02em] text-inherit no-underline" [attr.aria-label]="'app.fitflowHomePage' | t">
+          <div class="grid size-[34px] place-items-center rounded-[calc(var(--r)_*_10px)] bg-accent text-accent-ink"><app-icon name="dumbbell" /></div>
           {{ 'app.fitflow' | t }}
         </a>
         <div class="card">
-          <h1 class="text-[22px] font-extrabold tracking-[-.02em]">{{ heading() }}</h1>
+          <h1 class="text-[1.375rem] font-extrabold tracking-[-.02em]">{{ heading() }}</h1>
           @if (subtitle()) {
             <p class="text-text-2" style="margin: 6px 0 0">{{ subtitle() }}</p>
           }
@@ -26,7 +26,7 @@ import { TPipe } from '../../common/pipes/translate/t.pipe';
           </div>
         </div>
         @if (!auth.isAuthenticated()) {
-          <div class="mt-4 text-center text-[13px]">
+          <div class="mt-4 text-center text-[0.8125rem]">
             <a routerLink="/" class="text-muted">{{ 'auth.continueAsGuest' | t }}</a>
           </div>
         }

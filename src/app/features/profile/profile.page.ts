@@ -19,7 +19,7 @@ import { AvatarComponent } from '../auth/avatar.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (auth.user(); as u) {
-      <div class="mx-auto flex max-w-[640px] flex-col gap-[18px]">
+      <div class="mx-auto flex max-w-[40rem] flex-col gap-[18px]">
         <div class="card">
           <div class="card-head"><h3><app-icon name="heart" /> {{ 'profile.title' | t }}</h3></div>
 
@@ -32,7 +32,7 @@ import { AvatarComponent } from '../auth/avatar.component';
                   <button class="btn btn-danger" [disabled]="photoBusy()" (click)="removePhoto()"><app-icon name="trash" size="sm" />{{ 'profile.removePhoto' | t }}</button>
                 }
               </div>
-              <span class="text-muted" style="font-size: 12px">{{ 'profile.photoHint' | t }}</span>
+              <span class="text-muted" style="font-size: 0.75rem">{{ 'profile.photoHint' | t }}</span>
               <input #file type="file" accept="image/*" hidden (change)="pickPhoto(file)" />
             </div>
           </div>

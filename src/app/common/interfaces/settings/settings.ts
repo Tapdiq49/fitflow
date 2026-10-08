@@ -11,6 +11,29 @@ export const SKINS = ['lime', 'ocean', 'violet', 'rose', 'amber', 'teal', 'orang
 
 export type SkinId = (typeof SKINS)[number];
 
+/** Text direction of the whole app (RTL flips the layout). */
+export type Direction = 'ltr' | 'rtl';
+
+/** Where the navigation sits: classic sidebar, floating sidebar card, a bar on top, or a dock at the bottom. */
+export const NAV_LAYOUTS = ['side', 'floating', 'top', 'dock'] as const;
+export type NavLayout = (typeof NAV_LAYOUTS)[number];
+
+/** Text size of the whole app: scales the root font size. */
+export const FONT_SCALES = ['sm', 'md', 'lg'] as const;
+export type FontScale = (typeof FONT_SCALES)[number];
+
+/** How round the corners of cards, fields and buttons are. */
+export const CORNERS = ['sharp', 'medium', 'round'] as const;
+export type Corners = (typeof CORNERS)[number];
+
+/** Clock shown as 13:30 or 1:30 PM. */
+export const TIME_FORMATS = ['24h', '12h'] as const;
+export type TimeFormat = (typeof TIME_FORMATS)[number];
+
+/** Date shown as text (6 October 2026), 06.10.2026 or 10/06/2026. */
+export const DATE_FORMATS = ['text', 'dmy', 'mdy'] as const;
+export type DateFormat = (typeof DATE_FORMATS)[number];
+
 /** 'program' = built-in Full Body A/B with progression; 'trainer' = exercises the trainer gives, entered per week. */
 export type WorkoutMode = 'program' | 'trainer';
 
@@ -40,6 +63,13 @@ export interface Settings {
   skin: SkinId;
   /** The desktop sidebar is shown as a narrow icon rail. */
   sidebarCollapsed: boolean;
+  dir: Direction;
+  navLayout: NavLayout;
+  fontScale: FontScale;
+  corners: Corners;
+  highContrast: boolean;
+  timeFormat: TimeFormat;
+  dateFormat: DateFormat;
   lang: Lang;
   showCreatine: boolean;
   workoutTime: string;

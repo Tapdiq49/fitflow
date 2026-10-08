@@ -16,7 +16,7 @@ import { TPipe } from '../../common/pipes/translate/t.pipe';
   imports: [IconComponent, TPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] items-end gap-3 [&_input]:h-[42px]">
+    <div class="grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] items-end gap-3 [&_input]:h-[2.625rem]">
       <label class="field">{{ 'settings.heightCm' | t }}<input #h type="text" inputmode="numeric" [value]="known.height ?? ''" (keydown.enter)="save(h.value, w.value, a.value)" /></label>
       <label class="field">{{ 'common.weightKg' | t }}<input #w type="text" inputmode="decimal" [value]="known.startWeight ?? ''" (keydown.enter)="save(h.value, w.value, a.value)" /></label>
       <label class="field">{{ 'settings.age' | t }}<input #a type="text" inputmode="numeric" [value]="known.age ?? ''" (keydown.enter)="save(h.value, w.value, a.value)" /></label>
@@ -24,7 +24,7 @@ import { TPipe } from '../../common/pipes/translate/t.pipe';
         {{ 'settings.sex' | t }}
         <div class="flex gap-2">
           @for (o of sexes; track o.value) {
-            <button type="button" role="radio" class="btn h-[42px] flex-1" [class.btn-primary]="sex() === o.value" [attr.aria-checked]="sex() === o.value" (click)="sex.set(o.value)">{{ o.label | t }}</button>
+            <button type="button" role="radio" class="btn h-[2.625rem] flex-1" [class.btn-primary]="sex() === o.value" [attr.aria-checked]="sex() === o.value" (click)="sex.set(o.value)">{{ o.label | t }}</button>
           }
         </div>
       </div>

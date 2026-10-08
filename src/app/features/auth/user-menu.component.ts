@@ -39,13 +39,13 @@ const MENU_POSITIONS: ConnectedPosition[] = [
         <app-avatar [user]="u" />
       </button>
       <ng-template #menu>
-        <div cdkMenu [class]="panel + ' min-w-[210px] max-w-[280px] p-1'" [attr.aria-label]="'auth.accountMenu' | t">
+        <div cdkMenu [class]="panel + ' min-w-[13.125rem] max-w-[17.5rem] p-1'" [attr.aria-label]="'auth.accountMenu' | t">
           <div class="flex items-center gap-2.5 px-2.5 py-2">
             <app-avatar [user]="u" [size]="40" />
             <div class="min-w-0">
             <div class="truncate font-semibold">{{ u.username ?? u.email }}</div>
             @if (u.username) {
-              <div class="truncate text-[12px] text-muted">{{ u.email }}</div>
+              <div class="truncate text-[0.75rem] text-muted">{{ u.email }}</div>
             }
             </div>
           </div>
@@ -53,14 +53,14 @@ const MENU_POSITIONS: ConnectedPosition[] = [
           <a
             cdkMenuItem
             routerLink="/profile"
-            class="flex w-full cursor-pointer items-center gap-2 rounded-[8px] px-2.5 py-2 text-[14px] text-text no-underline outline-none hover:bg-surface focus-visible:bg-surface focus-visible:outline focus-visible:outline-accent/60"
+            class="flex w-full cursor-pointer items-center gap-2 rounded-[calc(var(--r)_*_8px)] px-2.5 py-2 text-[0.875rem] text-text no-underline outline-none hover:bg-surface focus-visible:bg-surface focus-visible:outline focus-visible:outline-accent/60"
           >
             <app-icon name="settings" size="sm" />{{ 'profile.menuProfile' | t }}
           </a>
           <button
             type="button"
             cdkMenuItem
-            class="flex w-full cursor-pointer items-center gap-2 rounded-[8px] border-0 bg-transparent px-2.5 py-2 text-left text-[14px] outline-none hover:bg-surface focus-visible:bg-surface focus-visible:outline focus-visible:outline-accent/60"
+            class="flex w-full cursor-pointer items-center gap-2 rounded-[calc(var(--r)_*_8px)] border-0 bg-transparent px-2.5 py-2 text-left text-[0.875rem] outline-none hover:bg-surface focus-visible:bg-surface focus-visible:outline focus-visible:outline-accent/60"
             [disabled]="signingOut()"
             (cdkMenuItemTriggered)="signOut()"
           >

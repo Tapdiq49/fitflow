@@ -32,19 +32,19 @@ type TextField = Exclude<keyof Draft, 'unit'>;
       @if (auth.user()) {
       <div class="card" #form>
         <div class="card-head"><h3><app-icon [name]="editingId() ? 'edit' : 'plus'" /> {{ (editingId() ? 'references.editFood' : 'references.addFood') | t }}</h3></div>
-        <div class="grid grid-cols-[repeat(auto-fit,minmax(170px,1fr))] items-start gap-3 [&_[role=combobox]]:h-[42px] [&_input]:h-[42px]">
+        <div class="grid grid-cols-[repeat(auto-fit,minmax(170px,1fr))] items-start gap-3 [&_[role=combobox]]:h-[2.625rem] [&_input]:h-[2.625rem]">
           <label class="field">{{ 'references.nameAz' | t }}<input type="text" [value]="draft().az" (input)="set('az', $event)" (keydown.enter)="save()" /></label>
           <label class="field">{{ 'references.nameEn' | t }}<input type="text" [value]="draft().en" (input)="set('en', $event)" (keydown.enter)="save()" /></label>
           <label class="field">{{ 'references.nameRu' | t }}<input type="text" [value]="draft().ru" (input)="set('ru', $event)" (keydown.enter)="save()" /></label>
           <div class="field">{{ 'references.unit' | t }}<app-select [label]="'references.unit' | t" [options]="unitOptions()" [value]="draft().unit" (valueChange)="setUnit($event)" /></div>
         </div>
-        <div class="mt-3 grid grid-cols-[repeat(auto-fit,minmax(110px,1fr))] items-start gap-3 [&_input]:h-[42px]">
+        <div class="mt-3 grid grid-cols-[repeat(auto-fit,minmax(110px,1fr))] items-start gap-3 [&_input]:h-[2.625rem]">
           <label class="field">{{ 'addMeal.kcal' | t }}<input type="text" inputmode="decimal" [value]="draft().k" (input)="set('k', $event)" (keydown.enter)="save()" /></label>
           <label class="field">{{ 'dash.protein' | t }}<input type="text" inputmode="decimal" [value]="draft().p" (input)="set('p', $event)" (keydown.enter)="save()" /></label>
           <label class="field">{{ 'dash.carbs' | t }}<input type="text" inputmode="decimal" [value]="draft().c" (input)="set('c', $event)" (keydown.enter)="save()" /></label>
           <label class="field">{{ 'dash.fat' | t }}<input type="text" inputmode="decimal" [value]="draft().f" (input)="set('f', $event)" (keydown.enter)="save()" /></label>
         </div>
-        <p class="text-muted" style="font-size: 12px; margin: 10px 0 0">{{ 'references.macrosPer' | t: { a: perLabel() } }}</p>
+        <p class="text-muted" style="font-size: 0.75rem; margin: 10px 0 0">{{ 'references.macrosPer' | t: { a: perLabel() } }}</p>
         <div class="mt-3"><button class="btn btn-primary" [disabled]="busy()" (click)="save()">@if (busy()) { <span class="spinner"></span> } @else { <app-icon [name]="editingId() ? 'save' : 'plus'" size="sm" /> }{{ (editingId() ? 'common.save' : 'references.add') | t }}</button>@if (editingId()) { <button class="btn" style="margin-left: 8px" [disabled]="busy()" (click)="cancelEdit()">{{ 'common.cancel' | t }}</button> }</div>
       </div>
       } @else if (auth.isGuest()) {
@@ -62,12 +62,12 @@ type TextField = Exclude<keyof Draft, 'unit'>;
           <h3><app-icon name="utensils" /> {{ 'references.foods' | t }}</h3>
           <span class="badge">{{ total() }}</span>
         </div>
-        <p class="text-muted" style="font-size: 12px; margin: 0 0 12px">{{ 'references.foodsHint' | t }}</p>
+        <p class="text-muted" style="font-size: 0.75rem; margin: 0 0 12px">{{ 'references.foodsHint' | t }}</p>
         @if (catalog.loadFailed()) {
           <div class="alert alert-warn mb-3" role="status"><app-icon name="alert" /><div>{{ 'references.loadFailed' | t }}</div></div>
         }
         <input type="text" class="w-full" [value]="q.searchInput()" (input)="q.setSearch(val($event))" [placeholder]="'references.search' | t" [attr.aria-label]="'references.search' | t" />
-        <p class="text-muted mb-3" style="font-size: 12px; margin: 6px 0 0">@if (searchTooShort()) { {{ 'references.searchMin' | t: { n: minSearch } }} }</p>
+        <p class="text-muted mb-3" style="font-size: 0.75rem; margin: 6px 0 0">@if (searchTooShort()) { {{ 'references.searchMin' | t: { n: minSearch } }} }</p>
         <app-data-table [columns]="columns()" [rows]="view().rows" [rowKey]="rowKey" [emptyText]="'references.nothingFound' | t" [loading]="catalog.loading() || list.loading()" [loadingLabel]="'common.loading' | t" [reorderable]="!!auth.user()" [reorderLabel]="'references.drag' | t" (reorder)="reorder($event)">
           <ng-template appTableCell="actions" let-e>
             @if (e.isSystem) {
