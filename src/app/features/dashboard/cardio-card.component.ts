@@ -6,11 +6,13 @@ import { StoreService } from '../../core/services/store.service';
 import { UiService } from '../../core/services/ui.service';
 import { inputValue } from '../../core/utils';
 import { IconComponent } from '../../shared/icon/icon.component';
+import { BusyDirective } from '../../common/directives/busy/busy.directive';
+import { BUSY } from '../../core/busy-keys';
 import { TPipe } from '../../common/pipes/translate/t.pipe';
 
 @Component({
   selector: 'app-cardio-card',
-  imports: [IconComponent, TPipe],
+  imports: [BusyDirective, IconComponent, TPipe],
   host: { class: 'card' },
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -23,8 +25,8 @@ import { TPipe } from '../../common/pipes/translate/t.pipe';
           }
         </div>
         <div class="flex flex-wrap gap-1.5" style="margin-bottom: 12px">
-          <button class="btn btn-sm" [class.btn-active]="cardio().type === 'walk'" (click)="day.setCardio(k(), { type: 'walk' })">{{ 'dash.briskWalk2030' | t }}</button>
-          <button class="btn btn-sm" [class.btn-active]="cardio().type === 'jog'" (click)="day.setCardio(k(), { type: 'jog' })">{{ 'dash.easyJog2025' | t }}</button>
+          <button class="btn btn-sm" [class.btn-active]="cardio().type === 'walk'" [appBusy]="BUSY.cardio(k())" (click)="day.setCardio(k(), { type: 'walk' })">{{ 'dash.briskWalk2030' | t }}</button>
+          <button class="btn btn-sm" [class.btn-active]="cardio().type === 'jog'" [appBusy]="BUSY.cardio(k())" (click)="day.setCardio(k(), { type: 'jog' })">{{ 'dash.easyJog2025' | t }}</button>
         </div>
         <div class="kv"><span>{{ 'dash.intensity' | t }}</span><b>{{ 'dash.zone2PaceYou' | t }}</b></div>
         <div class="kv"><span>{{ 'dash.pulse' | t }}</span><b>{{ 'dash.110135BeatsPer' | t }}</b></div>
@@ -33,17 +35,17 @@ import { TPipe } from '../../common/pipes/translate/t.pipe';
           <b>{{ cardio().type === 'jog' ? ('dash.ifYouFeelGroin' | t) : ('dash.inclinedTreadmill58' | t) }}</b>
         </div>
         <div class="flex flex-wrap items-center gap-2" style="margin-top: 12px">
-          <label class="field" style="flex: 1">
+          <label class="field" style="flex: 1" [appBusy]="BUSY.cardio(k())">
             {{ 'common.minutes' | t }}
             <input
               type="text"
               inputmode="numeric"
               [value]="cardio().minutes"
               [placeholder]="cardio().type === 'jog' ? '20–25' : '20–30'"
-              (input)="day.setCardio(k(), { minutes: val($event) })"
+              (change)="day.setCardio(k(), { minutes: val($event) })"
             />
           </label>
-          <button class="btn" [class.btn-done]="cardio().done" [class.btn-primary]="!cardio().done" style="align-self: flex-end" (click)="day.toggleCardio(k())">
+          <button class="btn" [class.btn-done]="cardio().done" [class.btn-primary]="!cardio().done" style="align-self: flex-end" [appBusy]="BUSY.toggle(k(), 'cardio')" (click)="day.toggleCardio(k())">
             <app-icon name="check" size="sm" />{{ cardio().done ? ('dash.done' | t) : ('dash.completeCardio' | t) }}
           </button>
         </div>
@@ -64,6 +66,7 @@ import { TPipe } from '../../common/pipes/translate/t.pipe';
   `,
 })
 export class CardioCardComponent {
+  protected readonly BUSY = BUSY;
   protected readonly val = inputValue;
   protected readonly day = inject(DayService);
   private readonly ui = inject(UiService);

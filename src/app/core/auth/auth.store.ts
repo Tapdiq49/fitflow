@@ -30,6 +30,11 @@ export class AuthStore {
     return u !== null && u.username === null;
   });
 
+  /** True while `init()` has started and the stored session is still being checked (a signed-in user may be about to appear). */
+  restoring(): boolean {
+    return this.started !== null && this._status() === 'loading';
+  }
+
   /** Restores the stored session once; resolves when the status is known. Safe to call from guards. */
   init(): Promise<void> {
     return (this.started ??= this.start());

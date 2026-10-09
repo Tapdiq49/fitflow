@@ -15,6 +15,8 @@ import { DateU, F, dayName, inputValue } from '../../core/utils';
 import { CardioCardComponent } from '../dashboard/cardio-card.component';
 import { ChartComponent } from '../../shared/chart/chart.component';
 import { IconComponent } from '../../shared/icon/icon.component';
+import { BusyDirective } from '../../common/directives/busy/busy.directive';
+import { BUSY } from '../../core/busy-keys';
 import { SelectComponent, SelectOption } from '../../shared/forms/select.component';
 import { TimePickerComponent } from '../../shared/forms/time-picker.component';
 import { TPipe, TdPipe } from '../../common/pipes/translate/t.pipe';
@@ -22,7 +24,7 @@ import { t } from '../../core/i18n/translate';
 
 @Component({
   selector: 'app-workout-page',
-  imports: [IconComponent, SelectComponent, TimePickerComponent, ChartComponent, CardioCardComponent, NgTemplateOutlet, RouterLink, RequiresPermissionDirective, TPipe, TdPipe],
+  imports: [BusyDirective, IconComponent, SelectComponent, TimePickerComponent, ChartComponent, CardioCardComponent, NgTemplateOutlet, RouterLink, RequiresPermissionDirective, TPipe, TdPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="flex flex-col gap-[18px]">
@@ -40,8 +42,8 @@ import { t } from '../../core/i18n/translate';
           <div class="flex flex-wrap gap-2" [class]="workout.isTrainer() ? 'items-end [&_.btn]:h-10 [&_[role=combobox]]:h-10' : 'items-center'">
             @if (workout.isTrainer()) {
               <div class="flex flex-wrap items-end gap-2">
-                <div class="field w-[7.5rem]">{{ 'workout.started' | t }}<app-time-picker [label]="'workout.started' | t" [value]="log().startTime ?? ''" (valueChange)="workout.setTime(k(), 'startTime', $event)" /></div>
-                <div class="field w-[7.5rem]">{{ 'workout.finished' | t }}<app-time-picker [label]="'workout.finished' | t" [value]="log().endTime ?? ''" (valueChange)="workout.setTime(k(), 'endTime', $event)" /></div>
+                <div class="field w-[7.5rem]" [appBusy]="BUSY.workoutTime(k(), 'startTime')">{{ 'workout.started' | t }}<app-time-picker [label]="'workout.started' | t" [value]="log().startTime ?? ''" (valueChange)="workout.setTime(k(), 'startTime', $event)" /></div>
+                <div class="field w-[7.5rem]" [appBusy]="BUSY.workoutTime(k(), 'endTime')">{{ 'workout.finished' | t }}<app-time-picker [label]="'workout.finished' | t" [value]="log().endTime ?? ''" (valueChange)="workout.setTime(k(), 'endTime', $event)" /></div>
                 @if (duration() != null) {
                   <span class="pb-2 text-[0.9375rem] font-bold text-accent tabular-nums">{{ 'workout.nMin' | t: { n: duration()! } }}</span>
                 }
@@ -52,9 +54,9 @@ import { t } from '../../core/i18n/translate';
             } @else if (log().startedAt) {
               <span class="text-[1.375rem] font-extrabold text-accent tabular-nums">{{ elapsed() }}</span>
             } @else if (!workout.isTrainer()) {
-              <button class="btn btn-primary" appRequires="workout.edit" (click)="workout.start(k())"><app-icon name="play" size="sm" />{{ 'common.startWorkout' | t }}</button>
+              <button class="btn btn-primary" appRequires="workout.edit" [appBusy]="BUSY.workoutStart(k())" (click)="workout.start(k())"><app-icon name="play" size="sm" />{{ 'common.startWorkout' | t }}</button>
             }
-            <button class="btn" appRequires="workout.edit" [class.btn-primary]="!log().savedAt" (click)="workout.save(k())">
+            <button class="btn" appRequires="workout.edit" [class.btn-primary]="!log().savedAt" [appBusy]="BUSY.toggle(k(), 'workout')" (click)="workout.save(k())">
               <app-icon name="save" size="sm" />{{ log().savedAt ? ('workout.saveAgain' | t) : ('workout.saveWorkout' | t) }}
             </button>
           </div>
@@ -81,7 +83,7 @@ import { t } from '../../core/i18n/translate';
                   <h4 class="text-[1rem] font-bold">{{ c.ex.name }}</h4>
                   <div class="mt-1 text-[0.75rem] text-muted">{{ c.ex.note | td }}</div>
                 </div>
-                <button class="btn btn-sm" [class.btn-done]="c.done" (click)="workout.toggleExercise(k(), c.id)">
+                <button class="btn btn-sm" [class.btn-done]="c.done" [appBusy]="BUSY.exercise(k(), c.id)" (click)="workout.toggleExercise(k(), c.id)">
                   <app-icon name="check" size="sm" />{{ c.done ? ('common.completed' | t) : ('workout.completeExercise' | t) }}
                 </button>
               </div>
@@ -114,25 +116,25 @@ import { t } from '../../core/i18n/translate';
                       <td class="w-[2.125rem] font-bold text-muted">{{ i + 1 }}</td>
                       @if (!c.timed) {
                         <td>
-                          <input class="w-full text-center font-semibold" type="text" inputmode="decimal" [value]="s.w" [placeholder]="c.rec.w != null ? F.kg(c.rec.w) : ('common.kg' | t)" (input)="workout.setValue(k(), c.id, i, 'w', val($event))" />
+                          <input class="w-full text-center font-semibold" type="text" inputmode="decimal" [value]="s.w" [placeholder]="c.rec.w != null ? F.kg(c.rec.w) : ('common.kg' | t)" [appBusy]="BUSY.set(k(), c.id, i)" (change)="workout.setValue(k(), c.id, i, 'w', val($event))" />
                         </td>
                       }
                       <td>
-                        <input class="w-full text-center font-semibold" type="text" inputmode="numeric" [value]="s.r" [placeholder]="c.ex.min + '–' + c.ex.max" (input)="workout.setValue(k(), c.id, i, 'r', val($event))" />
+                        <input class="w-full text-center font-semibold" type="text" inputmode="numeric" [value]="s.r" [placeholder]="c.ex.min + '–' + c.ex.max" [appBusy]="BUSY.set(k(), c.id, i)" (change)="workout.setValue(k(), c.id, i, 'r', val($event))" />
                       </td>
                       <td class="w-10">
-                        <button class="check" role="checkbox" [attr.aria-checked]="s.done" [class.check-on]="s.done" (click)="toggleSet(c.id, i)" [attr.aria-label]="'workout.setCompleted' | t"><app-icon name="check" /></button>
+                        <button class="check" role="checkbox" [attr.aria-checked]="s.done" [class.check-on]="s.done" [appBusy]="BUSY.set(k(), c.id, i)" (click)="toggleSet(c.id, i)" [attr.aria-label]="'workout.setCompleted' | t"><app-icon name="check" /></button>
                       </td>
                       <td class="w-10">
                         @if (i >= c.ex.sets) {
-                          <button class="btn btn-ghost btn-icon btn-sm" (click)="workout.removeSet(k(), c.id, i)" [attr.aria-label]="'workout.deleteSet' | t"><app-icon name="x" size="sm" /></button>
+                          <button class="btn btn-ghost btn-icon btn-sm" [appBusy]="BUSY.set(k(), c.id, i)" (click)="workout.removeSet(k(), c.id, i)" [attr.aria-label]="'workout.deleteSet' | t"><app-icon name="x" size="sm" /></button>
                         }
                       </td>
                     </tr>
                   }
                 </tbody>
               </table>
-              <button class="btn btn-ghost btn-sm" (click)="workout.addSet(k(), c.id)"><app-icon name="plus" size="sm" />{{ 'workout.addSet' | t }}</button>
+              <button class="btn btn-ghost btn-sm" [appBusy]="BUSY.addSet(k(), c.id)" (click)="workout.addSet(k(), c.id)"><app-icon name="plus" size="sm" />{{ 'workout.addSet' | t }}</button>
             </div>
           }
         </div>
@@ -217,6 +219,7 @@ import { t } from '../../core/i18n/translate';
   `,
 })
 export class WorkoutPage {
+  protected readonly BUSY = BUSY;
   protected readonly F = F;
   protected readonly val = inputValue;
   protected readonly safety = SAFETY;
@@ -308,7 +311,7 @@ export class WorkoutPage {
     return `${e.sets}×${e.min}–${e.max}${e.kind === 'time' ? ` ${t('common.sec')}` : ''}`;
   }
 
-  protected toggleSet(id: string, i: number): void {
-    if (this.workout.toggleSet(this.k(), id, i)) this.rest.start(HEAVY_LIFTS.has(id) ? 150 : 90);
+  protected async toggleSet(id: string, i: number): Promise<void> {
+    if (await this.workout.toggleSet(this.k(), id, i)) this.rest.start(HEAVY_LIFTS.has(id) ? 150 : 90);
   }
 }

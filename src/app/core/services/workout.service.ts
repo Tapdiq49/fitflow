@@ -3,6 +3,8 @@ import { EXERCISES, PROGRAM } from '../data/program';
 import { TRAINER_EX_PREFIX } from '../data/trainer-plan';
 import { DayRecord, Exercise, HistoryEntry, Recommendation, WorkoutLog } from '../../common/interfaces';
 import { DateU, F, parseNum, rnd, toMin } from '../utils';
+import { BUSY } from '../busy-keys';
+import { DataSyncService } from './data-sync.service';
 import { ProgramService } from './program.service';
 import { StoreService } from './store.service';
 import { ToastService } from './toast.service';
@@ -18,6 +20,7 @@ export interface PlannedExercise {
 @Injectable({ providedIn: 'root' })
 export class WorkoutService {
   private readonly store = inject(StoreService);
+  private readonly data = inject(DataSyncService);
   private readonly program = inject(ProgramService);
   private readonly toast = inject(ToastService);
   private readonly plans = inject(TrainerPlanService);
@@ -69,8 +72,8 @@ export class WorkoutService {
     return this.blank(k);
   }
 
-  start(k: string): void {
-    this.store.mutateDay(k, (d) => {
+  start(k: string): Promise<boolean> {
+    return this.data.commitDay(k, (d) => {
       const wo = this.ensureIn(d, k);
       for (const id of Object.keys(wo.ex)) {
         const rec = this.recommend(id, k);
@@ -79,12 +82,14 @@ export class WorkoutService {
         });
       }
       if (!this.isTrainer()) wo.startedAt ??= Date.now();
-    });
+    }, BUSY.workoutStart(k));
   }
 
   /** Trainer mode: sets the workout start/end time typed in afterwards. */
-  setTime(k: string, field: 'startTime' | 'endTime', value: string): void {
-    this.store.mutateDay(k, (d) => (this.ensureIn(d, k)[field] = value));
+  setTime(k: string, field: 'startTime' | 'endTime', value: string): Promise<boolean> {
+    return this.data.commitDay(k, (d) => {
+      this.ensureIn(d, k)[field] = value;
+    }, BUSY.workoutTime(k, field));
   }
 
   /** Minutes between the typed start and end time (past midnight counts as the next day); null until both are set. */
@@ -93,45 +98,49 @@ export class WorkoutService {
     return (toMin(wo.endTime) - toMin(wo.startTime) + 1440) % 1440;
   }
 
-  setValue(k: string, id: string, i: number, field: 'w' | 'r', value: string): void {
-    this.store.mutateDay(k, (d) => (this.ensureIn(d, k).ex[id].sets[i][field] = value));
+  setValue(k: string, id: string, i: number, field: 'w' | 'r', value: string): Promise<boolean> {
+    return this.data.commitDay(k, (d) => {
+      this.ensureIn(d, k).ex[id].sets[i][field] = value;
+    }, BUSY.set(k, id, i));
   }
 
-  /** Toggles a set; returns true when it became done. */
-  toggleSet(k: string, id: string, i: number): boolean {
+  /** Toggles a set; resolves true when it became done (false also when the change could not be saved). */
+  async toggleSet(k: string, id: string, i: number): Promise<boolean> {
     let done = false;
-    this.store.mutateDay(k, (d) => {
+    const saved = await this.data.commitDay(k, (d) => {
       const wo = this.ensureIn(d, k);
       const s = wo.ex[id].sets[i];
       s.done = !s.done;
       if (s.done && s.r === '') s.r = String(this.defOf(id).min);
       if (!this.isTrainer()) wo.startedAt ??= Date.now();
       done = s.done;
-    });
-    return done;
+    }, BUSY.set(k, id, i));
+    return saved && done;
   }
 
-  addSet(k: string, id: string): void {
-    this.store.mutateDay(k, (d) => {
+  addSet(k: string, id: string): Promise<boolean> {
+    return this.data.commitDay(k, (d) => {
       const sets = this.ensureIn(d, k).ex[id].sets;
       sets.push({ w: sets.at(-1)?.w ?? '', r: '', done: false });
-    });
+    }, BUSY.addSet(k, id));
   }
 
-  removeSet(k: string, id: string, i: number): void {
-    this.store.mutateDay(k, (d) => this.ensureIn(d, k).ex[id].sets.splice(i, 1));
+  removeSet(k: string, id: string, i: number): Promise<boolean> {
+    return this.data.commitDay(k, (d) => {
+      this.ensureIn(d, k).ex[id].sets.splice(i, 1);
+    }, BUSY.set(k, id, i));
   }
 
-  toggleExercise(k: string, id: string): void {
-    this.store.mutateDay(k, (d) => {
+  toggleExercise(k: string, id: string): Promise<boolean> {
+    return this.data.commitDay(k, (d) => {
       const st = this.ensureIn(d, k).ex[id];
       st.done = !st.done;
       if (st.done) st.sets.forEach((s) => (s.done = parseNum(s.r) > 0 || s.done));
-    });
+    }, BUSY.exercise(k, id));
   }
 
   /** Writes logged sets into the per-exercise history. Returns the number of exercises saved. */
-  save(k: string): number {
+  async save(k: string): Promise<number> {
     const wo = this.get(k);
     const entries = Object.keys(wo.ex)
       .map((id) => ({
@@ -145,7 +154,8 @@ export class WorkoutService {
       this.toast.show(t('workoutSvc.noSetWasRecorded'));
       return 0;
     }
-    this.store.mutate((s) => {
+    // The history rows and the day's check mark go to the account in one change.
+    const saved = await this.data.commit((s) => {
       for (const id of Object.keys(wo.ex)) {
         s.history[id] = (s.history[id] ?? []).filter((e) => e.date !== k);
       }
@@ -158,7 +168,8 @@ export class WorkoutService {
         this.ensureIn(d, k).savedAt = Date.now();
         d.checks['workout'] = true;
       }
-    });
+    }, BUSY.toggle(k, 'workout'));
+    if (!saved) return 0;
     this.toast.show(t('workoutSvc.workoutSavedNExercises', { n: entries.length }));
     return entries.length;
   }

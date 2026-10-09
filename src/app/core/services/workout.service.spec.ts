@@ -127,11 +127,11 @@ describe('WorkoutService, trainer mode', () => {
     expect(plans.gymDays('2026-09-28')).toEqual([1, 3, 5]); // earlier week, no plan yet
   });
 
-  it('saves a trainer workout into history', () => {
+  it('saves a trainer workout into history', async () => {
     plans.saveWorkout('2026-10-05', { 1: [ex('Squat')] });
     workout.setValue('2026-10-05', 't:squat', 0, 'w', '60');
     workout.setValue('2026-10-05', 't:squat', 0, 'r', '10');
-    expect(workout.save('2026-10-05')).toBe(1);
+    expect(await workout.save('2026-10-05')).toBe(1);
     expect(store.state().history['t:squat'][0].sets).toEqual([{ w: 60, r: 10 }]);
   });
 });

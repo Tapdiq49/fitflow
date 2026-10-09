@@ -1,6 +1,6 @@
 # Backend migration rules: Supabase first, NestJS-ready
 
-Status: decided 2026-10-07. **Phase 1, authentication: implemented 2026-10-07** (see "Authentication" below). **Phase 2, data migration (`StoreService` → Postgres): not started** — until the user says to begin, app data stays in localStorage (see `AGENTS.md` → Policy).
+Status: decided 2026-10-07. **Phase 1, authentication: implemented 2026-10-07** (see "Authentication" below). **Phase 2, data migration (`StoreService` → Postgres): started 2026-10-09** — days, weights and exercise history now go to the account (see "Authentication" below); every change is sent to the backend first and written locally only after it said yes (rule 8).
 
 ## Authentication (phase 1, done)
 
@@ -13,7 +13,8 @@ Status: decided 2026-10-07. **Phase 1, authentication: implemented 2026-10-07** 
 - **Height and starting weight moved to the profile, 2026-10-07:** columns `profiles.height_cm` / `start_weight_kg` (`..._profiles_body.sql`), read with the user (`AuthUser`), written through `AuthService.setBodyBasics`; `BodyBasicsSyncService` copies them both ways (account wins at sign-in, local values are dropped when the account has none). Weights, days, plans and the rest are still local.
 - **Weekly trainer plans moved to the account, 2026-10-07:** table `trainer_plans` (`..._trainer_plans.sql`; jsonb per user, kind and week), `PlanRepository` port + Supabase adapter + fake, `PlanSyncService` (account wins at sign-in, later changes are sent; guests stay on localStorage). Weights, days, history and settings are still local.
 - **Settings moved to the account, 2026-10-07:** `profiles.settings` (`..._profiles_settings.sql`; every synced setting), `AuthService.setSettings`, `SettingsSyncService` (account wins at sign-in; guests stay on localStorage). Weights, days, history and the generated menus are still local.
-- Phase 2 must still add: first sign-in import of the local data (rule 7), `AuthService.accessToken()` for the data API.
+- **Days, weights and exercise history moved to the account, 2026-10-09:** tables `days` (`record jsonb` = `DayRecord`), `weights`, `exercise_history` and the function `apply_user_data(jsonb)` (`..._user_data.sql`; RLS `user_id = auth.uid()`), `UserDataRepository` port + Supabase adapter + fake, `DataSyncService` (`commit` / `commitDay`: account first, local after; one change at a time; at sign-in the account wins, and a browser's data is uploaded once when the account holds none — rule 7). A write is one RPC call, so a change that touches several tables (saving a workout = history rows + the day's check mark) is one transaction. NestJS equivalent: one endpoint that runs the same statements in a transaction. Typing fields save on `change`, not on every keystroke. Past days stay frozen (rule 9): the settings that shape a day are copied into `DayRecord.snap` (saved to the account) before they change (`SettingsService.save`).
+- Still local only: `foodCache` (a copy of the backend food list). Phase 2 still needs `AuthService.accessToken()` only if a NestJS API replaces the Supabase client.
 - NestJS move for auth: implement `AuthService` over HTTP (`/auth/login`, `/auth/register`, …), port `profiles` to the new `users` table, keep `AuthStore` and the pages unchanged.
 
 ## Why a backend
@@ -30,13 +31,14 @@ Supabase free plan (checked 2026-10-07, <https://supabase.com/pricing>): 500 MB 
 ## Rules while implementing
 
 1. **One seam.** Every read/write already goes through `StoreService` (`mutate`, `mutateDay`, `replace`, `reset`, `updateSettings`). Put persistence behind a small repository interface used by `StoreService`. The Supabase SDK is imported in the adapter file(s) only — never in components, pages or other services. Moving to NestJS then means writing a second adapter that calls an HTTP API.
-2. **Plain Postgres.** Schema lives in versioned SQL migrations in the repo. UUID primary keys, `created_at` / `updated_at`, and a `user_id` column on every table. No Supabase-only column types or functions. Do not use Realtime, Storage or Edge Functions without asking the user.
+2. **Plain Postgres.** Schema lives in versioned SQL migrations in the repo. UUID primary keys, `created_at` / `updated_at`, and a `user_id` column on every table. No Supabase-only column types or functions. Storage and further Edge Functions need the user's approval; Realtime is approved (decision 2026-10-09, rule 12).
 3. **Keep the data shape.** Do not redesign `AppState`. Suggested tables: `settings` (one row per user), `days` (`user_id`, `date`, `record jsonb` = `DayRecord`), `weights`, `week_plans` and `workout_plans` (`week` Monday key + `plan jsonb`), `history` (`exercise_id`, `date`, `sets jsonb`). `jsonb` for the nested parts keeps `fitflow.v1` backups importable unchanged.
 4. **Auth behind an interface.** An `AuthService` exposes "current user id", "session token", sign in and sign out. Supabase Auth issues a JWT; a NestJS API can issue one too. UI code must not touch Supabase user objects or metadata.
 5. **Authorization as one rule.** Row Level Security policy: `user_id = auth.uid()` for select/insert/update/delete on every table. Put a comment above each policy: "NestJS equivalent: guard + `WHERE user_id = :currentUser`". Never rely on the client to filter by user.
 6. **Secrets.** Only the public (anon) key may be in the client. The service-role key and database password never go into the repo or the Angular bundle. The project URL and the publishable key live in `src/environments/environment*.ts` and are committed (they are public by design).
 7. **First sign-in import.** Existing browser data must be uploaded once: reuse the JSON import path (`StoreService.replace` → `normalize`) and the same `fitflow.v1` shape; keep the Export (JSON) button working as a manual backup.
-8. **Offline and conflicts.** Decide before building (open question below). Default proposal: write locally first, queue writes, send when online, last write wins per `days` row using `updated_at`.
+8. **Offline and conflicts (decided 2026-10-09).** Offline use is not required and there is one device per user, so there is no write queue and no conflict resolution. A change is sent to the backend first; only when it answers with success (HTTP 2xx) is `localStorage` updated, as `PlanSyncService.persist` and `BodyBasicsSyncService.persist` already do. A failed request changes nothing and the UI shows the offline / server error.
+12. **Realtime (decided 2026-10-09).** If live updates are needed later, use Supabase Realtime. Keep it behind a port (for example `core/repositories/*-changes.ts`: `subscribe(table, handler)` returning an unsubscribe function) and import the SDK in the adapter only, so a NestJS move is an adapter swap (WebSocket / Socket.IO gateway or SSE with the same port). Never leak Supabase channel or payload types into services or components. Realtime is not built yet; Firebase is not used.
 9. **Past days stay frozen.** The backend must not recompute stored past days when settings or plans change; keep the existing rule (`DayRecord.snap`, menus of past days untouched).
 10. **Translations.** `az/en/ru.json` stay bundled. If they ever move to the backend, the bundled Azerbaijani file remains the fallback and `translate.spec.ts` keeps checking the bundled files.
 11. **Free-plan safety net.** Add a periodic JSON export (or a scheduled dump) so the missing free-plan backups are not a single point of failure.
@@ -52,5 +54,6 @@ Supabase free plan (checked 2026-10-07, <https://supabase.com/pricing>): 500 MB 
 ## Open questions for the user
 
 - ~~Login method~~ — decided: e-mail/username + password, Google; offline is not needed for auth (needs a connection; guests keep working offline).
-- Is offline use needed (gym with weak signal), or can we assume a connection?
+- ~~Offline use~~ — decided 2026-10-09: not needed; backend first, `localStorage` after a 2xx answer (rule 8).
+- ~~Realtime~~ — decided 2026-10-09: Supabase Realtime when needed, behind a port (rule 12).
 - Create the Supabase project (free account) now or when the migration starts?

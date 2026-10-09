@@ -137,13 +137,18 @@ export class StoreService {
     this.persist();
   }
 
-  /** Persists the settings form with the bounds the form promises. */
+  /** Replaces the whole state with one that was already built (by `DataSyncService`, after the backend accepted it) and persists it. */
+  apply(next: AppState): void {
+    this._state.set(next);
+    this.persist();
+  }
+
+  /**
+   * Persists the settings form with the bounds the form promises. Past days that must keep the old times are frozen first
+   * (`SettingsService.save`), because those day records live in the account.
+   */
   updateSettings(f: Settings): void {
     this.mutate((s) => {
-      // Freeze past days with the settings they were lived under before the change applies.
-      const { workoutTime, wakeTime, sleepTime, showCreatine } = s.settings;
-      const today = DateU.today();
-      for (const [k, d] of Object.entries(s.days)) if (k < today && !d.snap) d.snap = { workoutTime, wakeTime, sleepTime, showCreatine };
       s.settings = {
         ...f,
         height: f.height == null ? null : clamp(f.height, MIN_HEIGHT, MAX_HEIGHT),

@@ -8,6 +8,8 @@ import { ToastService } from '../../core/services/toast.service';
 import { UiService } from '../../core/services/ui.service';
 import { F, nowHM, parseNum } from '../../core/utils';
 import { IconComponent } from '../../shared/icon/icon.component';
+import { BusyDirective } from '../../common/directives/busy/busy.directive';
+import { BUSY } from '../../core/busy-keys';
 import { ModalComponent } from '../../shared/modal/modal.component';
 import { SelectComponent, SelectOption } from '../../shared/forms/select.component';
 import { TimePickerComponent } from '../../shared/forms/time-picker.component';
@@ -16,7 +18,7 @@ import { t, td } from '../../core/i18n/translate';
 
 @Component({
   selector: 'app-add-meal-dialog',
-  imports: [ModalComponent, IconComponent, SelectComponent, TimePickerComponent, TPipe, TdPipe],
+  imports: [BusyDirective, ModalComponent, IconComponent, SelectComponent, TimePickerComponent, TPipe, TdPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-modal [heading]="'addMeal.addMeal' | t" (closed)="close()">
@@ -84,7 +86,7 @@ import { t, td } from '../../core/i18n/translate';
       <label class="flex cursor-pointer items-center gap-2" style="margin-top: 12px"><input #done type="checkbox" checked /> {{ 'addMeal.markAsEaten' | t }}</label>
       <div class="mt-[18px] flex justify-end gap-2">
         <button class="btn" (click)="close()">{{ 'common.cancel' | t }}</button>
-        <button class="btn btn-primary" (click)="save(name.value, time(), done.checked)"><app-icon name="save" size="sm" />{{ 'common.save' | t }}</button>
+        <button class="btn btn-primary" [appBusy]="menuKey()" (click)="save(name.value, time(), done.checked)"><app-icon name="save" size="sm" />{{ 'common.save' | t }}</button>
       </div>
     </app-modal>
   `,
@@ -134,13 +136,17 @@ export class AddMealDialog {
     this.items.update((l) => l.filter((_, j) => j !== i));
   }
 
-  protected save(name: string, time: string, done: boolean): void {
+  protected menuKey(): string {
+    return BUSY.menu(this.ui.viewDate());
+  }
+
+  protected async save(name: string, time: string, done: boolean): Promise<void> {
     if (!this.items().length) {
       this.toast.show(t('addMeal.addAtLeastOne'));
       return;
     }
-    this.day.addMeal(this.ui.viewDate(), { name: name.trim() || t('addMeal.extraMeal'), time: time || nowHM(), done, items: this.items() });
-    this.close();
+    // The dialog stays open (with what was typed) when the account did not take the meal.
+    if (await this.day.addMeal(this.ui.viewDate(), { name: name.trim() || t('addMeal.extraMeal'), time: time || nowHM(), done, items: this.items() })) this.close();
   }
 
   protected close(): void {

@@ -2,12 +2,14 @@
 title: 'Migrate app styles to Tailwind CSS'
 type: 'refactor'
 created: '2026-10-06'
-status: 'in-review'
+status: 'done'
 baseline_commit: 'NO_VCS'
 route: 'dispatch'
 review_loop_iteration: 0
 context: ['{project-root}/AGENTS.md']
 ---
+
+> **Status note (2026-10-09):** done. The styles were extended after this migration: skins, text size, corners, contrast and direction now live in `src/styles/_skins.scss` and `src/styles/_appearance.scss` and are applied by `ThemeService`. The "deferred light theme" mentioned below shipped through the display options panel (`features/appearance/`), so `deferred-work.md` was removed. Details below (for example `src/styles.css`) describe the state at migration time; the stylesheet entry point is now `src/styles.scss`.
 
 <frozen-after-approval reason="human-owned intent — do not modify unless human renegotiates">
 

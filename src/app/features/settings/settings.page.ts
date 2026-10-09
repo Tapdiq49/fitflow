@@ -8,7 +8,9 @@ import { BodyBasicsSyncService } from '../../core/services/body-basics-sync.serv
 import { BodyIssue, OBESE_BMI, TargetSuggestion, bmiOf, bodyIssue, plausibleBody, suggestTargets } from '../../core/targets';
 import { BodyService } from '../../core/services/body.service';
 import { ConfirmService } from '../../core/services/confirm.service';
+import { DataSyncService } from '../../core/services/data-sync.service';
 import { DayService } from '../../core/services/day.service';
+import { SettingsService } from '../../core/services/settings.service';
 import { SessionService } from '../../core/services/session.service';
 import { TrainerPlanService } from '../../core/services/trainer-plan.service';
 import { DEFAULT_SETTINGS, SETTINGS_RANGE, StoreService } from '../../core/services/store.service';
@@ -185,6 +187,8 @@ export class SettingsPage {
   private readonly body = inject(BodyService);
   private readonly plans = inject(TrainerPlanService);
   private readonly basicsSync = inject(BodyBasicsSyncService);
+  private readonly data = inject(DataSyncService);
+  private readonly settings = inject(SettingsService);
 
   /** Meals a day in the trainer plan of this week, fewest and most over the 7 days: in trainer mode the plan decides, not a setting. */
   protected readonly planMeals = computed(() => {
@@ -362,7 +366,8 @@ export class SettingsPage {
     if (bodyChanged && f.height != null && f.startWeight != null && f.age != null && f.sex != null) {
       if (!(await this.basicsSync.persist({ height: f.height, startWeight: f.startWeight, age: f.age, sex: f.sex }))) return;
     }
-    this.store.updateSettings(f);
+    // Past days are frozen in the account first when the timeline settings change; nothing is saved if the account refuses.
+    if (!(await this.settings.save(f))) return;
     for (const k of Object.keys(this.typed) as (keyof typeof this.typed)[]) delete this.typed[k];
     this.toast.show(t('settings.settingsSaved'));
     const k = this.ui.viewDate();
@@ -394,11 +399,13 @@ export class SettingsPage {
     const file = input.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = () => {
+    reader.onload = async () => {
       try {
-        this.store.replace(JSON.parse(String(reader.result)));
-        this.day.ensureDay(this.ui.viewDate());
-        this.toast.show(t('settings.dataRestored'));
+        // For a signed-in user the backup is saved to the account first; nothing is replaced here if the account refuses.
+        if (await this.data.replaceAll(JSON.parse(String(reader.result)))) {
+          this.day.ensureDay(this.ui.viewDate());
+          this.toast.show(t('settings.dataRestored'));
+        }
       } catch {
         this.toast.show(t('settings.fileCouldNotRead'));
       }
@@ -410,7 +417,7 @@ export class SettingsPage {
   protected async reset(): Promise<void> {
     const message = t('settings.deleteAllDataThis') + (this.auth.user() ? '\n\n' + t('settings.deleteAllAccountNote') : '');
     if (!(await this.confirm.ask(message, { confirmLabel: t('settings.deleteAll'), danger: true }))) return;
-    this.store.reset();
+    if (!(await this.data.clearAll())) return; // the account refused: nothing was deleted
     this.ui.goToday();
     this.day.ensureDay(this.ui.today());
     this.toast.show(t('settings.dataDeleted'));

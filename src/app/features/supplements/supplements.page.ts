@@ -7,12 +7,14 @@ import { ToastService } from '../../core/services/toast.service';
 import { UiService } from '../../core/services/ui.service';
 import { DateU, F } from '../../core/utils';
 import { IconComponent } from '../../shared/icon/icon.component';
+import { BusyDirective } from '../../common/directives/busy/busy.directive';
+import { BUSY } from '../../core/busy-keys';
 import { TPipe } from '../../common/pipes/translate/t.pipe';
 import { t } from '../../core/i18n/translate';
 
 @Component({
   selector: 'app-supplements-page',
-  imports: [IconComponent, RequiresPermissionDirective, TPipe],
+  imports: [BusyDirective, IconComponent, RequiresPermissionDirective, TPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="flex flex-col gap-[18px]">
@@ -32,7 +34,7 @@ import { t } from '../../core/i18n/translate';
               <span [title]="F.short(d.k)" style="flex: 1; height: 8px; border-radius: calc(var(--r) * 4px)" [style.background]="d.on ? 'var(--accent)' : 'var(--surface-3)'"></span>
             }
           </div>
-          <button class="btn" style="width: 100%" [class.btn-done]="creatine()" [class.btn-primary]="!creatine()" (click)="day.toggle(k(), 'creatine')">
+          <button class="btn" style="width: 100%" [class.btn-done]="creatine()" [class.btn-primary]="!creatine()" [appBusy]="BUSY.toggle(k(), 'creatine')" (click)="day.toggle(k(), 'creatine')">
             <app-icon name="check" size="sm" />{{ creatine() ? ('supp.takenToday' | t) : ('supp.iTookToday' | t) }}
           </button>
           <p class="text-muted" style="font-size: 0.75rem; margin: 10px 0 0">
@@ -53,7 +55,7 @@ import { t } from '../../core/i18n/translate';
             <input type="checkbox" [checked]="store.settings().useWhey" (change)="toggleWhey($event)" />
             {{ 'supp.addWheyWhenCreating' | t }}
           </label>
-          <button class="btn btn-primary" style="width: 100%" (click)="day.addWhey(k())">
+          <button class="btn btn-primary" style="width: 100%" [appBusy]="BUSY.menu(k())" (click)="day.addWhey(k())">
             <app-icon name="plus" size="sm" />{{ 'supp.iDrank1Scoop' | t }}
           </button>
         </div>
@@ -69,6 +71,7 @@ import { t } from '../../core/i18n/translate';
   `,
 })
 export class SupplementsPage {
+  protected readonly BUSY = BUSY;
   protected readonly F = F;
   protected readonly day = inject(DayService);
   protected readonly store = inject(StoreService);

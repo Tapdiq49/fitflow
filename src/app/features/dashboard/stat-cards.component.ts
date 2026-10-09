@@ -6,6 +6,8 @@ import { ToastService } from '../../core/services/toast.service';
 import { UiService } from '../../core/services/ui.service';
 import { F, inputValue, parseNum } from '../../core/utils';
 import { IconComponent } from '../../shared/icon/icon.component';
+import { BusyDirective } from '../../common/directives/busy/busy.directive';
+import { BUSY } from '../../core/busy-keys';
 import { TimePickerComponent } from '../../shared/forms/time-picker.component';
 import { TPipe } from '../../common/pipes/translate/t.pipe';
 import { t } from '../../core/i18n/translate';
@@ -13,7 +15,7 @@ import { t } from '../../core/i18n/translate';
 /** The four headline cards: Calories, Protein, Water, Sleep. */
 @Component({
   selector: 'app-stat-cards',
-  imports: [IconComponent, TimePickerComponent, TPipe],
+  imports: [BusyDirective, IconComponent, TimePickerComponent, TPipe],
   host: { class: 'grid grid-cols-4 gap-4 laptop:grid-cols-2 phone:gap-2.5' },
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -40,7 +42,7 @@ import { t } from '../../core/i18n/translate';
       <div class="bar bar-water"><i [style.width.%]="F.pct(water(), waterTarget())"></i></div>
       <div class="grid grid-cols-[repeat(4,1fr)] gap-1.5 phone:grid-cols-[1fr_1fr]">
         @for (ml of waterSteps; track ml) {
-          <button class="btn btn-sm px-1! py-1.5! text-[0.75rem]!" (click)="day.addWater(k(), ml)">+{{ ml }}</button>
+          <button class="btn btn-sm px-1! py-1.5! text-[0.75rem]!" [appBusy]="BUSY.water(k(), ml)" (click)="day.addWater(k(), ml)">+{{ ml }}</button>
         }
       </div>
       <div class="grid grid-cols-[1fr_auto] gap-1.5">
@@ -54,9 +56,9 @@ import { t } from '../../core/i18n/translate';
           [placeholder]="'dash.otherAmountMl' | t"
           [attr.aria-label]="'dash.otherAmountMl' | t"
         />
-        <button class="btn btn-sm" [disabled]="!customMl().trim()" (click)="addCustomWater()" [attr.aria-label]="'dash.addWater' | t"><app-icon name="plus" size="sm" /></button>
+        <button class="btn btn-sm" [disabled]="!customMl().trim()" [appBusy]="BUSY.water(k(), 'custom')" (click)="addCustomWater()" [attr.aria-label]="'dash.addWater' | t"><app-icon name="plus" size="sm" /></button>
       </div>
-      <button class="btn btn-ghost btn-sm" [disabled]="!canUndo()" (click)="day.undoWater(k())">{{ 'dash.undoLast' | t }}</button>
+      <button class="btn btn-ghost btn-sm" [disabled]="!canUndo()" [appBusy]="BUSY.water(k(), 'undo')" (click)="day.undoWater(k())">{{ 'dash.undoLast' | t }}</button>
     </div>
 
     <div class="card flex flex-col gap-3">
@@ -64,14 +66,15 @@ import { t } from '../../core/i18n/translate';
       <div class="text-[1.75rem] font-extrabold tracking-[-.02em] tabular-nums phone:text-[1.375rem]">{{ F.dur(sleep()) }} <small class="text-[0.875rem] font-semibold text-muted">{{ 'dash.per79H' | t }}</small></div>
       <div class="bar bar-sleep"><i [style.width.%]="sleep() ? F.pct(sleep()!, 480) : 0"></i></div>
       <div class="grid grid-cols-[1fr_1fr] gap-2">
-        <div class="field">{{ 'dash.wentToBed' | t }}<app-time-picker [label]="'dash.wentToBed' | t" [value]="bed()" (valueChange)="day.setSleep(k(), 'bed', $event)" /></div>
-        <div class="field">{{ 'dash.wokeUp' | t }}<app-time-picker [label]="'dash.wokeUp' | t" [value]="wake()" (valueChange)="day.setSleep(k(), 'wake', $event)" /></div>
+        <div class="field" [appBusy]="BUSY.sleep(k(), 'bed')">{{ 'dash.wentToBed' | t }}<app-time-picker [label]="'dash.wentToBed' | t" [value]="bed()" (valueChange)="day.setSleep(k(), 'bed', $event)" /></div>
+        <div class="field" [appBusy]="BUSY.sleep(k(), 'wake')">{{ 'dash.wokeUp' | t }}<app-time-picker [label]="'dash.wokeUp' | t" [value]="wake()" (valueChange)="day.setSleep(k(), 'wake', $event)" /></div>
       </div>
       <small class="text-muted">{{ sleepNote() }}</small>
     </div>
   `,
 })
 export class StatCardsComponent {
+  protected readonly BUSY = BUSY;
   protected readonly F = F;
   protected readonly val = inputValue;
   protected readonly waterSteps = [250, 500, 750, 1000];
@@ -102,9 +105,9 @@ export class StatCardsComponent {
   /** Amount typed in the water card's "other amount" field. */
   protected readonly customMl = signal('');
 
-  protected addCustomWater(): void {
+  protected async addCustomWater(): Promise<void> {
     if (!this.customMl().trim()) return;
-    if (this.day.addWater(this.k(), parseNum(this.customMl()))) this.customMl.set('');
+    if (await this.day.addWater(this.k(), parseNum(this.customMl()), 'custom')) this.customMl.set('');
     else this.toast.show(t('dash.enterAmountBetween15000'));
   }
 

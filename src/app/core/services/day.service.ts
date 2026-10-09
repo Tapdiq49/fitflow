@@ -8,6 +8,8 @@ import { DateU, F, clamp, fromMin, hashStr, nowHM, toMin, uid } from '../utils';
 import { KCAL_MAX, KCAL_MIN } from '../targets';
 import { MenuService } from './menu.service';
 import { ProgramService } from './program.service';
+import { BUSY } from '../busy-keys';
+import { DataSyncService } from './data-sync.service';
 import { StoreService } from './store.service';
 import { TrainerPlanService } from './trainer-plan.service';
 import { ToastService } from './toast.service';
@@ -25,6 +27,7 @@ const MAX_DRINK_ML = 5000;
 @Injectable({ providedIn: 'root' })
 export class DayService {
   private readonly store = inject(StoreService);
+  private readonly data = inject(DataSyncService);
   private readonly program = inject(ProgramService);
   private readonly menu = inject(MenuService);
   private readonly plans = inject(TrainerPlanService);
@@ -32,11 +35,15 @@ export class DayService {
   private readonly toast = inject(ToastService);
 
   ensureDay(k: string): void {
-    const current = this.store.peek(k)?.menu;
     // Past days keep the menu they had; only today and later follow a menu-mode change.
-    if (current && (k < DateU.today() || !this.menuModeMismatch(current))) return;
-    const menu = this.menu.generate(k, { keep: (current ?? []).filter((m) => m.done || m.custom) });
-    this.store.mutateDay(k, (d) => (d.menu = menu));
+    const stays = (current: Meal[] | null | undefined): boolean => !!current && (k < DateU.today() || !this.menuModeMismatch(current));
+    if (stays(this.store.peek(k)?.menu)) return;
+    // Decided again when the change runs (an earlier call may have made the menu meanwhile); a failed save is reported by the data service.
+    void this.data.commitDay(k, (d) => {
+      if (stays(d.menu)) return false;
+      d.menu = this.menu.generate(k, { keep: (d.menu ?? []).filter((m) => m.done || m.custom) });
+      return true;
+    });
   }
 
   /** Saves a week's trainer plan (null = drop it and fall back to the earlier week) and rebuilds stored menus from that week on. */
@@ -50,12 +57,15 @@ export class DayService {
   rebuildTrainerMenus(from: string = DateU.today()): void {
     if (this.store.effectiveMenuMode() !== 'trainer') return;
     const start = from > DateU.today() ? from : DateU.today();
-    for (const k of Object.keys(this.store.state().days).filter((x) => x >= start)) {
-      const current = this.store.peek(k)?.menu;
-      if (!current) continue;
-      const menu = this.menu.generate(k, { keep: current.filter((m) => m.done || m.custom) });
-      this.store.mutateDay(k, (d) => (d.menu = menu));
-    }
+    void this.data.commit((s) => {
+      let changed = false;
+      for (const [k, d] of Object.entries(s.days)) {
+        if (k < start || !d.menu) continue;
+        d.menu = this.menu.generate(k, { keep: d.menu.filter((m) => m.done || m.custom) });
+        changed = true;
+      }
+      return changed;
+    });
   }
 
   /**
@@ -136,15 +146,15 @@ export class DayService {
     return Math.round(((done + pFrac * 2) / (items.length + 2)) * 100);
   }
 
-  toggle(k: string, id: string): void {
-    this.store.mutateDay(k, (d) => {
+  toggle(k: string, id: string): Promise<boolean> {
+    return this.data.commitDay(k, (d) => {
       if (id.startsWith('meal:')) {
         const m = d.menu?.find((x) => x.id === id.slice(5));
         if (m) m.done = !m.done;
       } else if (id === 'creatine') d.creatine = !d.creatine;
       else if (id === 'cardio') d.cardio.done = !d.cardio.done;
       else d.checks[id] = !d.checks[id];
-    });
+    }, BUSY.toggle(k, id));
   }
 
   tip(k: string): string {
@@ -172,18 +182,22 @@ export class DayService {
   }
 
   // ---------- meals ----------
-  toggleMeal(k: string, id: string): void {
-    this.toggle(k, `meal:${id}`);
+  toggleMeal(k: string, id: string): Promise<boolean> {
+    return this.toggle(k, `meal:${id}`);
   }
 
-  swapMeal(k: string, id: string): void {
+  async swapMeal(k: string, id: string): Promise<void> {
     let ok = false;
-    this.store.mutateDay(k, (d) => (ok = !!d.menu && this.menu.swap(d.menu, id, k)));
-    this.toast.show(ok ? t('day.alternativeMealSelected') : t('day.noAlternativeForThis'));
+    const saved = await this.data.commitDay(k, (d) => {
+      ok = !!d.menu && this.menu.swap(d.menu, id, k);
+    }, BUSY.meal(k, id, 'swap'));
+    if (saved) this.toast.show(ok ? t('day.alternativeMealSelected') : t('day.noAlternativeForThis'));
   }
 
-  removeMeal(k: string, id: string): void {
-    this.store.mutateDay(k, (d) => (d.menu = (d.menu ?? []).filter((m) => m.id !== id)));
+  removeMeal(k: string, id: string): Promise<boolean> {
+    return this.data.commitDay(k, (d) => {
+      d.menu = (d.menu ?? []).filter((m) => m.id !== id);
+    }, BUSY.meal(k, id, 'remove'));
   }
 
   /**
@@ -200,30 +214,37 @@ export class DayService {
   }
 
   /** New menu for the day; eaten and custom meals are kept. */
-  regenerateMenu(k: string): void {
-    const current = this.store.peek(k)?.menu ?? [];
-    const keep = current.filter((m) => m.done || m.custom);
-    const menu = this.menu.generate(k, { keep, avoid: current.map((m) => m.templateId ?? '') });
-    this.store.mutateDay(k, (d) => (d.menu = menu));
-    this.toast.show(keep.length ? t('day.newMenuCreatedEaten') : t('day.newMenuCreated'));
+  async regenerateMenu(k: string): Promise<void> {
+    let kept = 0;
+    const saved = await this.data.commitDay(k, (d) => {
+      const current = d.menu ?? [];
+      const keep = current.filter((m) => m.done || m.custom);
+      kept = keep.length;
+      d.menu = this.menu.generate(k, { keep, avoid: current.map((m) => m.templateId ?? '') });
+    }, BUSY.menu(k));
+    if (saved) this.toast.show(kept ? t('day.newMenuCreatedEaten') : t('day.newMenuCreated'));
   }
 
-  resetDay(k: string): void {
-    this.store.mutate((s) => delete s.days[k]);
-    this.ensureDay(k);
-    this.toast.show(t('day.newDayPlanCreated'));
+  async resetDay(k: string): Promise<void> {
+    // The old record is dropped and a fresh plan made in one change: the account never holds the day without its menu.
+    const saved = await this.data.commit((s) => {
+      const d = (s.days[k] = newDay());
+      d.menu = this.menu.generate(k, { keep: [] });
+    }, BUSY.menu(k));
+    if (saved) this.toast.show(t('day.newDayPlanCreated'));
   }
 
-  addMeal(k: string, meal: Omit<Meal, 'id' | 'slot' | 'custom'>): void {
-    this.store.mutateDay(k, (d) => {
+  async addMeal(k: string, meal: Omit<Meal, 'id' | 'slot' | 'custom'>): Promise<boolean> {
+    const saved = await this.data.commitDay(k, (d) => {
       const added: Meal = { ...meal, id: uid(), slot: 'custom', custom: true };
       d.menu = [...(d.menu ?? []), added].sort((a, b) => a.time.localeCompare(b.time));
-    });
-    this.toast.show(t('day.mealAdded'));
+    }, BUSY.menu(k));
+    if (saved) this.toast.show(t('day.mealAdded'));
+    return saved;
   }
 
-  addWhey(k: string): void {
-    this.store.mutateDay(k, (d) => {
+  async addWhey(k: string): Promise<void> {
+    const saved = await this.data.commitDay(k, (d) => {
       const menu = (d.menu ??= []);
       let m = menu.find((x) => x.slot === 'supp');
       if (!m) {
@@ -234,65 +255,73 @@ export class DayService {
       const it = m.items.find((i) => i.food === 'whey');
       if (it) it.amt += 1;
       else m.items.push(foodItem('whey', 1));
-    });
-    this.toast.show(t('day.wheyAdded24G'));
+    }, BUSY.menu(k));
+    if (saved) this.toast.show(t('day.wheyAdded24G'));
   }
 
   // ---------- water / sleep / cardio ----------
   /** Adds a drink; also amounts typed by hand, rounded to whole ml. Returns false (nothing added) outside 1–5000 ml. */
-  addWater(k: string, ml: number): boolean {
+  /** `source` names the button that asked (its busy key); the amount by default. */
+  async addWater(k: string, ml: number, source: string | number = ml): Promise<boolean> {
     ml = Math.round(ml);
     if (!(ml >= 1 && ml <= MAX_DRINK_ML)) return false;
     const target = this.waterTarget(k);
-    const before = this.store.peek(k)?.water ?? 0;
-    this.store.mutateDay(k, (d) => {
+    let before = 0;
+    const saved = await this.data.commitDay(k, (d) => {
+      before = d.water;
       d.water += ml;
       d.waterLog.push(ml);
-    });
-    if (before < target && before + ml >= target) this.toast.show(t('day.waterTargetReached'));
-    return true;
+    }, BUSY.water(k, source));
+    if (saved && before < target && before + ml >= target) this.toast.show(t('day.waterTargetReached'));
+    return saved;
   }
 
-  undoWater(k: string): void {
-    this.store.mutateDay(k, (d) => {
+  undoWater(k: string): Promise<boolean> {
+    return this.data.commitDay(k, (d) => {
       const ml = d.waterLog.pop();
       if (ml) d.water = Math.max(0, d.water - ml);
-    });
+    }, BUSY.water(k, 'undo'));
   }
 
-  setSleep(k: string, field: 'bed' | 'wake', value: string): void {
-    this.store.mutateDay(k, (d) => {
+  setSleep(k: string, field: 'bed' | 'wake', value: string): Promise<boolean> {
+    return this.data.commitDay(k, (d) => {
       d.sleep[field] = value;
       if (d.sleep.bed && d.sleep.wake) d.checks['sleep'] = true;
-    });
+    }, BUSY.sleep(k, field));
   }
 
-  setCardio(k: string, patch: Partial<{ type: 'walk' | 'jog'; minutes: string }>): void {
-    this.store.mutateDay(k, (d) => Object.assign(d.cardio, patch));
+  setCardio(k: string, patch: Partial<{ type: 'walk' | 'jog'; minutes: string }>): Promise<boolean> {
+    return this.data.commitDay(k, (d) => {
+      Object.assign(d.cardio, patch);
+    }, BUSY.cardio(k));
   }
 
-  toggleCardio(k: string): void {
+  async toggleCardio(k: string): Promise<void> {
     let done = false;
-    this.store.mutateDay(k, (d) => {
+    const saved = await this.data.commitDay(k, (d) => {
       d.cardio.done = !d.cardio.done;
       if (d.cardio.done && !d.cardio.minutes) d.cardio.minutes = d.cardio.type === 'jog' ? '20' : '25';
       done = d.cardio.done;
-    });
-    if (done) this.toast.show(t('day.cardioRecorded'));
+    }, BUSY.toggle(k, 'cardio'));
+    if (saved && done) this.toast.show(t('day.cardioRecorded'));
   }
 
   /** Rebuilds the stored menus of today and later days whose totals are no longer close to the (changed) targets; eaten and custom meals stay. */
   refreshMenusForTargets(): void {
     if (this.store.effectiveMenuMode() !== 'auto') return;
     const { kcalTarget, proteinTarget } = this.store.settings();
-    for (const k of Object.keys(this.store.state().days).filter((x) => x >= DateU.today())) {
-      const current = this.store.peek(k)?.menu;
-      if (!current?.length) continue;
-      const t = menuTotals(current);
-      if (Math.abs(t.k - kcalTarget) <= 150 && Math.abs(t.p - proteinTarget) <= 20) continue;
-      const menu = this.menu.generate(k, { keep: current.filter((m) => m.done || m.custom) });
-      this.store.mutateDay(k, (d) => (d.menu = menu));
-    }
+    const today = DateU.today();
+    void this.data.commit((s) => {
+      let changed = false;
+      for (const [k, d] of Object.entries(s.days)) {
+        if (k < today || !d.menu?.length) continue;
+        const totals = menuTotals(d.menu);
+        if (Math.abs(totals.k - kcalTarget) <= 150 && Math.abs(totals.p - proteinTarget) <= 20) continue;
+        d.menu = this.menu.generate(k, { keep: d.menu.filter((m) => m.done || m.custom) });
+        changed = true;
+      }
+      return changed;
+    });
   }
 
   /** The body-trend advice moves the calorie target. That is the user taking over the numbers, so automatic targets switch to typed ones. */

@@ -7,9 +7,9 @@ import { StoreService } from './store.service';
 import { UiService } from './ui.service';
 
 /**
- * Signing out of the app. Every app datum still lives in this browser's localStorage (nothing is saved to the account yet),
- * so it is wiped on sign-out (except the theme and the language): the next person on this device must not see it. Until the data moves to the backend this means
- * the data is gone for good, which is why the user has to confirm first.
+ * Signing out of the app. The days, weights and exercise history, the settings and the plans of a signed-in user live in the account,
+ * so the copy in this browser is wiped on sign-out (except the theme and the language): the next person on this device must not see it.
+ * It comes back from the account at the next sign-in.
  */
 @Injectable({ providedIn: 'root' })
 export class SessionService {

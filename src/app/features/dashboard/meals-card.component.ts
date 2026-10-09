@@ -8,6 +8,8 @@ import { StoreService } from '../../core/services/store.service';
 import { UiService } from '../../core/services/ui.service';
 import { F } from '../../core/utils';
 import { IconComponent } from '../../shared/icon/icon.component';
+import { BusyDirective } from '../../common/directives/busy/busy.directive';
+import { BUSY } from '../../core/busy-keys';
 import { TPipe, TdPipe } from '../../common/pipes/translate/t.pipe';
 import { TimePipe } from '../../common/pipes/format/time.pipe';
 import { t, td } from '../../core/i18n/translate';
@@ -15,7 +17,7 @@ import { t, td } from '../../core/i18n/translate';
 /** Today's meals as macro tables, with daily totals. */
 @Component({
   selector: 'app-meals-card',
-  imports: [IconComponent, TPipe, TdPipe, TimePipe],
+  imports: [BusyDirective, IconComponent, TPipe, TdPipe, TimePipe],
   host: { class: 'card' },
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -24,10 +26,10 @@ import { t, td } from '../../core/i18n/translate';
       <div class="flex flex-wrap items-center gap-2">
         <!-- The trainer's menu is fixed by the week plan, so a new one would be identical. -->
         @if (store.effectiveMenuMode() !== 'trainer') {
-          <button class="btn btn-primary btn-sm" (click)="day.regenerateMenu(k())"><app-icon name="refresh" size="sm" />{{ 'dash.createNewDailyMenu' | t }}</button>
+          <button class="btn btn-primary btn-sm" [appBusy]="BUSY.menu(k())" (click)="day.regenerateMenu(k())"><app-icon name="refresh" size="sm" />{{ 'dash.createNewDailyMenu' | t }}</button>
         }
         <button class="btn btn-sm" (click)="ui.addMealOpen.set(true)"><app-icon name="plus" size="sm" />{{ 'dash.addMeal' | t }}</button>
-        <button class="btn btn-sm btn-ghost" (click)="newDay()">{{ 'dash.resetDay' | t }}</button>
+        <button class="btn btn-sm btn-ghost" [appBusy]="BUSY.menu(k())" (click)="newDay()">{{ 'dash.resetDay' | t }}</button>
       </div>
     </div>
 
@@ -54,12 +56,12 @@ import { t, td } from '../../core/i18n/translate';
           <span class="text-[0.8125rem] text-text-2 tabular-nums">{{ 'dash.nKcalNG' | t: { a: F.round(mm.k), b: F.round(mm.p) } }}</span>
           <div class="flex gap-1.5">
             @if (!m.custom && !m.done) {
-              <button class="btn btn-sm btn-icon" [title]="'dash.alternativeMeal' | t" (click)="day.swapMeal(k(), m.id)"><app-icon name="shuffle" size="sm" /></button>
+              <button class="btn btn-sm btn-icon" [title]="'dash.alternativeMeal' | t" [appBusy]="BUSY.meal(k(), m.id, 'swap')" (click)="day.swapMeal(k(), m.id)"><app-icon name="shuffle" size="sm" /></button>
             }
             @if (m.custom) {
-              <button class="btn btn-sm btn-icon btn-danger" [title]="'common.delete' | t" (click)="day.removeMeal(k(), m.id)"><app-icon name="trash" size="sm" /></button>
+              <button class="btn btn-sm btn-icon btn-danger" [title]="'common.delete' | t" [appBusy]="BUSY.meal(k(), m.id, 'remove')" (click)="day.removeMeal(k(), m.id)"><app-icon name="trash" size="sm" /></button>
             }
-            <button class="btn btn-sm" [class.btn-done]="m.done" (click)="day.toggleMeal(k(), m.id)">
+            <button class="btn btn-sm" [class.btn-done]="m.done" [appBusy]="BUSY.toggle(k(), 'meal:' + m.id)" (click)="day.toggleMeal(k(), m.id)">
               <app-icon name="check" size="sm" />{{ m.done ? ('dash.eaten' | t) : ('dash.complete' | t) }}
             </button>
           </div>
@@ -120,6 +122,7 @@ import { t, td } from '../../core/i18n/translate';
   `,
 })
 export class MealsCardComponent {
+  protected readonly BUSY = BUSY;
   protected readonly F = F;
   protected readonly itemMacros = itemMacros;
   protected readonly itemName = itemName;

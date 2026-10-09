@@ -457,6 +457,37 @@ input[aria-invalid='true'] {
   animation: ff-spin 0.7s linear infinite;
 }
 
+/* An element waiting for the backend (the appBusy directive sets aria-busy): inert, with a spinner on buttons and check boxes. */
+[aria-busy='true'] {
+  pointer-events: none;
+  cursor: progress;
+  opacity: 0.75;
+}
+.btn[aria-busy='true'],
+.check[aria-busy='true'] {
+  position: relative;
+  color: transparent !important;
+  opacity: 1;
+}
+.btn[aria-busy='true']::after,
+.check[aria-busy='true']::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--text);
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: ff-spin 0.7s linear infinite;
+}
+.btn-primary[aria-busy='true']::after,
+.check-on[aria-busy='true']::after {
+  border-color: var(--accent-ink);
+  border-right-color: transparent;
+}
+
 /* <label class="field">Caption<input /></label> */
 @utility field {
   display: flex;

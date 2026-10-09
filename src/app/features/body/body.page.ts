@@ -10,13 +10,15 @@ import { DateU, F, parseNum } from '../../core/utils';
 import { ChartComponent } from '../../shared/chart/chart.component';
 import { DatePickerComponent } from '../../shared/forms/date-picker.component';
 import { IconComponent } from '../../shared/icon/icon.component';
+import { BusyDirective } from '../../common/directives/busy/busy.directive';
+import { BUSY } from '../../core/busy-keys';
 import { BodyBasicsFormComponent } from '../profile/body-basics-form.component';
 import { TPipe } from '../../common/pipes/translate/t.pipe';
 import { t } from '../../core/i18n/translate';
 
 @Component({
   selector: 'app-body-page',
-  imports: [IconComponent, ChartComponent, DatePickerComponent, BodyBasicsFormComponent, RequiresPermissionDirective, TPipe],
+  imports: [BusyDirective, IconComponent, ChartComponent, DatePickerComponent, BodyBasicsFormComponent, RequiresPermissionDirective, TPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @let st = stats();
@@ -31,7 +33,7 @@ import { t } from '../../core/i18n/translate';
           <div class="field">{{ 'body.date' | t }}<app-date-picker [label]="'body.date' | t" [(value)]="date" [max]="ui.today()" /></div>
           <label class="field">{{ 'common.weightKg' | t }}<input #kg type="text" inputmode="decimal" /></label>
           <label class="field">{{ 'body.waistCmAtNavel' | t }}<input #waist type="text" inputmode="decimal" [placeholder]="'body.optional' | t" /></label>
-          <button class="btn btn-primary" style="align-self: end" (click)="add(kg, waist)"><app-icon name="save" size="sm" />{{ 'common.addWeight' | t }}</button>
+          <button class="btn btn-primary" style="align-self: end" [appBusy]="BUSY.weight(date() || defaultDate())" (click)="add(kg, waist)"><app-icon name="save" size="sm" />{{ 'common.addWeight' | t }}</button>
         </div>
       </div>
 
@@ -92,7 +94,7 @@ import { t } from '../../core/i18n/translate';
                     <td class="tbl-num">{{ 'common.nKg' | t: { a: F.kg(w.kg) } }}</td>
                     <td class="tbl-num">{{ w.waist ? F.kg(w.waist) + ' sm' : '—' }}</td>
                     <td class="tbl-num">
-                      <button class="btn btn-ghost btn-icon btn-sm btn-danger" appRequires="body.edit" (click)="remove(w.date)" [attr.aria-label]="'common.delete' | t"><app-icon name="trash" size="sm" /></button>
+                      <button class="btn btn-ghost btn-icon btn-sm btn-danger" appRequires="body.edit" [appBusy]="BUSY.weight(w.date)" (click)="remove(w.date)" [attr.aria-label]="'common.delete' | t"><app-icon name="trash" size="sm" /></button>
                     </td>
                   </tr>
                 }
@@ -107,6 +109,7 @@ import { t } from '../../core/i18n/translate';
   `,
 })
 export class BodyPage {
+  protected readonly BUSY = BUSY;
   protected readonly F = F;
   protected readonly alertClass = { info: 'alert-info', warn: 'alert-warn', good: 'alert-good' };
   protected readonly ui = inject(UiService);
@@ -143,14 +146,14 @@ export class BodyPage {
   /** The day the weight is recorded for; follows the viewed day until the user picks another. */
   protected readonly date = linkedSignal(() => this.defaultDate());
 
-  protected add(kg: HTMLInputElement, waist: HTMLInputElement): void {
-    if (this.body.save(this.date() || this.defaultDate(), parseNum(kg.value), parseNum(waist.value))) {
+  protected async add(kg: HTMLInputElement, waist: HTMLInputElement): Promise<void> {
+    if (await this.body.save(this.date() || this.defaultDate(), parseNum(kg.value), parseNum(waist.value))) {
       kg.value = '';
       waist.value = '';
     }
   }
 
   protected async remove(date: string): Promise<void> {
-    if (await this.confirm.ask(t('body.deleteThisWeightEntry'), { confirmLabel: t('common.delete'), danger: true })) this.body.remove(date);
+    if (await this.confirm.ask(t('body.deleteThisWeightEntry'), { confirmLabel: t('common.delete'), danger: true })) await this.body.remove(date);
   }
 }

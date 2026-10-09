@@ -6,12 +6,14 @@ import { UiService } from '../../core/services/ui.service';
 import { WorkoutService } from '../../core/services/workout.service';
 import { DateU, F, dayName } from '../../core/utils';
 import { IconComponent } from '../../shared/icon/icon.component';
+import { BusyDirective } from '../../common/directives/busy/busy.directive';
+import { BUSY } from '../../core/busy-keys';
 import { TPipe } from '../../common/pipes/translate/t.pipe';
 import { t } from '../../core/i18n/translate';
 
 @Component({
   selector: 'app-workout-summary',
-  imports: [IconComponent, TPipe],
+  imports: [BusyDirective, IconComponent, TPipe],
   host: { class: 'card' },
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -21,7 +23,7 @@ import { t } from '../../core/i18n/translate';
         @if (log().savedAt) {
           <span class="badge badge-training"><app-icon name="check" size="sm" />{{ 'common.completed' | t }}</span>
         } @else {
-          <button class="btn btn-primary btn-sm" (click)="start()">
+          <button class="btn btn-primary btn-sm" [appBusy]="BUSY.workoutStart(ui.viewDate())" (click)="start()">
             <app-icon name="play" size="sm" />{{ workout.isTrainer() ? ('workout.logWorkout' | t) : log().startedAt ? ('dash.continue' | t) : ('common.startWorkout' | t) }}
           </button>
         }
@@ -46,6 +48,7 @@ import { t } from '../../core/i18n/translate';
   `,
 })
 export class WorkoutSummaryComponent {
+  protected readonly BUSY = BUSY;
   protected readonly ui = inject(UiService);
   private readonly program = inject(ProgramService);
   protected readonly workout = inject(WorkoutService);
@@ -78,8 +81,8 @@ export class WorkoutSummaryComponent {
     return nt ? `${dayName(DateU.dow(nt) - 1)} — ${this.workout.title(nt)}` : '—';
   });
 
-  protected start(): void {
-    this.workout.start(this.ui.viewDate());
-    void this.router.navigateByUrl('/workout');
+  protected async start(): Promise<void> {
+    // The workout page opens once the account has the started workout; on a failed save the user stays here with the message.
+    if (await this.workout.start(this.ui.viewDate())) void this.router.navigateByUrl('/workout');
   }
 }

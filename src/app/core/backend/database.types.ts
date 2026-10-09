@@ -73,6 +73,33 @@ export interface Database {
         };
         Relationships: [];
       };
+      days: {
+        Row: {
+          user_id: string;
+          /** Local calendar day (YYYY-MM-DD). */
+          day: string;
+          /** The app's DayRecord. */
+          record: Record<string, unknown>;
+          created_at: string;
+          updated_at: string;
+        };
+        /** Written through the function apply_user_data only. */
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      weights: {
+        Row: { user_id: string; day: string; kg: number; waist: number | null; created_at: string; updated_at: string };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      exercise_history: {
+        Row: { user_id: string; exercise_id: string; day: string; sets: { w: number; r: number }[]; created_at: string; updated_at: string };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
       foods: {
         Row: {
           id: string;
@@ -122,6 +149,11 @@ export interface Database {
       };
     };
     Functions: {
+      apply_user_data: {
+        /** One transaction for one change of days / weights / history; the shape is documented in supabase/migrations/..._user_data.sql. */
+        Args: { p_changes: Record<string, unknown> };
+        Returns: undefined;
+      };
       move_food: {
         Args: { p_id: string; p_target: string };
         Returns: undefined;

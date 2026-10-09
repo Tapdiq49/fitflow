@@ -1,59 +1,56 @@
 # Fitflow
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.2.1.
+Single-user fitness tracker: workouts, a generated daily menu, weight, digestion and supplements.
+Angular 22 (standalone components, signals), Tailwind CSS 4, Chart.js, Vitest. Data lives in the
+browser's localStorage; Supabase provides authentication, profile and settings, weekly trainer plans
+and the food reference list (see `supabase/README.md`).
 
-## Development server
+## Requirements
 
-To start a local development server, run:
+- Node.js with npm 12 (`packageManager` in `package.json`)
+- A Supabase project, only if you want sign-in. Without it the app runs as a guest.
 
-```bash
-ng serve
-```
-
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+## Setup
 
 ```bash
-ng generate component component-name
+npm install
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+`ng` is not on the PATH, so use `npx ng ...` or the npm scripts.
 
-```bash
-ng generate --help
-```
+For sign-in, fill in `src/environments/environment.ts` (dev) and `environment.prod.ts` (production
+build) and set up the database and Edge Functions as described in [supabase/README.md](supabase/README.md).
+Left empty, authentication is off.
 
-## Building
+## Commands
 
-To build the project run:
+| Task | Command |
+| --- | --- |
+| Dev server (http://localhost:4200) | `npm start` or `npx ng serve` |
+| Production build (`dist/`) | `npm run build` or `npx ng build` |
+| Unit tests, once | `npx ng test --watch=false` |
+| Unit tests, watch mode | `npx ng test` |
 
-```bash
-ng build
-```
+`npm test -- --watch=false` fails under npm 12 (`Unknown cli flag`); use the `npx ng test` form.
+The initial bundle has a 500 kB budget, and the production build fails when it is exceeded.
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+Do not run `prettier --write` on existing files: the code is hand-formatted and it would rewrite
+whole files.
 
-## Running unit tests
+## Project layout
 
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
+| Path | Contents |
+| --- | --- |
+| `src/app/core/` | Services, auth, data catalogs, i18n, pure helpers (`nutrition.ts`, `targets.ts`, `utils.ts`) |
+| `src/app/features/` | Lazy-loaded pages (dashboard, workout, body, calendar, settings, admin, ...) |
+| `src/app/shared/` | Reusable components, form controls, tables |
+| `src/app/common/` | Interfaces and permission ids |
+| `src/styles/` | Skins and display options |
+| `supabase/` | SQL migrations, Edge Functions, setup guide |
+| `_bmad-output/` | Planning and implementation notes |
 
-```bash
-ng test
-```
+## Further reading
 
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+- [AGENTS.md](AGENTS.md): project rules and architecture notes (also used by AI coding agents)
+- [supabase/README.md](supabase/README.md): backend setup
+- [_bmad-output/planning-artifacts/backend-migration-rules.md](_bmad-output/planning-artifacts/backend-migration-rules.md): backend migration decisions

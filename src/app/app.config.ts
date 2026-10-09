@@ -11,6 +11,7 @@ import { BodyBasicsSyncService } from './core/services/body-basics-sync.service'
 import { loadLang } from './core/i18n/translate';
 import { StoreService } from './core/services/store.service';
 import { FoodCatalogService } from './core/services/food-catalog.service';
+import { DataSyncService } from './core/services/data-sync.service';
 import { PlanSyncService } from './core/services/plan-sync.service';
 import { SettingsSyncService } from './core/services/settings-sync.service';
 import { TargetSyncService } from './core/services/target-sync.service';
@@ -19,6 +20,8 @@ import { PlanRepository } from './core/repositories/plan.repository';
 import { AdminUsersRepository } from './core/repositories/admin-users.repository';
 import { SupabaseAdminUsersRepository } from './core/repositories/supabase-admin-users.repository';
 import { SupabasePlanRepository } from './core/repositories/supabase-plan.repository';
+import { UserDataRepository } from './core/repositories/user-data.repository';
+import { SupabaseUserDataRepository } from './core/repositories/supabase-user-data.repository';
 import { SupabaseFoodRepository } from './core/repositories/supabase-food.repository';
 
 export const appConfig: ApplicationConfig = {
@@ -31,6 +34,7 @@ export const appConfig: ApplicationConfig = {
     { provide: AuthService, useClass: SupabaseAuthService },
     { provide: FoodRepository, useClass: SupabaseFoodRepository },
     { provide: PlanRepository, useClass: SupabasePlanRepository },
+    { provide: UserDataRepository, useClass: SupabaseUserDataRepository },
     { provide: AdminUsersRepository, useClass: SupabaseAdminUsersRepository },
     // The texts of the saved language are loaded before the first screen (Azerbaijani is built in; English and Russian load on demand).
     provideAppInitializer(() => loadLang(inject(StoreService).settings().lang)),
@@ -43,6 +47,7 @@ export const appConfig: ApplicationConfig = {
       inject(FoodCatalogService);
       inject(BodyBasicsSyncService);
       inject(PlanSyncService);
+      inject(DataSyncService);
       inject(SettingsSyncService);
       inject(TargetSyncService);
     }),

@@ -7,6 +7,8 @@ import { UiService } from '../../core/services/ui.service';
 import { WorkoutService } from '../../core/services/workout.service';
 import { F, fromMin, toMin } from '../../core/utils';
 import { IconComponent } from '../../shared/icon/icon.component';
+import { BusyDirective } from '../../common/directives/busy/busy.directive';
+import { BUSY } from '../../core/busy-keys';
 import { TypeBadgeComponent } from '../../shared/type-badge/type-badge.component';
 import { TPipe, TdPipe } from '../../common/pipes/translate/t.pipe';
 import { TimePipe } from '../../common/pipes/format/time.pipe';
@@ -15,7 +17,7 @@ import { t } from '../../core/i18n/translate';
 /** "BU GÜN NƏ ETMƏLİSƏN?" — the time-ordered checklist, score and tip of the day. */
 @Component({
   selector: 'app-today-hero',
-  imports: [IconComponent, TypeBadgeComponent, TPipe, TdPipe, TimePipe],
+  imports: [BusyDirective, IconComponent, TypeBadgeComponent, TPipe, TdPipe, TimePipe],
   host: {
     class:
       'card [background:radial-gradient(1200px_300px_at_0%_0%,color-mix(in_oklab,var(--color-accent)_10%,transparent),transparent_60%),var(--color-surface)] p-[26px]! tablet:p-[18px]! phone:p-[14px]!',
@@ -63,6 +65,7 @@ import { t } from '../../core/i18n/translate';
               [attr.aria-checked]="it.done"
               [class.check-on]="it.done"
               [disabled]="it.auto"
+              [appBusy]="BUSY.toggle(k(), it.id)"
               [title]="it.auto ? ('dash.markedAutomaticallyAsYou' | t) : ''"
               (click)="toggle(it.id)"
               [attr.aria-label]="'common.completed' | t"
@@ -95,6 +98,7 @@ import { t } from '../../core/i18n/translate';
   `,
 })
 export class TodayHeroComponent {
+  protected readonly BUSY = BUSY;
   protected readonly F = F;
   protected readonly ui = inject(UiService);
   private readonly day = inject(DayService);

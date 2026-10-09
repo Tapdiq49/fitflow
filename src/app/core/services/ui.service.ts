@@ -1,5 +1,6 @@
 import { DestroyRef, Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
 import { DateU, fromMin } from '../utils';
+import { DataSyncService } from './data-sync.service';
 import { DayService } from './day.service';
 import { StoreService } from './store.service';
 
@@ -7,6 +8,7 @@ import { StoreService } from './store.service';
 @Injectable({ providedIn: 'root' })
 export class UiService {
   private readonly day = inject(DayService);
+  private readonly data = inject(DataSyncService);
   private readonly store = inject(StoreService);
 
   readonly today = signal(DateU.today());
@@ -25,6 +27,7 @@ export class UiService {
   constructor() {
     effect(() => {
       const k = this.viewDate();
+      this.data.loads(); // the account's days replaced the local ones: the open day may need its plan again
       this.store.effectiveMenuMode(); // a switch between the trainer plan and the automatic menu rebuilds the open day at once
       untracked(() => this.day.ensureDay(k));
     });

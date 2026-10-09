@@ -8,12 +8,14 @@ import { UiService } from '../../core/services/ui.service';
 import { F, parseNum } from '../../core/utils';
 import { ChartComponent } from '../../shared/chart/chart.component';
 import { IconComponent } from '../../shared/icon/icon.component';
+import { BusyDirective } from '../../common/directives/busy/busy.directive';
+import { BUSY } from '../../core/busy-keys';
 import { BodyBasicsFormComponent } from '../profile/body-basics-form.component';
 import { TPipe } from '../../common/pipes/translate/t.pipe';
 
 @Component({
   selector: 'app-body-card',
-  imports: [IconComponent, ChartComponent, BodyBasicsFormComponent, RouterLink, TPipe],
+  imports: [BusyDirective, IconComponent, ChartComponent, BodyBasicsFormComponent, RouterLink, TPipe],
   host: { class: 'card' },
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -43,7 +45,7 @@ import { TPipe } from '../../common/pipes/translate/t.pipe';
     <div class="flex flex-wrap items-center gap-2" style="margin-top: 12px">
       <input #kg type="text" inputmode="decimal" [placeholder]="'dash.todaysWeightKg' | t" style="flex: 1" />
       <input #waist type="text" inputmode="decimal" [placeholder]="'dash.waistCm' | t" style="width: 110px" />
-      <button class="btn btn-primary" (click)="add(kg, waist)"><app-icon name="plus" size="sm" />{{ 'common.addWeight' | t }}</button>
+      <button class="btn btn-primary" [appBusy]="BUSY.weight(weightDay())" (click)="add(kg, waist)"><app-icon name="plus" size="sm" />{{ 'common.addWeight' | t }}</button>
     </div>
     @let adv = advice();
     <div class="alert" [class]="alertClass[adv.level]" style="margin-top: 12px">
@@ -58,6 +60,7 @@ import { TPipe } from '../../common/pipes/translate/t.pipe';
   `,
 })
 export class BodyCardComponent {
+  protected readonly BUSY = BUSY;
   protected readonly F = F;
   protected readonly alertClass = { info: 'alert-info', warn: 'alert-warn', good: 'alert-good' };
   protected readonly day = inject(DayService);
@@ -70,8 +73,13 @@ export class BodyCardComponent {
   protected readonly advice = computed(() => this.body.advice(this.stats()));
   protected readonly chart = computed(() => weightChart(this.body.sorted()));
 
-  protected add(kg: HTMLInputElement, waist: HTMLInputElement): void {
-    if (this.body.save(this.ui.viewDate() > this.ui.today() ? this.ui.today() : this.ui.viewDate(), parseNum(kg.value), parseNum(waist.value))) {
+  /** The day a weight typed here is recorded for: the viewed day, but never a day to come. */
+  protected weightDay(): string {
+    return this.ui.viewDate() > this.ui.today() ? this.ui.today() : this.ui.viewDate();
+  }
+
+  protected async add(kg: HTMLInputElement, waist: HTMLInputElement): Promise<void> {
+    if (await this.body.save(this.weightDay(), parseNum(kg.value), parseNum(waist.value))) {
       kg.value = '';
       waist.value = '';
     }

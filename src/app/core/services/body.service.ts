@@ -2,6 +2,8 @@ import { Injectable, computed, inject } from '@angular/core';
 import { Advice, BodyBasics, BodyStats, Sex, WeightEntry } from '../../common/interfaces';
 import { bmiOf, plausibleBody } from '../targets';
 import { DateU, F, rnd } from '../utils';
+import { BUSY } from '../busy-keys';
+import { DataSyncService } from './data-sync.service';
 import { MAX_HEIGHT, MAX_WEIGHT, MIN_HEIGHT, MIN_WEIGHT, SETTINGS_RANGE, StoreService } from './store.service';
 import { ToastService } from './toast.service';
 import { t } from '../i18n/translate';
@@ -9,6 +11,7 @@ import { t } from '../i18n/translate';
 @Injectable({ providedIn: 'root' })
 export class BodyService {
   private readonly store = inject(StoreService);
+  private readonly data = inject(DataSyncService);
   private readonly toast = inject(ToastService);
 
   readonly sorted = computed(() => [...this.store.state().weights].sort((a, b) => a.date.localeCompare(b.date)));
@@ -89,7 +92,8 @@ export class BodyService {
     return true;
   }
 
-  save(date: string, kg: number, waist: number): boolean {
+  /** Saves one day's weight (and waist); resolves false (with a message) when the entry is not usable or the account did not take it. */
+  async save(date: string, kg: number, waist: number): Promise<boolean> {
     if (date > DateU.today()) {
       this.toast.show(t('bodySvc.noFutureDate'));
       return false;
@@ -103,15 +107,17 @@ export class BodyService {
       this.toast.show(t('bodyBasics.implausible', { bmi: Math.round(bmiOf(height, kg)) }));
       return false;
     }
-    this.store.mutate((s) => {
+    const saved = await this.data.commit((s) => {
       s.weights = s.weights.filter((w) => w.date !== date);
       s.weights.push({ date, kg: rnd(kg, 1), waist: waist > 40 && waist < 200 ? rnd(waist, 1) : null });
-    });
-    this.toast.show(t('bodySvc.weightSaved'));
-    return true;
+    }, BUSY.weight(date));
+    if (saved) this.toast.show(t('bodySvc.weightSaved'));
+    return saved;
   }
 
-  remove(date: string): void {
-    this.store.mutate((s) => (s.weights = s.weights.filter((w) => w.date !== date)));
+  remove(date: string): Promise<boolean> {
+    return this.data.commit((s) => {
+      s.weights = s.weights.filter((w) => w.date !== date);
+    }, BUSY.weight(date));
   }
 }
