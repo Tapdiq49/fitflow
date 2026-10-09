@@ -1,13 +1,15 @@
 import { AdminUser, DEFAULT_ROLE_ID, Role } from '../../common/interfaces';
 import { AuthError } from '../../common/interfaces/auth/auth.models';
+import { HttpHeaders, HttpResourceRequest } from '@angular/common/http';
+import { Page, PageParams, pageSlice } from '../paging';
 import { AdminUsersRepository, RoleDraft } from './admin-users.repository';
 
 /** In-memory AdminUsersRepository for specs. `users` and `roles` are the tables; set `failing` to simulate an unreachable backend. */
 export class FakeAdminUsersRepository extends AdminUsersRepository {
   users: AdminUser[] = [];
   roles: Role[] = [
-    { id: 'admin', name: 'Administrator', description: '', isSystem: true, permissions: ['users.view', 'roles.view'], users: 0 },
-    { id: DEFAULT_ROLE_ID, name: 'User', description: '', isSystem: true, permissions: ['today.view'], users: 0 },
+    { id: 'admin', name: 'Administrator', description: '', names: { az: 'Administrator' }, descriptions: {}, isSystem: true, permissions: ['users.view', 'roles.view'], users: 0 },
+    { id: DEFAULT_ROLE_ID, name: 'User', description: '', names: { az: 'User' }, descriptions: {}, isSystem: true, permissions: ['today.view'], users: 0 },
   ];
   failing = false;
   /** Every call in the order it happened, e.g. "delete u2". */
@@ -20,9 +22,13 @@ export class FakeAdminUsersRepository extends AdminUsersRepository {
     return user;
   }
 
-  async list(): Promise<AdminUser[]> {
-    if (this.failing) throw new AuthError('network_error');
-    return structuredClone(this.users);
+  request(_p: PageParams): HttpResourceRequest | undefined {
+    return undefined;
+  }
+
+  /** What the real adapter would make of the backend's answer: the page of `users` for these parameters. */
+  parse(_body: unknown, _headers: HttpHeaders | undefined, p: PageParams): Page<AdminUser> {
+    return pageSlice(structuredClone(this.users), p, (u) => `${u.email} ${u.username ?? ''}`);
   }
 
   async remove(id: string): Promise<void> {
@@ -62,7 +68,7 @@ export class FakeAdminUsersRepository extends AdminUsersRepository {
     if (this.failing) throw new AuthError('network_error');
     if (role.id === 'admin') throw new AuthError('system_role');
     const id = role.id ?? `r${this.roles.length + 1}`;
-    const saved: Role = { id, name: role.name, description: role.description, isSystem: false, permissions: [...role.permissions], users: 0 };
+    const saved: Role = { id, name: role.names.az ?? Object.values(role.names)[0] ?? '', description: role.descriptions.az ?? '', names: { ...role.names }, descriptions: { ...role.descriptions }, isSystem: false, permissions: [...role.permissions], users: 0 };
     const at = this.roles.findIndex((r) => r.id === id);
     if (at >= 0) this.roles[at] = { ...saved, isSystem: this.roles[at].isSystem };
     else this.roles.push(saved);

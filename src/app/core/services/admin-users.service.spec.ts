@@ -5,7 +5,7 @@ import { FakeAdminUsersRepository } from '../repositories/fake-admin-users.repos
 import { AdminUsersService } from './admin-users.service';
 import { ToastService } from './toast.service';
 
-const user = (id: string, email: string): AdminUser => ({ id, email, username: id, avatar: null, roleId: 'user', createdAt: '2026-10-01T10:00:00Z', lastSignInAt: null, emailConfirmed: true });
+const user = (id: string, email: string): AdminUser => ({ id, email, username: id, avatar: null, roleId: 'user', roleName: 'User', createdAt: '2026-10-01T10:00:00Z', lastSignInAt: null, emailConfirmed: true });
 
 describe('AdminUsersService', () => {
   let repo: FakeAdminUsersRepository;
@@ -18,42 +18,36 @@ describe('AdminUsersService', () => {
     service = TestBed.inject(AdminUsersService);
   });
 
-  it('loads every user', async () => {
-    await service.load();
-    expect(service.users().map((u) => u.id)).toEqual(['u1', 'u2']);
-    expect(service.loadFailed()).toBe(false);
-  });
-
-  it('tells the user when the list cannot be loaded', async () => {
-    repo.failing = true;
-    await service.load();
-    expect(service.loadFailed()).toBe(true);
-    expect(TestBed.inject(ToastService).message()).toBeTruthy();
-  });
-
-  it('changes the list only after the backend accepted the change', async () => {
-    await service.load();
+  it('applies an accepted change in the backend and reports it', async () => {
     expect(await service.setEmail('u1', 'new@example.com')).toBe(true);
-    expect(service.users()[0].email).toBe('new@example.com');
     expect(await service.setAvatar('u2', 'data:image/jpeg;base64,AAAA')).toBe(true);
-    expect(service.users()[1].avatar).toBe('data:image/jpeg;base64,AAAA');
     expect(await service.remove('u2')).toBe(true);
-    expect(service.users().map((u) => u.id)).toEqual(['u1']);
+    expect(repo.users.map((u) => u.id)).toEqual(['u1']);
+    expect(repo.users[0].email).toBe('new@example.com');
     expect(repo.calls).toEqual(['email u1', 'avatar u2', 'delete u2']);
   });
 
-  it('leaves the list as it was and says why when the backend refuses', async () => {
-    await service.load();
+  it('changes nothing and says why when the backend refuses', async () => {
     repo.failing = true;
     expect(await service.remove('u1')).toBe(false);
     expect(await service.setEmail('u1', 'new@example.com')).toBe(false);
-    expect(service.users().map((u) => u.email)).toEqual(['a@example.com', 'b@example.com']);
+    expect(repo.users.map((u) => u.email)).toEqual(['a@example.com', 'b@example.com']);
     expect(TestBed.inject(ToastService).message()).toBeTruthy();
   });
 
   it('answers not found for a user that is gone', async () => {
-    await service.load();
     expect(await service.setPassword('nobody', 'Abcdefghi1')).toBe(false);
+  });
+});
+
+describe('FakeAdminUsersRepository paging', () => {
+  it('cuts one page of the matches for the search text', () => {
+    const repo = new FakeAdminUsersRepository();
+    repo.users = [user('u1', 'a@example.com'), user('u2', 'b@example.com'), user('u3', 'abc@example.com')];
+    expect(repo.parse(null, undefined, { page: 1, pageSize: 10, search: 'ab' }).rows.map((u) => u.id)).toEqual(['u3']);
+    const page = repo.parse(null, undefined, { page: 2, pageSize: 2, search: '' });
+    expect(page.rows.map((u) => u.id)).toEqual(['u3']);
+    expect(page.total).toBe(3);
   });
 });
 
@@ -76,31 +70,29 @@ describe('AdminUsersService roles', () => {
 
   it('creates a role and shows it in the list once the backend accepted it', async () => {
     await service.loadRoles();
-    const id = await service.saveRole({ name: 'Müşahidəçi', description: '', permissions: ['today.view'] });
+    const id = await service.saveRole({ names: { az: 'Müşahidəçi', en: 'Observer' }, descriptions: {}, permissions: ['today.view'] });
     expect(id).toBeTruthy();
     expect(service.roles().some((r) => r.id === id && r.permissions.includes('today.view'))).toBe(true);
   });
 
   it('refuses to change the administrator role and says why', async () => {
     await service.loadRoles();
-    expect(await service.saveRole({ id: 'admin', name: 'x', description: '', permissions: [] })).toBeNull();
+    expect(await service.saveRole({ id: 'admin', names: { az: 'x' }, descriptions: {}, permissions: [] })).toBeNull();
     expect(TestBed.inject(ToastService).message()).toBeTruthy();
   });
 
   it('assigns a role to an account and keeps the list as it was when the backend refuses', async () => {
-    await service.load();
     await service.loadRoles();
     expect(await service.setRole('u1', 'admin')).toBe(true);
-    expect(service.users()[0].roleId).toBe('admin');
+    expect(repo.users[0].roleId).toBe('admin');
     expect(await service.setRole('u2', 'no-such-role')).toBe(false);
-    expect(service.users()[1].roleId).toBe('user');
+    expect(repo.users[1].roleId).toBe('user');
   });
 
   it('does not delete a built-in role or a role that accounts still have', async () => {
-    await service.load();
     await service.loadRoles();
     expect(await service.deleteRole('user')).toBe(false);
-    const id = (await service.saveRole({ name: 'Yeni', description: '', permissions: [] })) as string;
+    const id = (await service.saveRole({ names: { az: 'Yeni' }, descriptions: {}, permissions: [] })) as string;
     await service.setRole('u1', id);
     expect(await service.deleteRole(id)).toBe(false);
     await service.setRole('u1', 'user');

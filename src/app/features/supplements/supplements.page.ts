@@ -6,6 +6,7 @@ import { StoreService } from '../../core/services/store.service';
 import { ToastService } from '../../core/services/toast.service';
 import { UiService } from '../../core/services/ui.service';
 import { DateU, F } from '../../core/utils';
+import { CheckboxComponent } from '../../shared/forms/checkbox/checkbox.component';
 import { IconComponent } from '../../shared/icon/icon.component';
 import { BusyDirective } from '../../common/directives/busy/busy.directive';
 import { BUSY } from '../../core/busy-keys';
@@ -14,7 +15,7 @@ import { t } from '../../core/i18n/translate';
 
 @Component({
   selector: 'app-supplements-page',
-  imports: [BusyDirective, IconComponent, RequiresPermissionDirective, TPipe],
+  imports: [CheckboxComponent, BusyDirective, IconComponent, RequiresPermissionDirective, TPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="flex flex-col gap-[18px]">
@@ -51,10 +52,7 @@ import { t } from '../../core/i18n/translate';
           <p class="text-text-2" style="margin-top: 0">{{ 'supp.wheyNotMainFood' | t }}</p>
           <div class="kv"><span>{{ 'supp.todaysPlannedProtein' | t }}</span><b>{{ 'supp.nPerNG' | t: { a: F.round(planProtein()), b: store.settings().proteinTarget } }}</b></div>
           <div class="kv"><span>{{ 'supp.1Scoop' | t }}</span><b>{{ 'supp.120Kcal24G' | t }}</b></div>
-          <label class="flex cursor-pointer items-center gap-2" style="margin: 12px 0">
-            <input type="checkbox" [checked]="store.settings().useWhey" (change)="toggleWhey($event)" />
-            {{ 'supp.addWheyWhenCreating' | t }}
-          </label>
+          <app-checkbox style="margin: 12px 0" [checked]="store.settings().useWhey" (checkedChange)="toggleWhey($event)">{{ 'supp.addWheyWhenCreating' | t }}</app-checkbox>
           <button class="btn btn-primary" style="width: 100%" [appBusy]="BUSY.menu(k())" (click)="day.addWhey(k())">
             <app-icon name="plus" size="sm" />{{ 'supp.iDrank1Scoop' | t }}
           </button>
@@ -89,8 +87,7 @@ export class SupplementsPage {
   protected readonly streak = computed(() => this.last7().filter((d) => d.on).length);
   protected readonly planProtein = computed(() => menuTotals(this.store.state().days[this.k()]?.menu).p);
 
-  protected toggleWhey(e: Event): void {
-    const on = (e.target as HTMLInputElement).checked;
+  protected toggleWhey(on: boolean): void {
     this.store.setUseWhey(on);
     this.toast.show(on ? t('supp.wheyOn') : t('supp.wheyOff'));
   }

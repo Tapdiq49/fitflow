@@ -7,6 +7,7 @@ import type { Database } from '../backend/database.types';
 import { Client, SupabaseClientProvider } from '../backend/supabase-client';
 import { Lang, Unit } from '../../common/interfaces';
 import { Page, PageParams } from '../paging';
+import { activeLang } from '../utils';
 import { FoodRepository, FoodRow, NewFoodRow } from './food.repository';
 
 type DbFood = Database['public']['Views']['food_list']['Row'];
@@ -14,16 +15,19 @@ type DbColumns = Pick<DbFood, 'id' | 'code' | 'names' | 'unit' | 'kcal' | 'prote
 type DbUnit = DbFood['unit'];
 
 const COLUMNS_BASE = 'id, code, names, unit, kcal, protein, carbs, fat, role, step, min_amount, max_amount';
+const COLUMNS_NO_NAMES = 'id, code, unit, kcal, protein, carbs, fat, role, step, min_amount, max_amount, position';
 const COLUMNS = `${COLUMNS_BASE}, position`;
 const UNIT_TO_DB: Record<Unit, DbUnit> = { q: 'g', ml: 'ml', 'ədəd': 'piece', 'x/q': 'tbsp', 'ç.q': 'tsp', 'ölçü': 'scoop' };
 const UNIT_FROM_DB: Record<DbUnit, Unit> = { g: 'q', ml: 'ml', piece: 'ədəd', tbsp: 'x/q', tsp: 'ç.q', scoop: 'ölçü' };
 
 const num = (v: number | string | null): number | null => (v === null ? null : Number(v));
 
-const toRow = (r: DbColumns): FoodRow => ({
+type RowFields = Omit<DbColumns, 'names'>;
+
+const build = (r: RowFields, names: Partial<Record<Lang, string>>): FoodRow => ({
   id: r.id,
   code: r.code,
-  names: r.names as Partial<Record<Lang, string>>,
+  names,
   unit: UNIT_FROM_DB[r.unit],
   k: Number(r.kcal),
   p: Number(r.protein),
@@ -36,25 +40,44 @@ const toRow = (r: DbColumns): FoodRow => ({
   position: r.position,
 });
 
+const toRow = (r: DbColumns): FoodRow => build(r, r.names as Partial<Record<Lang, string>>);
+
+/** A row of the paged list: only the name in the asked language (`n_<lang>`) and in Azerbaijani (`n_az`, the fallback) came with it. */
+type PageRow = RowFields & Partial<Record<`n_${Lang}`, string | null>>;
+
+const toPageRow = (r: PageRow): FoodRow => {
+  const names: Partial<Record<Lang, string>> = {};
+  for (const lang of ['az', 'en', 'ru'] as const) {
+    const name = r[`n_${lang}`];
+    if (name) names[lang] = name;
+  }
+  return build(r, names);
+};
+
 /** Characters that would change the meaning of a PostgREST filter or an ilike pattern are dropped from the search text. */
 const cleanTerm = (text: string): string => text.replace(/[%_*,()"\\]/g, ' ').replace(/\s+/g, ' ').trim();
 
-/** One page of the food list in the user's order: placed foods first, then the rest (system foods, then own) by Azerbaijani name. The count comes back in the Content-Range header. */
-export function foodsPageRequest(baseUrl: string, p: PageParams): HttpResourceRequest {
+/**
+ * One page of the food list in the user's order: placed foods first, then the rest (system foods, then own) by name. The language is part of
+ * the request (rule 13): only the name in `lang` (and the Azerbaijani one as the fallback) comes back, the order is by that name and the
+ * search looks at that name only. The count comes back in the Content-Range header.
+ */
+export function foodsPageRequest(baseUrl: string, p: PageParams, lang: Lang): HttpResourceRequest {
+  const names = lang === 'az' ? 'n_az:names->>az' : `n_az:names->>az, n_${lang}:names->>${lang}`;
   const params: Record<string, string> = {
-    select: COLUMNS,
-    order: 'position.asc.nullslast,user_id.asc.nullsfirst,names->>az.asc,id.asc',
+    select: `${COLUMNS_NO_NAMES}, ${names}`,
+    order: `position.asc.nullslast,user_id.asc.nullsfirst,names->>${lang}.asc,id.asc`,
     limit: String(p.pageSize),
     offset: String((p.page - 1) * p.pageSize),
   };
   const term = cleanTerm(p.search);
-  if (term) params['or'] = `(names->>az.ilike.*${term}*,names->>en.ilike.*${term}*,names->>ru.ilike.*${term}*)`;
+  if (term) params[`names->>${lang}`] = `ilike.*${term}*`;
   return { url: `${baseUrl}/rest/v1/food_list`, params, headers: { Prefer: 'count=exact' } };
 }
 
 /** The Content-Range header "0-9/37" means 37 rows in all; the total is null when the header is missing. */
 export function foodsPageParse(body: unknown, headers: HttpHeaders | undefined): Page<FoodRow> {
-  const rows = (Array.isArray(body) ? (body as DbColumns[]) : []).map(toRow);
+  const rows = (Array.isArray(body) ? (body as PageRow[]) : []).map(toPageRow);
   const total = /\/(\d+)$/.exec(headers?.get('content-range') ?? '')?.[1];
   return { rows, total: total === undefined ? null : Number(total) };
 }
@@ -65,7 +88,7 @@ export class SupabaseFoodRepository extends FoodRepository {
   private readonly provider = inject(SupabaseClientProvider);
 
   request(p: PageParams): HttpResourceRequest | undefined {
-    return environment.supabaseUrl ? foodsPageRequest(environment.supabaseUrl, p) : undefined;
+    return environment.supabaseUrl ? foodsPageRequest(environment.supabaseUrl, p, activeLang()) : undefined;
   }
 
   parse(body: unknown, headers: HttpHeaders | undefined, _p: PageParams): Page<FoodRow> {

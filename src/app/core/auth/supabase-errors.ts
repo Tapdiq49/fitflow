@@ -8,6 +8,7 @@ const BY_CODE: Record<string, AuthErrorCode> = {
   same_password: 'same_password',
   user_already_exists: 'email_taken',
   email_exists: 'email_taken',
+  invalid_email: 'invalid_email', // the codes of our own Edge Functions (admin-users)
   validation_failed: 'invalid_email',
   email_address_invalid: 'invalid_email',
   over_request_rate_limit: 'rate_limited',

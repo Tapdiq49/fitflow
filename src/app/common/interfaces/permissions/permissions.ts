@@ -1,3 +1,4 @@
+import type { Lang } from '../settings/settings';
 /**
  * Every permission of the system, `<module>.<action>`. A module is a page or an area, an action what may be done in it:
  * `view` opens the page (menu entry and route), the other actions are the things that change data.
@@ -71,8 +72,12 @@ export const DEFAULT_ROLE_ID = 'user';
 
 export interface Role {
   id: string;
+  /** Name and description in the language the list was asked for (the backend picks it, falling back to Azerbaijani). */
   name: string;
   description: string;
+  /** The texts in every language, for the form that edits them. */
+  names: Partial<Record<Lang, string>>;
+  descriptions: Partial<Record<Lang, string>>;
   /** Built-in: cannot be deleted (and `admin` cannot be edited). */
   isSystem: boolean;
   permissions: string[];

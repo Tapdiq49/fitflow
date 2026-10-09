@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal, signal } from '@angular/core';
-import { ADMIN_ROLE_ID, PERMISSION_GROUPS, Role } from '../../common/interfaces';
+import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal, signal, WritableSignal } from '@angular/core';
+import { ADMIN_ROLE_ID, Lang, PERMISSION_GROUPS, Role } from '../../common/interfaces';
 import { RequiresPermissionDirective } from '../../common/directives/requires-permission/requires-permission.directive';
 import { TPipe } from '../../common/pipes/translate/t.pipe';
 import { AuthStore } from '../../core/auth/auth.store';
@@ -9,6 +9,8 @@ import { ConfirmService } from '../../core/services/confirm.service';
 import { PermissionService } from '../../core/services/permission.service';
 import { ToastService } from '../../core/services/toast.service';
 import { inputValue } from '../../core/utils';
+import { AccordionItemComponent } from '../../shared/accordion/accordion-item.component';
+import { CheckboxComponent } from '../../shared/forms/checkbox/checkbox.component';
 import { IconComponent } from '../../shared/icon/icon.component';
 import { TextFieldComponent } from '../../shared/forms/text-field/text-field.component';
 
@@ -21,7 +23,7 @@ const NEW = 'new';
  */
 @Component({
   selector: 'app-roles-page',
-  imports: [TextFieldComponent, RequiresPermissionDirective, IconComponent, TPipe],
+  imports: [AccordionItemComponent, CheckboxComponent, TextFieldComponent, RequiresPermissionDirective, IconComponent, TPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="card">
@@ -52,7 +54,7 @@ const NEW = 'new';
             <span class="flex w-full items-center justify-between gap-2 font-semibold">
               <span class="truncate">{{ r.name }}</span>
               @if (r.isSystem) {
-                <span class="badge"><app-icon name="lock" size="sm" />{{ 'roles.system' | t }}</span>
+                <span class="badge shrink-0 whitespace-nowrap"><app-icon name="lock" size="sm" />{{ 'roles.system' | t }}</span>
               }
             </span>
             <span class="text-[0.75rem] text-muted">{{ 'roles.usersCount' | t: { n: r.users } }} · {{ r.permissions.length }}/{{ total }}</span>
@@ -70,31 +72,55 @@ const NEW = 'new';
         <div class="card">
           <div class="card-head">
             <h3>{{ isNew() ? ('roles.new' | t) : selected()?.name }}</h3>
+            <span class="flex items-center gap-2">
+              <button type="button" class="btn btn-ghost btn-sm" (click)="toggleAllGroups()">{{ (allOpen() ? 'roles.collapseAll' : 'roles.expandAll') | t }}</button>
+              <button type="button" class="btn btn-ghost btn-icon btn-sm" (click)="selectedId.set(null)" [attr.aria-label]="'common.close' | t" [title]="'common.close' | t"><app-icon name="x" size="sm" /></button>
+            </span>
           </div>
+
+          <app-text-field class="mb-3 max-w-full" clearable width="16rem" [value]="search()" (input)="setSearch(val($event))" [placeholder]="'roles.searchPermissions' | t" [label]="'roles.searchPermissions' | t" />
 
           @if (locked()) {
             <div class="alert alert-info mb-3" role="status"><app-icon name="lock" /><div>{{ 'roles.adminLocked' | t }}</div></div>
           }
 
-          <div class="flex flex-col gap-3" [attr.inert]="locked() ? '' : null" [class.opacity-70]="locked()">
-            <label class="field">{{ 'roles.name' | t }}<app-text-field maxlength="60" [value]="name()" (input)="name.set(val($event))" /></label>
-            <label class="field">{{ 'roles.description' | t }}<app-text-field maxlength="200" [value]="description()" (input)="description.set(val($event))" /></label>
+          <div class="flex flex-col gap-3">
+            <!-- The administrator role cannot be changed: its fields and boxes are locked, but the groups can still be opened and read. -->
+            <div class="flex flex-col gap-3" [attr.inert]="locked() ? '' : null" [class.opacity-70]="locked()">
+              <!-- The name and the short text in the three languages, like the names of a food. -->
+              <div class="grid grid-cols-3 gap-3 tablet:grid-cols-1">
+                @for (l of langs; track l) {
+                  <label class="field">{{ 'roles.name' | t }} · {{ l.toUpperCase() }}<app-text-field maxlength="60" [value]="names()[l]" (input)="setText(names, l, val($event))" /></label>
+                }
+              </div>
+              <div class="grid grid-cols-3 gap-3 tablet:grid-cols-1">
+                @for (l of langs; track l) {
+                  <label class="field">{{ 'roles.description' | t }} · {{ l.toUpperCase() }}<app-text-field maxlength="200" [value]="descriptions()[l]" (input)="setText(descriptions, l, val($event))" /></label>
+                }
+              </div>
+            </div>
 
-            @for (g of groups; track g.module) {
-              <fieldset class="m-0 rounded-[calc(var(--r)_*_10px)] border border-border-soft p-3">
-                <legend class="flex items-center gap-3 px-1 text-[0.8125rem] font-bold">
-                  {{ 'perm.module.' + g.module | t }}
-                  <button type="button" class="btn btn-ghost btn-sm" (click)="setGroup(g.permissions, !groupAll(g.permissions))">{{ (groupAll(g.permissions) ? 'roles.none' : 'roles.all') | t }}</button>
-                </legend>
-                <div class="grid grid-cols-2 gap-x-4 tablet:grid-cols-1">
+            @for (g of shownGroups(); track g.module) {
+              <app-accordion-item class="border-b border-border-soft last:border-b-0" bare [open]="openGroups().has(g.module)" (openChange)="setGroupOpen(g.module, $event)" [heading]="'perm.module.' + g.module | t" [summary]="groupCount(g.permissions) + '/' + g.permissions.length">
+                <div class="mb-2 flex justify-start">
+                  <button type="button" class="btn btn-ghost btn-sm" [disabled]="locked()" (click)="setGroup(g.permissions, !groupAll(g.permissions))">{{ (groupAll(g.permissions) ? 'roles.none' : 'roles.all') | t }}</button>
+                </div>
+                <!-- Every permission is a tile; a granted one gets the accent border. -->
+                <div class="grid grid-cols-[repeat(auto-fill,minmax(14rem,1fr))] gap-2">
                   @for (p of g.permissions; track p) {
-                    <label class="flex cursor-pointer items-start gap-2.5 py-1.5 text-[0.8125rem]" [class.opacity-50]="!canGrant(p)" [title]="canGrant(p) ? '' : ('roles.cannotGrant' | t)">
-                      <input type="checkbox" class="mt-0.5" [checked]="has(p)" [disabled]="!canGrant(p)" (change)="toggle(p)" />
-                      <span>{{ 'perm.' + p | t }}</span>
-                    </label>
+                    <app-checkbox
+                      class="text-[0.8125rem]"
+                      [labelClass]="'items-center rounded-[calc(var(--r)_*_10px)] border px-3 py-2.5 [transition:background_.15s,border-color_.15s] ' + (has(p) ? 'border-accent bg-accent-soft' : 'border-border-soft hover:border-border-hover')"
+                      [checked]="has(p)"
+                      [disabled]="locked() || !canGrant(p)"
+                      [title]="canGrant(p) ? '' : ('roles.cannotGrant' | t)"
+                      (checkedChange)="toggle(p)"
+                    >{{ 'perm.' + p | t }}</app-checkbox>
                   }
                 </div>
-              </fieldset>
+              </app-accordion-item>
+            } @empty {
+              <p class="m-0 py-3 text-center text-muted">{{ 'roles.noMatch' | t }}</p>
             }
           </div>
 
@@ -135,8 +161,28 @@ export class RolesPage {
   protected readonly locked = computed(() => this.selected()?.id === ADMIN_ROLE_ID);
   protected readonly busy = signal(false);
 
-  protected readonly name = linkedSignal(() => this.selected()?.name ?? '');
-  protected readonly description = linkedSignal(() => this.selected()?.description ?? '');
+  /** The text of the permission search. */
+  protected readonly search = signal('');
+  /** The groups with only the permissions (or whole groups, when the module name matches) that fit the search text. */
+  protected readonly shownGroups = computed(() => {
+    const needle = this.search().trim().toLowerCase();
+    if (!needle) return this.groups;
+    return this.groups
+      .map((g) => {
+        const moduleHit = t('perm.module.' + g.module).toLowerCase().includes(needle);
+        return { ...g, permissions: moduleHit ? g.permissions : g.permissions.filter((p) => t('perm.' + p).toLowerCase().includes(needle)) };
+      })
+      .filter((g) => g.permissions.length > 0);
+  });
+
+  /** The permission groups that are open (modules). */
+  protected readonly openGroups = signal<ReadonlySet<string>>(new Set());
+  protected readonly allOpen = computed(() => this.groups.every((g) => this.openGroups().has(g.module)));
+
+  protected readonly langs: readonly Lang[] = ['az', 'en', 'ru'];
+  /** The name and the short text of the open role per language (the Azerbaijani one falls back to the stored text). */
+  protected readonly names = linkedSignal<Record<Lang, string>>(() => this.textsOf(this.selected()?.names, this.selected()?.name));
+  protected readonly descriptions = linkedSignal<Record<Lang, string>>(() => this.textsOf(this.selected()?.descriptions, this.selected()?.description));
   protected readonly granted = linkedSignal<string[]>(() => [...(this.selected()?.permissions ?? [])]);
 
   /** What the person may do with the open role: create when it is new, edit otherwise. */
@@ -144,6 +190,31 @@ export class RolesPage {
 
   constructor() {
     void this.admin.loadRoles();
+  }
+
+  /** Filters the permissions; the groups that have a match are opened so the matches are visible. */
+  protected setSearch(text: string): void {
+    this.search.set(text);
+    if (text.trim()) this.openGroups.set(new Set(this.shownGroups().map((g) => g.module)));
+  }
+
+  protected setGroupOpen(module: string, open: boolean): void {
+    this.openGroups.update((s) => {
+      const next = new Set(s);
+      if (open) next.add(module);
+      else next.delete(module);
+      return next;
+    });
+  }
+
+  /** Opens every group, or closes them all when every one is already open. */
+  protected toggleAllGroups(): void {
+    this.openGroups.set(this.allOpen() ? new Set() : new Set(this.groups.map((g) => g.module)));
+  }
+
+  /** How many of the permissions the open role holds (shown on the folded group). */
+  protected groupCount(perms: readonly string[]): number {
+    return perms.filter((p) => this.has(p)).length;
   }
 
   protected has(p: string): boolean {
@@ -159,23 +230,37 @@ export class RolesPage {
     this.granted.update((all) => (all.includes(p) ? all.filter((x) => x !== p) : [...all, p]));
   }
 
+  /** Every permission of the group that the person may give is granted. */
   protected groupAll(ids: readonly string[]): boolean {
     return ids.filter((p) => this.canGrant(p)).every((p) => this.granted().includes(p));
   }
 
+  /** Grants (or takes away) every permission of the group that the person may give. */
   protected setGroup(ids: readonly string[], on: boolean): void {
     const grantable = ids.filter((p) => this.canGrant(p));
     this.granted.update((all) => (on ? [...new Set([...all, ...grantable])] : all.filter((p) => !grantable.includes(p))));
   }
 
+  private trimmed(texts: Record<Lang, string>): Partial<Record<Lang, string>> {
+    return Object.fromEntries(this.langs.map((l) => [l, texts[l].trim()] as const).filter(([, v]) => v));
+  }
+
+  private textsOf(texts: Partial<Record<Lang, string>> | undefined, azFallback = ''): Record<Lang, string> {
+    return { az: texts?.az ?? azFallback, en: texts?.en ?? '', ru: texts?.ru ?? '' };
+  }
+
+  protected setText(target: WritableSignal<Record<Lang, string>>, lang: Lang, text: string): void {
+    target.update((all) => ({ ...all, [lang]: text }));
+  }
+
   protected async save(): Promise<void> {
-    if (!this.name().trim()) {
+    if (!Object.values(this.names()).some((n) => n.trim())) {
       this.toast.show(t('roles.nameRequired'));
       return;
     }
     this.busy.set(true);
     try {
-      const id = await this.admin.saveRole({ id: this.isNew() ? undefined : (this.selectedId() ?? undefined), name: this.name().trim(), description: this.description().trim(), permissions: this.granted() });
+      const id = await this.admin.saveRole({ id: this.isNew() ? undefined : (this.selectedId() ?? undefined), names: this.trimmed(this.names()), descriptions: this.trimmed(this.descriptions()), permissions: this.granted() });
       if (id) {
         this.selectedId.set(id);
         this.toast.show(t('roles.saved'));

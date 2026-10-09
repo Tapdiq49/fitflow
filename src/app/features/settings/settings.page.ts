@@ -17,6 +17,7 @@ import { DEFAULT_SETTINGS, SETTINGS_RANGE, StoreService } from '../../core/servi
 import { ToastService } from '../../core/services/toast.service';
 import { UiService } from '../../core/services/ui.service';
 import { DateU, F, inputValue, parseNum, sameJson } from '../../core/utils';
+import { CheckboxComponent } from '../../shared/forms/checkbox/checkbox.component';
 import { IconComponent } from '../../shared/icon/icon.component';
 import { DatePickerComponent } from '../../shared/forms/date-picker/date-picker.component';
 import { SelectFieldComponent, SelectOption } from '../../shared/forms/select-field/select-field.component';
@@ -31,7 +32,7 @@ type OptionField = 'mealsPerDay' | 'menuMode' | 'workoutMode' | 'theme' | 'goal'
 
 @Component({
   selector: 'app-settings-page',
-  imports: [TextFieldComponent, NumberFieldComponent, RouterLink, IconComponent, DatePickerComponent, SelectFieldComponent, TimePickerComponent, RequiresPermissionDirective, TPipe],
+  imports: [CheckboxComponent, TextFieldComponent, NumberFieldComponent, RouterLink, IconComponent, DatePickerComponent, SelectFieldComponent, TimePickerComponent, RequiresPermissionDirective, TPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="flex flex-col gap-[18px]">
@@ -142,12 +143,8 @@ type OptionField = 'mealsPerDay' | 'menuMode' | 'workoutMode' | 'theme' | 'goal'
             </div>
           </div>
         }
-        <label class="flex cursor-pointer items-center gap-2" style="margin-top: 14px">
-          <input type="checkbox" [checked]="form().useWhey" (change)="setWhey($event)" /> {{ 'settings.addWheyToMenu' | t }}
-        </label>
-        <label class="flex cursor-pointer items-center gap-2" style="margin-top: 10px">
-          <input type="checkbox" [checked]="form().showCreatine" (change)="setCreatine($event)" /> {{ 'settings.showCreatinePlanDashboard' | t }}
-        </label>
+        <app-checkbox style="margin-top: 14px" [checked]="form().useWhey" (checkedChange)="setWhey($event)">{{ 'settings.addWheyToMenu' | t }}</app-checkbox>
+        <app-checkbox style="margin-top: 10px" [checked]="form().showCreatine" (checkedChange)="setCreatine($event)">{{ 'settings.showCreatinePlanDashboard' | t }}</app-checkbox>
         <div class="flex flex-wrap items-center gap-2" style="margin-top: 16px">
           <button class="btn btn-primary" (click)="save()"><app-icon name="save" size="sm" />{{ 'common.save' | t }}</button>
           <span class="text-muted" style="font-size: 0.75rem">{{ 'settings.newTargetsApplyTo' | t }}</span>
@@ -356,13 +353,11 @@ export class SettingsPage {
     this.form.update((f) => ({ ...f, [field]: v }));
   }
 
-  protected setCreatine(e: Event): void {
-    const on = (e.target as HTMLInputElement).checked;
+  protected setCreatine(on: boolean): void {
     this.form.update((f) => ({ ...f, showCreatine: on }));
   }
 
-  protected setWhey(e: Event): void {
-    const on = (e.target as HTMLInputElement).checked;
+  protected setWhey(on: boolean): void {
     this.form.update((f) => ({ ...f, useWhey: on }));
   }
 

@@ -15,13 +15,14 @@ import { SelectFieldComponent, SelectOption } from '../../shared/forms/select-fi
 import { TimePickerComponent } from '../../shared/forms/time-picker/time-picker.component';
 import { TPipe, TdPipe } from '../../common/pipes/translate/t.pipe';
 import { t, td } from '../../core/i18n/translate';
+import { CheckboxComponent } from '../../shared/forms/checkbox/checkbox.component';
 import { TextFieldComponent } from '../../shared/forms/text-field/text-field.component';
 import { NumberFieldComponent } from '../../shared/forms/number-field/number-field.component';
 import { FieldValue } from '../../shared/forms/field-base/field-base';
 
 @Component({
   selector: 'app-add-meal-dialog',
-  imports: [TextFieldComponent, NumberFieldComponent, BusyDirective, ModalComponent, IconComponent, SelectFieldComponent, TimePickerComponent, TPipe, TdPipe],
+  imports: [CheckboxComponent, TextFieldComponent, NumberFieldComponent, BusyDirective, ModalComponent, IconComponent, SelectFieldComponent, TimePickerComponent, TPipe, TdPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-modal [heading]="'addMeal.addMeal' | t" (closed)="close()">
@@ -86,10 +87,10 @@ import { FieldValue } from '../../shared/forms/field-base/field-base';
         }
       </div>
 
-      <label class="flex cursor-pointer items-center gap-2" style="margin-top: 12px"><input #done type="checkbox" checked /> {{ 'addMeal.markAsEaten' | t }}</label>
+      <app-checkbox style="margin-top: 12px" [(checked)]="eaten">{{ 'addMeal.markAsEaten' | t }}</app-checkbox>
       <div class="mt-[18px] flex justify-end gap-2">
         <button class="btn" (click)="close()">{{ 'common.cancel' | t }}</button>
-        <button class="btn btn-primary" [appBusy]="menuKey()" (click)="save(name.value, time(), done.checked)"><app-icon name="save" size="sm" />{{ 'common.save' | t }}</button>
+        <button class="btn btn-primary" [appBusy]="menuKey()" (click)="save(name.value, time(), eaten())"><app-icon name="save" size="sm" />{{ 'common.save' | t }}</button>
       </div>
     </app-modal>
   `,
@@ -102,6 +103,8 @@ export class AddMealDialog {
   protected readonly name_ = itemName;
   protected readonly amount = itemAmount;
   protected readonly time = signal(nowHM());
+  /** The new meal is marked as eaten (the box starts ticked). */
+  protected readonly eaten = signal(true);
 
   private readonly ui = inject(UiService);
   private readonly day = inject(DayService);

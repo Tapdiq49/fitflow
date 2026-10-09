@@ -17,6 +17,14 @@ class HostComponent {
   readonly left = signal(0);
 }
 
+@Component({
+  imports: [TextFieldComponent],
+  template: `<app-text-field clearable [value]="text()" (input)="text.set($any($event.target).value)" />`,
+})
+class ClearHost {
+  readonly text = signal('');
+}
+
 describe('TextFieldComponent', () => {
   let fixture: ComponentFixture<HostComponent>;
   const inputs = (): HTMLInputElement[] => Array.from(fixture.nativeElement.querySelectorAll('input'));
@@ -96,5 +104,22 @@ describe('TextFieldComponent', () => {
     expect(field.value).toBe('Süd');
     field.value = '';
     expect(inputs()[0].value).toBe('');
+  });
+
+  it('shows an × on a clearable field only while it holds text, and empties it with the owner told', () => {
+    const f2 = TestBed.createComponent(ClearHost);
+    f2.detectChanges();
+    const el = f2.nativeElement as HTMLElement;
+    const input = el.querySelector('input') as HTMLInputElement;
+    expect(el.querySelector('button')).toBeNull();
+    input.value = 'abc';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    f2.detectChanges();
+    expect(f2.componentInstance.text()).toBe('abc');
+    (el.querySelector('button') as HTMLButtonElement).click();
+    f2.detectChanges();
+    expect(input.value).toBe('');
+    expect(f2.componentInstance.text()).toBe('');
+    expect(el.querySelector('button')).toBeNull();
   });
 });

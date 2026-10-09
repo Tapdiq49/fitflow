@@ -7,6 +7,8 @@ export interface AdminUser {
   avatar: string | null;
   /** Id of the account's role (see `Role`). */
   roleId: string;
+  /** Name of that role, so the user list needs no second request for the roles. */
+  roleName: string;
   /** ISO date-time. */
   createdAt: string;
   lastSignInAt: string | null;

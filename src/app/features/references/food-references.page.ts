@@ -70,7 +70,7 @@ type TextField = Exclude<keyof Draft, 'unit'>;
         @if (catalog.loadFailed()) {
           <div class="alert alert-warn mb-3" role="status"><app-icon name="alert" /><div>{{ 'references.loadFailed' | t }}</div></div>
         }
-        <app-text-field class="w-full" [value]="q.searchInput()" (input)="q.setSearch(val($event))" [placeholder]="'references.search' | t" [label]="'references.search' | t" />
+        <app-text-field class="w-full" clearable [value]="q.searchInput()" (input)="q.setSearch(val($event))" [placeholder]="'references.search' | t" [label]="'references.search' | t" />
         <p class="text-muted mb-3" style="font-size: 0.75rem; margin: 6px 0 0">@if (searchTooShort()) { {{ 'references.searchMin' | t: { n: minSearch } }} }</p>
         <app-data-table [columns]="columns()" [rows]="view().rows" [rowKey]="rowKey" [emptyText]="'references.nothingFound' | t" [loading]="catalog.loading() || list.loading()" [loadingLabel]="'common.loading' | t" [reorderable]="!!auth.user()" [reorderLabel]="'references.drag' | t" (reorder)="reorder($event)">
           <ng-template appTableCell="actions" let-e>

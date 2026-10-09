@@ -1,37 +1,33 @@
-import { Injectable, inject, signal } from '@angular/core';
-import { AdminUser, Role } from '../../common/interfaces';
+import { Injectable, effect, inject, signal, untracked } from '@angular/core';
+import { Role } from '../../common/interfaces';
 import { authErrorText } from '../auth/auth-errors';
 import { AdminUsersRepository, RoleDraft } from '../repositories/admin-users.repository';
+import { activeLang } from '../utils';
 import { ToastService } from './toast.service';
 
 /**
- * The user list of the management page and the actions on it (change e-mail / password / picture, delete). Every action goes to the
- * backend first; the list on screen changes only when the backend accepted it. A refused action tells the user why (a toast) and returns
- * false. This is not app data, so it lives here and not in `StoreService`.
+ * The roles and the actions of the user management page (change e-mail / password / picture / role, delete). Every action goes to the
+ * backend first and a refused one tells the user why (a toast) and returns false. The user list itself is a paged table: the page reads
+ * it with `pagedResource` through `AdminUsersRepository.request` / `parse` (like every backend list) and reloads it after an accepted
+ * action. This is not app data, so it lives here and not in `StoreService`.
  */
 @Injectable({ providedIn: 'root' })
 export class AdminUsersService {
   private readonly repo = inject(AdminUsersRepository);
   private readonly toast = inject(ToastService);
 
-  readonly users = signal<AdminUser[]>([]);
-  readonly loading = signal(false);
-  readonly loadFailed = signal(false);
   readonly roles = signal<Role[]>([]);
   readonly rolesLoading = signal(false);
   readonly rolesFailed = signal(false);
 
-  async load(): Promise<void> {
-    this.loading.set(true);
-    try {
-      this.users.set(await this.repo.list());
-      this.loadFailed.set(false);
-    } catch (e) {
-      this.loadFailed.set(true);
-      this.toast.show(authErrorText(e));
-    } finally {
-      this.loading.set(false);
-    }
+  constructor() {
+    // The names of the built-in roles come from the backend in the active language: a language switch reads them again.
+    effect(() => {
+      activeLang();
+      untracked(() => {
+        if (this.roles().length) void this.loadRoles();
+      });
+    });
   }
 
   async loadRoles(): Promise<void> {
@@ -65,17 +61,17 @@ export class AdminUsersService {
   }
 
   async setRole(id: string, roleId: string): Promise<boolean> {
-    const ok = await this.run(() => this.repo.setRole(id, roleId), () => this.patch(id, { roleId }));
+    const ok = await this.run(() => this.repo.setRole(id, roleId), () => undefined);
     if (ok && this.roles().length) void this.loadRoles(); // the number of accounts per role changed
     return ok;
   }
 
   remove(id: string): Promise<boolean> {
-    return this.run(() => this.repo.remove(id), () => this.users.update((all) => all.filter((u) => u.id !== id)));
+    return this.run(() => this.repo.remove(id), () => undefined);
   }
 
   setEmail(id: string, email: string): Promise<boolean> {
-    return this.run(() => this.repo.setEmail(id, email), () => this.patch(id, { email }));
+    return this.run(() => this.repo.setEmail(id, email), () => undefined);
   }
 
   setPassword(id: string, password: string): Promise<boolean> {
@@ -83,11 +79,7 @@ export class AdminUsersService {
   }
 
   setAvatar(id: string, avatar: string | null): Promise<boolean> {
-    return this.run(() => this.repo.setAvatar(id, avatar), () => this.patch(id, { avatar }));
-  }
-
-  private patch(id: string, change: Partial<AdminUser>): void {
-    this.users.update((all) => all.map((u) => (u.id === id ? { ...u, ...change } : u)));
+    return this.run(() => this.repo.setAvatar(id, avatar), () => undefined);
   }
 
   private async run(call: () => Promise<void>, applied: () => void): Promise<boolean> {

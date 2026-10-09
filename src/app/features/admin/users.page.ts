@@ -1,5 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, linkedSignal, signal, untracked } from '@angular/core';
 import { AdminUser } from '../../common/interfaces';
 import { RequiresPermissionDirective } from '../../common/directives/requires-permission/requires-permission.directive';
 import { TPipe } from '../../common/pipes/translate/t.pipe';
@@ -8,7 +8,8 @@ import { authErrorText } from '../../core/auth/auth-errors';
 import { imageToAvatarDataUrl } from '../../core/auth/avatar';
 import { isEmail, isStrongPassword } from '../../core/auth/auth-validation';
 import { t } from '../../core/i18n/translate';
-import { PagedQuery, pageSlice } from '../../core/paging';
+import { MIN_SEARCH_LENGTH, PagedQuery, pagedResource } from '../../core/paging';
+import { AdminUsersRepository } from '../../core/repositories/admin-users.repository';
 import { AdminUsersService } from '../../core/services/admin-users.service';
 import { ConfirmService } from '../../core/services/confirm.service';
 import { ToastService } from '../../core/services/toast.service';
@@ -45,16 +46,16 @@ import { FieldValue } from '../../shared/forms/field-base/field-base';
         <h3><app-icon name="users" /> {{ 'admin.title' | t }}</h3>
         <span class="flex items-center gap-2">
           <span class="badge">{{ total() }}</span>
-          <button class="btn btn-sm" [disabled]="users.loading()" [attr.aria-busy]="users.loading()" (click)="users.load()">@if (users.loading()) { <span class="spinner"></span> } @else { <app-icon name="refresh" size="sm" /> }{{ 'admin.refresh' | t }}</button>
+          <button class="btn btn-sm" [disabled]="list.loading()" [attr.aria-busy]="list.loading()" (click)="list.reload()">@if (list.loading()) { <span class="spinner"></span> } @else { <app-icon name="refresh" size="sm" /> }{{ 'admin.refresh' | t }}</button>
         </span>
       </div>
       <p class="text-muted" style="font-size: 0.75rem; margin: 0 0 12px">{{ 'admin.hint' | t }}</p>
-      @if (users.loadFailed()) {
+      @if (list.failed()) {
         <div class="alert alert-warn mb-3" role="status"><app-icon name="alert" /><div>{{ 'admin.loadFailed' | t }}</div></div>
       }
-      <app-text-field class="w-full" [value]="q.searchInput()" (input)="q.setSearch(val($event))" [placeholder]="'admin.search' | t" [label]="'admin.search' | t" />
-      <div class="mb-3"></div>
-      <app-data-table [columns]="columns()" [rows]="view().rows" [rowKey]="rowKey" [emptyText]="'admin.empty' | t" [loading]="users.loading()" [loadingLabel]="'common.loading' | t">
+      <app-text-field class="w-full" clearable [value]="q.searchInput()" (input)="q.setSearch(val($event))" [placeholder]="'admin.search' | t" [label]="'admin.search' | t" />
+      <p class="text-muted mb-3" style="font-size: 0.75rem; margin: 6px 0 0">@if (searchTooShort()) { {{ 'references.searchMin' | t: { n: minSearch } }} }</p>
+      <app-data-table [columns]="columns()" [rows]="rows()" [rowKey]="rowKey" [emptyText]="'admin.empty' | t" [loading]="list.loading()" [loadingLabel]="'common.loading' | t">
         <ng-template appTableCell="user" let-u>
           <div class="flex items-center gap-2.5">
             <ng-container *ngTemplateOutlet="avatar; context: { $implicit: u, size: 36 }" />
@@ -65,13 +66,13 @@ import { FieldValue } from '../../shared/forms/field-base/field-base';
           </div>
         </ng-template>
         <ng-template appTableCell="status" let-u>
-          <span class="badge">{{ roleName(u.roleId) }}</span>
+          <span class="badge">{{ u.roleName }}</span>
           @if (!u.emailConfirmed) {
             <span class="badge">{{ 'admin.unconfirmed' | t }}</span>
           }
         </ng-template>
         <ng-template appTableCell="actions" let-u>
-          <button class="btn btn-ghost btn-icon btn-sm" (click)="editingId.set(u.id)" [attr.aria-label]="('admin.edit' | t) + ': ' + u.email"><app-icon name="edit" size="sm" /></button>
+          <button class="btn btn-ghost btn-icon btn-sm" (click)="edit(u.id)" [attr.aria-label]="('admin.edit' | t) + ': ' + u.email"><app-icon name="edit" size="sm" /></button>
           <button class="btn btn-ghost btn-icon btn-sm" appRequires="users.delete" [disabled]="u.id === me()" [title]="u.id === me() ? ('admin.cannotDeleteSelf' | t) : ''" (click)="remove(u)" [attr.aria-label]="('common.delete' | t) + ': ' + u.email"><app-icon name="trash" size="sm" /></button>
         </ng-template>
       </app-data-table>
@@ -84,33 +85,31 @@ import { FieldValue } from '../../shared/forms/field-base/field-base';
       <app-modal [heading]="'admin.edit' | t" (closed)="editingId.set(null)">
         <div class="flex flex-col gap-4">
           <div class="flex flex-wrap items-center gap-3">
-            <ng-container *ngTemplateOutlet="avatar; context: { $implicit: u, size: 64 }" />
+            <ng-container *ngTemplateOutlet="avatar; context: { $implicit: shownUser(), size: 64 }" />
             <div class="flex flex-col gap-2">
               <div class="font-semibold">{{ u.username ?? u.email }}</div>
               <div class="flex flex-wrap gap-2" appRequires="users.edit_avatar">
-                <button class="btn btn-sm" [disabled]="busy()" (click)="file.click()"><app-icon name="upload" size="sm" />{{ 'profile.changePhoto' | t }}</button>
-                @if (u.avatar) {
-                  <button class="btn btn-sm btn-danger" [disabled]="busy()" (click)="removePhoto(u)"><app-icon name="trash" size="sm" />{{ 'profile.removePhoto' | t }}</button>
+                <button type="button" class="btn btn-sm" [disabled]="busy()" (click)="file.click()"><app-icon name="upload" size="sm" />{{ 'profile.changePhoto' | t }}</button>
+                @if (shownAvatar()) {
+                  <button type="button" class="btn btn-sm btn-danger" [disabled]="busy()" (click)="avatarDraft.set(null)"><app-icon name="trash" size="sm" />{{ 'profile.removePhoto' | t }}</button>
                 }
               </div>
-              <input #file type="file" accept="image/*" hidden (change)="pickPhoto(u, file)" />
+              <input #file type="file" accept="image/*" hidden (change)="pickPhoto(file)" />
             </div>
           </div>
 
-          <div class="field" appRequires="users.assign_role">
-            {{ 'admin.role' | t }}
-            <app-select-field [label]="'admin.role' | t" [options]="roleOptions()" [value]="u.roleId" [disabled]="u.id === me() || busy()" (valueChange)="changeRole(u, $event)" />
-          </div>
-
-          <form class="flex flex-col gap-2" appRequires="users.edit_email" (submit)="saveEmail($event, u, email.value)" novalidate>
-            <label class="field">{{ 'admin.newEmail' | t }}<app-text-field #email inputmode="email" autocomplete="off" [value]="u.email" /></label>
-            <div><button type="submit" class="btn btn-primary btn-sm" [disabled]="busy()">{{ 'common.save' | t }}</button></div>
-          </form>
-
-          <form class="flex flex-col gap-2" appRequires="users.edit_password" (submit)="savePassword($event, u, pw)" novalidate>
-            <label class="field">{{ 'admin.newPassword' | t }}<app-text-field #pw type="password" autocomplete="new-password" /></label>
-            <small class="text-muted">{{ 'admin.passwordHint' | t }}</small>
-            <div><button type="submit" class="btn btn-primary btn-sm" [disabled]="busy()">{{ 'common.save' | t }}</button></div>
+          <!-- One form, one Save: the role, the e-mail and the new password are sent together, and only what changed. -->
+          <form class="flex flex-col gap-4" (submit)="saveAll($event, u, email, pw)" novalidate>
+            <div class="field" appRequires="users.assign_role">
+              {{ 'admin.role' | t }}
+              <app-select-field [label]="'admin.role' | t" [options]="roleOptions()" [value]="pendingRole()" [placeholder]="u.roleName" [loading]="users.rolesLoading()" [disabled]="u.id === me()" (valueChange)="pendingRole.set($event)" />
+            </div>
+            <label class="field" appRequires="users.edit_email">{{ 'admin.newEmail' | t }}<app-text-field #email inputmode="email" autocomplete="off" [value]="u.email" /></label>
+            <div class="flex flex-col gap-1.5" appRequires="users.edit_password">
+              <label class="field">{{ 'admin.newPassword' | t }}<app-text-field #pw type="password" autocomplete="new-password" /></label>
+              <small class="text-muted">{{ 'admin.passwordHint' | t }}</small>
+            </div>
+            <div><button type="submit" class="btn btn-primary btn-sm" [disabled]="busy() || list.loading()">@if (busy()) { <span class="spinner"></span> }{{ 'common.save' | t }}</button></div>
           </form>
         </div>
       </app-modal>
@@ -125,16 +124,42 @@ export class UsersPage {
 
   protected readonly val = inputValue;
   protected readonly q = new PagedQuery();
+  protected readonly minSearch = MIN_SEARCH_LENGTH;
+  protected readonly searchTooShort = computed(() => {
+    const n = this.q.searchInput().trim().length;
+    return n > 0 && n < MIN_SEARCH_LENGTH;
+  });
   protected readonly me = computed(() => this.auth.user()?.id ?? null);
   protected readonly editingId = signal<string | null>(null);
-  protected readonly edited = computed(() => this.users.users().find((u) => u.id === this.editingId()) ?? null);
+  protected readonly edited = computed(() => this.rows().find((u) => u.id === this.editingId()) ?? null);
+  /** The picture chosen in the dialog, not saved yet: undefined = unchanged, null = removed. It starts again whenever another account is opened. */
+  protected readonly avatarDraft = linkedSignal<string | null | undefined>(() => {
+    this.editingId();
+    return undefined;
+  });
+  protected readonly shownAvatar = computed(() => {
+    const draft = this.avatarDraft();
+    return draft !== undefined ? draft : (this.edited()?.avatar ?? null);
+  });
+  /** The open account as the dialog shows it (with the picture that is chosen but not saved yet). */
+  protected readonly shownUser = computed(() => {
+    const u = this.edited();
+    return u ? { ...u, avatar: this.shownAvatar() } : null;
+  });
+  /** The role of the open account as the list has it (a plain value, so a reload that changes nothing keeps the choice in the dialog). */
+  private readonly editedRole = computed(() => this.edited()?.roleId ?? '');
+  /** The role chosen in the dialog, not saved yet; it starts again from the account's role whenever that changes. */
+  protected readonly pendingRole = linkedSignal(() => this.editedRole());
   /** An action of the open dialog is on its way to the backend. */
   protected readonly busy = signal(false);
 
   protected readonly roleOptions = computed<SelectOption<string>[]>(() => this.users.roles().map((r) => ({ value: r.id, label: r.name })));
   protected readonly rowKey = (u: AdminUser): string => u.id;
-  protected readonly view = computed(() => pageSlice(this.users.users(), this.q.params(), (u) => `${u.email} ${u.username ?? ''}`));
-  protected readonly total = computed(() => this.view().total ?? 0);
+  private readonly repo = inject(AdminUsersRepository);
+  /** The backend page: every new page, page size or search text is a request, and a newer one cancels the one still running. */
+  protected readonly list = pagedResource<AdminUser>(this.q, this.repo);
+  protected readonly rows = computed(() => this.list.view()?.rows ?? []);
+  protected readonly total = computed(() => this.list.view()?.total ?? this.rows().length);
   protected readonly columns = computed<TableColumn<AdminUser>[]>(() => [
     { id: 'user', header: t('admin.user') },
     { id: 'created', header: t('admin.created'), value: (u) => this.date(u.createdAt) },
@@ -144,17 +169,17 @@ export class UsersPage {
   ]);
 
   constructor() {
-    void this.users.load();
-    void this.users.loadRoles();
+    // A page that no longer exists (accounts deleted) goes back to the last one.
+    effect(() => {
+      const total = this.total();
+      untracked(() => this.q.clampTo(total));
+    });
   }
 
-  protected roleName(id: string): string {
-    return this.users.roles().find((r) => r.id === id)?.name ?? id;
-  }
-
-  protected async changeRole(u: AdminUser, roleId: string): Promise<void> {
-    if (roleId === u.roleId) return;
-    if (await this.act(() => this.users.setRole(u.id, roleId))) this.toast.show(t('admin.roleChanged'));
+  /** The roles are needed only by the role select of the dialog, so they are read when it opens (not with the list). */
+  protected edit(id: string): void {
+    this.editingId.set(id);
+    if (!this.users.roles().length) void this.users.loadRoles();
   }
 
   private date(iso: string): string {
@@ -164,35 +189,60 @@ export class UsersPage {
   protected async remove(u: AdminUser): Promise<void> {
     if (!(await this.confirm.ask(t('admin.deleteConfirm', { email: u.email }), { confirmLabel: t('common.delete'), danger: true }))) return;
     if (await this.users.remove(u.id)) {
-      this.q.clampTo(this.total());
+      this.list.reload();
       this.toast.show(t('admin.deleted'));
     }
   }
 
-  protected async saveEmail(e: Event, u: AdminUser, value: string): Promise<void> {
+  /** Saves what changed in the dialog (role, e-mail, new password) one after the other; the first refusal stops it and tells why. */
+  protected async saveAll(e: Event, u: AdminUser, emailField: FieldValue, pwField: FieldValue): Promise<void> {
     e.preventDefault();
-    const email = value.trim().toLowerCase();
-    if (email === u.email) return;
-    if (!isEmail(email)) {
+    if (this.busy()) return;
+    const email = emailField.value.trim().toLowerCase();
+    const password = pwField.value;
+    const role = this.pendingRole();
+    const emailChanged = email !== u.email;
+    const roleChanged = role !== u.roleId && u.id !== this.me();
+    const passwordSet = password !== '';
+    const picture = this.avatarDraft();
+    const pictureChanged = picture !== undefined && picture !== u.avatar;
+    if (!emailChanged && !roleChanged && !passwordSet && !pictureChanged) return;
+    if (emailChanged && !isEmail(email)) {
       this.toast.show(t('auth.error.invalid_email'));
       return;
     }
-    if (await this.act(() => this.users.setEmail(u.id, email))) this.toast.show(t('admin.emailSaved'));
-  }
-
-  protected async savePassword(e: Event, u: AdminUser, input: FieldValue): Promise<void> {
-    e.preventDefault();
-    if (!isStrongPassword(input.value)) {
+    if (passwordSet && !isStrongPassword(password)) {
       this.toast.show(t('auth.error.weak_password'));
       return;
     }
-    if (await this.act(() => this.users.setPassword(u.id, input.value))) {
-      input.value = '';
-      this.toast.show(t('admin.passwordSaved'));
+    this.busy.set(true);
+    // The list is read again only when the backend accepted something; a refusal changes nothing, so there is nothing new to fetch.
+    let saved = false;
+    try {
+      if (emailChanged) {
+        if (!(await this.users.setEmail(u.id, email))) return;
+        saved = true;
+      }
+      if (roleChanged) {
+        if (!(await this.users.setRole(u.id, role))) return;
+        saved = true;
+      }
+      if (pictureChanged) {
+        if (!(await this.users.setAvatar(u.id, picture))) return;
+        saved = true;
+      }
+      if (passwordSet && !(await this.users.setPassword(u.id, password))) return;
+      pwField.value = '';
+      this.toast.show(t('admin.userSaved'));
+      this.editingId.set(null); // saved: the dialog closes (the picture draft starts again with the next account)
+    } finally {
+      this.busy.set(false);
+      if (saved) this.list.reload();
     }
   }
 
-  protected async pickPhoto(u: AdminUser, input: HTMLInputElement): Promise<void> {
+  /** The chosen picture is only shown; it is sent with the rest when Save is pressed. */
+  protected async pickPhoto(input: HTMLInputElement): Promise<void> {
     const file = input.files?.[0];
     input.value = '';
     if (!file) return;
@@ -203,17 +253,15 @@ export class UsersPage {
       this.toast.show(authErrorText(err));
       return;
     }
-    if (await this.act(() => this.users.setAvatar(u.id, dataUrl))) this.toast.show(t('admin.pictureSaved'));
-  }
-
-  protected async removePhoto(u: AdminUser): Promise<void> {
-    if (await this.act(() => this.users.setAvatar(u.id, null))) this.toast.show(t('admin.pictureSaved'));
+    this.avatarDraft.set(dataUrl);
   }
 
   private async act(call: () => Promise<boolean>): Promise<boolean> {
     this.busy.set(true);
     try {
-      return await call();
+      const ok = await call();
+      if (ok) this.list.reload();
+      return ok;
     } finally {
       this.busy.set(false);
     }

@@ -1,10 +1,10 @@
-import { AccordionContent, AccordionGroup, AccordionPanel, AccordionTrigger } from '@angular/aria/accordion';
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, model, signal } from '@angular/core';
 import { MealItem, Unit } from '../../common/interfaces';
 import { UNITS, addItem, itemAmount, itemMacros, itemName, per100, sumMacros } from '../../core/nutrition';
 import { FoodCatalogService } from '../../core/services/food-catalog.service';
 import { ToastService } from '../../core/services/toast.service';
 import { F, parseNum } from '../../core/utils';
+import { AccordionItemComponent } from '../accordion/accordion-item.component';
 import { IconComponent } from '../icon/icon.component';
 import { SelectFieldComponent, SelectOption } from '../forms/select-field/select-field.component';
 import { TPipe, TdPipe } from '../../common/pipes/translate/t.pipe';
@@ -23,37 +23,12 @@ import { FieldValue } from '../forms/field-base/field-base';
  */
 @Component({
   selector: 'app-meal-items',
-  imports: [TextFieldComponent, NumberFieldComponent, AccordionGroup, AccordionTrigger, AccordionPanel, AccordionContent, IconComponent, SelectFieldComponent, TPipe, TdPipe],
+  imports: [TextFieldComponent, NumberFieldComponent, AccordionItemComponent, IconComponent, SelectFieldComponent, TPipe, TdPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
-    <!--
-      The foods can be folded away (Angular Aria accordion). Look of an FAQ accordion: a flat item with a line under it, a title that is
-      underlined on hover, a chevron that turns, a panel that slides open and fades in; what the foods add up to stays visible.
-    -->
-    <div ngAccordionGroup class="animate-rise">
-      <button
-        ngAccordionTrigger
-        type="button"
-        class="flex w-full cursor-pointer appearance-none items-center justify-between gap-3 rounded-[calc(var(--r)_*_10px)] border-0 px-2.5 py-3.5 text-left text-[0.875rem] font-semibold text-text [transition:background_.15s] hover:bg-surface-2"
-        [class]="open() ? 'bg-surface-2' : 'bg-transparent'"
-        [panel]="panel"
-        [(expanded)]="open"
-      >
-        <span>{{ 'plan.mealFoods' | t }}</span>
-        <span class="flex items-center gap-3 text-[0.8125rem] font-normal text-muted tabular-nums">
-          {{ 'plan.mealFoodsSummary' | t: { n: items().length, k: F.round(total().k) } }}
-          <!-- One plus that turns by 45 degrees into a cross while the item is open. It sits in a span of its own: the icon element is display:contents, which has no box to turn. -->
-          <span class="inline-grid shrink-0 place-items-center text-text [transition:transform_.2s_ease]" [style.transform]="open() ? 'rotate(45deg)' : 'rotate(0deg)'">
-            <app-icon name="plus" />
-          </span>
-        </span>
-      </button>
-      <!-- The panel keeps its content while folded so the height can animate (grid rows 0fr to 1fr). -->
-      <div class="grid [transition:grid-template-rows_.25s_ease,opacity_.25s_ease]" [class]="open() ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'">
-      <div ngAccordionPanel #panel="ngAccordionPanel" [preserveContent]="true" class="min-h-0 overflow-hidden">
-      <ng-template ngAccordionContent>
-      <div class="mt-2.5 mb-3.5 rounded-[calc(var(--r)_*_14px)] border border-border-soft bg-surface-2 p-3.5">
+    <!-- The foods can be folded away (shared accordion item); what the foods add up to stays visible. -->
+    <app-accordion-item [heading]="'plan.mealFoods' | t" [summary]="'plan.mealFoodsSummary' | t: { n: items().length, k: F.round(total().k) }" [(open)]="open">
       @if (items().length) {
         <!-- One card per food: the name and amount, the macros as small chips, the calories, a delete button. -->
         <ul class="m-0 flex list-none flex-col gap-2 p-0">
@@ -114,11 +89,7 @@ import { FieldValue } from '../forms/field-base/field-base';
           <p class="m-0 mt-1.5 text-[0.75rem] text-muted">{{ 'plan.customPer' | t: { v: customPerLabel() } }}</p>
         }
       </details>
-      </div>
-      </ng-template>
-      </div>
-      </div>
-    </div>
+    </app-accordion-item>
   `,
 })
 export class MealItemsComponent implements OnInit {

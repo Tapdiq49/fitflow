@@ -33,12 +33,13 @@ export interface SelectOption<T> {
       cdkOverlayOrigin
       #origin="cdkOverlayOrigin"
       [(expanded)]="open"
-      [disabled]="disabled()"
+      [disabled]="disabled() || loading()"
+      [attr.aria-busy]="loading() || null"
       [attr.aria-label]="label()"
       class="flex h-full w-full cursor-pointer items-center justify-between gap-2 rounded-[calc(var(--r)_*_9px)] border bg-bg px-2.5 py-2 text-left text-[0.875rem] font-medium text-text outline-none [transition:border-color_.2s] focus-visible:border-accent aria-disabled:cursor-not-allowed aria-disabled:border-border-soft aria-disabled:bg-surface-2 aria-disabled:text-muted aria-disabled:opacity-70"
       [class]="open() ? 'border-accent' : 'border-border'"
     >
-      <span class="min-w-0 truncate" [class.text-muted]="!selectedLabel()" [attr.title]="selectedLabel() || null">{{ selectedLabel() || placeholder() }}</span><app-icon name="down" size="sm" class="shrink-0" />
+      <span class="min-w-0 truncate" [class.text-muted]="!selectedLabel()" [attr.title]="selectedLabel() || null">{{ selectedLabel() || placeholder() }}</span>@if (loading()) {<span class="spinner shrink-0 text-muted"></span>} @else {<app-icon name="down" size="sm" class="shrink-0" />}
     </div>
     <ng-template ngComboboxPopup [combobox]="combobox" popupType="listbox">
       <ng-template
@@ -86,6 +87,8 @@ export class SelectFieldComponent<T> {
   /** Accessible name; the visible caption usually sits above the field. */
   readonly label = input.required<string>();
   readonly disabled = input(false);
+  /** The options are on their way: a spinner takes the place of the arrow and the field cannot be opened. */
+  readonly loading = input(false);
   /** Shown (muted) while the value is not one of the options, e.g. an empty value that stands for "nothing chosen yet". */
   readonly placeholder = input('');
 

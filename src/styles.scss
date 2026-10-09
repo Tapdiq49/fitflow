@@ -317,11 +317,11 @@
     background 0.2s,
     border-color 0.2s;
   white-space: nowrap;
-  &:hover {
+  &:hover:not(:disabled) {
     background: var(--surface-3);
     border-color: var(--border-strong);
   }
-  &:active {
+  &:active:not(:disabled) {
     transform: scale(0.97);
   }
   &.btn-primary {
@@ -329,9 +329,19 @@
     border-color: var(--accent);
     color: var(--accent-ink);
   }
-  &.btn-primary:hover {
+  &.btn-primary:hover:not(:disabled) {
     background: var(--accent-hover);
     border-color: var(--accent-hover);
+  }
+  /* A button that cannot be pressed (a request is on its way, nothing to save): faded, and the primary one is the accent colour dulled. */
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+  &.btn-primary:disabled {
+    background: color-mix(in oklab, var(--accent) 55%, var(--surface-2));
+    border-color: color-mix(in oklab, var(--accent) 55%, var(--surface-2));
+    color: color-mix(in oklab, var(--accent-ink) 75%, transparent);
   }
   &.btn-ghost {
     background: transparent;
@@ -680,6 +690,36 @@ input[aria-invalid='true'] {
   & tfoot td {
     font-weight: 700;
     background: color-mix(in oklab, var(--shade) 12%, transparent);
+  }
+}
+
+/* Look of <app-data-table>: a bordered panel with a quiet header, row hover and an accent edge on the hovered row. Sits on top of `tbl`. */
+@utility data-tbl {
+  &.tbl {
+    font-size: 0.875rem;
+    & th {
+      padding: 12px 16px;
+      background: var(--surface-2);
+      border-bottom: 1px solid var(--border);
+      letter-spacing: 0.08em;
+    }
+    & td {
+      padding: 13px 16px;
+      border-top: 0;
+      border-bottom: 1px solid var(--border-soft);
+      color: var(--text-2);
+      transition: background-color 0.15s ease;
+    }
+    & tbody tr:last-child td {
+      border-bottom: 0;
+    }
+    & tbody tr:hover td {
+      background: color-mix(in oklab, var(--surface-2) 70%, transparent);
+      color: var(--text);
+    }
+    & tbody tr:hover td:first-child {
+      box-shadow: inset 3px 0 0 var(--accent);
+    }
   }
 }
 

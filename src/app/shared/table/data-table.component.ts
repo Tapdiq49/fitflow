@@ -41,8 +41,8 @@ export interface TableMove {
   template: `
     <div class="relative" [attr.aria-busy]="loading()">
     @if (rows().length) {
-      <div class="overflow-x-auto" style="border: 0">
-        <table class="tbl">
+      <div class="overflow-x-auto rounded-[calc(var(--r)_*_12px)] border border-border-soft bg-surface">
+        <table class="tbl data-tbl">
           <thead>
             <tr>
               @if (reorderable()) {

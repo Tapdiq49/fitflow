@@ -42,7 +42,7 @@ export interface Database {
         Relationships: [];
       };
       roles: {
-        Row: { id: string; name: string; description: string; is_system: boolean; created_at: string };
+        Row: { id: string; name: string; description: string; names: Record<string, string>; descriptions: Record<string, string>; is_system: boolean; created_at: string };
         Insert: never;
         Update: never;
         Relationships: [];

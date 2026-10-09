@@ -8,11 +8,12 @@ import { inputValue } from '../../core/utils';
 import { TPipe } from '../../common/pipes/translate/t.pipe';
 import { AuthShellComponent } from './auth-shell.component';
 import { OAuthButtonsComponent } from './oauth-buttons.component';
+import { CheckboxComponent } from '../../shared/forms/checkbox/checkbox.component';
 import { TextFieldComponent } from '../../shared/forms/text-field/text-field.component';
 
 @Component({
   selector: 'app-sign-up-page',
-  imports: [TextFieldComponent, RouterLink, AuthShellComponent, OAuthButtonsComponent, TPipe],
+  imports: [CheckboxComponent, TextFieldComponent, RouterLink, AuthShellComponent, OAuthButtonsComponent, TPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (sentTo(); as address) {
@@ -38,9 +39,7 @@ import { TextFieldComponent } from '../../shared/forms/text-field/text-field.com
           </label>
           <fieldset class="m-0 flex flex-col gap-1.5 border-0 p-0">
             <legend class="eyebrow mb-1.5 p-0">{{ 'auth.emailPreferences' | t }}</legend>
-            <label class="flex cursor-pointer items-start gap-2">
-              <input type="checkbox" class="mt-0.5" [checked]="emailPreferences()" (change)="emailPreferences.set(checked($event))" /> {{ 'auth.productUpdates' | t }}
-            </label>
+            <app-checkbox [(checked)]="emailPreferences">{{ 'auth.productUpdates' | t }}</app-checkbox>
           </fieldset>
           @if (error(); as e) {
             <div class="alert alert-bad" role="alert">{{ e }}</div>
@@ -66,10 +65,6 @@ export class SignUpPage {
   protected readonly error = signal('');
   /** Set once the confirmation e-mail is on its way. */
   protected readonly sentTo = signal('');
-
-  protected checked(e: Event): boolean {
-    return (e.target as HTMLInputElement).checked;
-  }
 
   /** Early hint when the user leaves the username field; the database unique index stays the real guard. */
   protected async checkUsername(): Promise<void> {
