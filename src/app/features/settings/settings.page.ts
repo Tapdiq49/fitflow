@@ -24,7 +24,7 @@ import { TimePickerComponent } from '../../shared/forms/time-picker.component';
 import { TPipe } from '../../common/pipes/translate/t.pipe';
 import { t } from '../../core/i18n/translate';
 
-type NumField = 'height' | 'startWeight' | 'age' | 'kcalTarget' | 'proteinTarget';
+type NumField = 'height' | 'startWeight' | 'age' | 'kcalTarget' | 'proteinTarget' | 'restHeavySec' | 'restLightSec';
 type OptionField = 'mealsPerDay' | 'menuMode' | 'workoutMode' | 'theme' | 'goal' | 'targetMode';
 
 @Component({
@@ -101,6 +101,8 @@ type OptionField = 'mealsPerDay' | 'menuMode' | 'workoutMode' | 'theme' | 'goal'
             {{ 'settings.workoutMode' | t }}
             <app-select [label]="'settings.workoutMode' | t" [options]="workoutModes()" [disabled]="!!safetyIssue()" [value]="safetyIssue() ? 'trainer' : form().workoutMode" (valueChange)="setOption('workoutMode', $event)" />
           </div>
+          <label class="field">{{ 'settings.restHeavySec' | t }}<input type="text" inputmode="numeric" [placeholder]="std.restHeavySec" [value]="form().restHeavySec" [attr.aria-invalid]="errors().restHeavySec ? 'true' : null" (input)="setNum('restHeavySec', $event)" />@if (errors().restHeavySec; as e) { <small class="text-bad">{{ e }}</small> }</label>
+          <label class="field">{{ 'settings.restLightSec' | t }}<input type="text" inputmode="numeric" [placeholder]="std.restLightSec" [value]="form().restLightSec" [attr.aria-invalid]="errors().restLightSec ? 'true' : null" (input)="setNum('restLightSec', $event)" />@if (errors().restLightSec; as e) { <small class="text-bad">{{ e }}</small> }</label>
           <div class="field">
             {{ 'settings.appearance' | t }}
             <app-select [label]="'settings.appearance' | t" [options]="themes()" [value]="form().theme" (valueChange)="setOption('theme', $event)" />
@@ -307,7 +309,7 @@ export class SettingsPage {
   }
 
   /** The numbers with a sensible standard value: an empty field means the standard (see DEFAULT_SETTINGS). */
-  private static readonly HAS_STANDARD: readonly NumField[] = ['kcalTarget', 'proteinTarget'];
+  private static readonly HAS_STANDARD: readonly NumField[] = ['kcalTarget', 'proteinTarget', 'restHeavySec', 'restLightSec'];
 
   /** Height, starting weight, age, sex and the program start are required; the two targets fall back to the standard when empty. Any out-of-range value is reported, never replaced. */
   private validate(): boolean {

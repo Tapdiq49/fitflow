@@ -19,7 +19,10 @@ export const BUSY = {
   /** The workout times typed in (trainer mode). */
   workoutTime: (day: string, field: 'startTime' | 'endTime'): string => `workout-time:${day}:${field}`,
   exercise: (day: string, exerciseId: string): string => `exercise:${day}:${exerciseId}`,
+  /** The check box of a set (done, remove). */
   set: (day: string, exerciseId: string, index: number): string => `set:${day}:${exerciseId}:${index}`,
+  /** The weight / reps field of a set. Not the key of the check box: tapping the check box right after typing blurs the field, and a busy check box would swallow that tap. */
+  setField: (day: string, exerciseId: string, index: number, field: 'w' | 'r'): string => `set-field:${day}:${exerciseId}:${index}:${field}`,
   /** Adding a set to an exercise. */
   addSet: (day: string, exerciseId: string): string => `add-set:${day}:${exerciseId}`,
   /** Saving or removing a weight entry. */

@@ -20,6 +20,8 @@ export const SETTINGS_RANGE = {
   age: { min: 14, max: 90 },
   kcalTarget: { min: KCAL_MIN, max: KCAL_MAX },
   proteinTarget: { min: PROTEIN_MIN, max: PROTEIN_MAX },
+  restHeavySec: { min: 10, max: 600 },
+  restLightSec: { min: 10, max: 600 },
 } as const;
 
 export const DEFAULT_SETTINGS: Omit<Settings, 'programStart'> = {
@@ -51,6 +53,8 @@ export const DEFAULT_SETTINGS: Omit<Settings, 'programStart'> = {
   workoutTime: '18:00',
   wakeTime: '07:00',
   sleepTime: '23:30',
+  restHeavySec: 150,
+  restLightSec: 90,
   guestNoticeDismissedAt: '',
 };
 
@@ -156,6 +160,8 @@ export class StoreService {
         age: f.age == null ? null : clamp(Math.round(f.age), SETTINGS_RANGE.age.min, SETTINGS_RANGE.age.max),
         kcalTarget: clamp(f.kcalTarget, SETTINGS_RANGE.kcalTarget.min, SETTINGS_RANGE.kcalTarget.max),
         proteinTarget: clamp(f.proteinTarget, SETTINGS_RANGE.proteinTarget.min, SETTINGS_RANGE.proteinTarget.max),
+        restHeavySec: clamp(Math.round(f.restHeavySec), SETTINGS_RANGE.restHeavySec.min, SETTINGS_RANGE.restHeavySec.max),
+        restLightSec: clamp(Math.round(f.restLightSec), SETTINGS_RANGE.restLightSec.min, SETTINGS_RANGE.restLightSec.max),
         mealsPerDay: clamp(Math.round(f.mealsPerDay), 3, 6),
         programStart: DateU.monday(f.programStart),
       };

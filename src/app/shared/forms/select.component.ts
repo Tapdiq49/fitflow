@@ -15,6 +15,7 @@ export interface SelectOption<T> {
  * Single-choice dropdown on Angular Aria: an `ngCombobox` trigger with an `ngListbox` popup,
  * positioned by a CDK connected overlay in the top layer (works inside modals and clipped cards).
  * Keyboard: Enter / Space / ↓ open, ↑ ↓ Home End move, typing jumps, Enter selects, Escape closes.
+ * A label wider than the field is cut with an ellipsis (in the field and in the list) and shows in full as a tooltip on hover.
  *
  * ```html
  * <app-select [label]="'settings.appearance' | t" [options]="themes()" [(value)]="theme" />
@@ -37,7 +38,7 @@ export interface SelectOption<T> {
       class="flex h-full w-full cursor-pointer items-center justify-between gap-2 rounded-[calc(var(--r)_*_9px)] border bg-bg px-2.5 py-2 text-left text-[0.875rem] font-medium text-text outline-none [transition:border-color_.2s] focus-visible:border-accent aria-disabled:cursor-not-allowed aria-disabled:border-border-soft aria-disabled:bg-surface-2 aria-disabled:text-muted aria-disabled:opacity-70"
       [class]="open() ? 'border-accent' : 'border-border'"
     >
-      <span class="truncate">{{ selectedLabel() }}</span><app-icon name="down" size="sm" />
+      <span class="min-w-0 truncate" [attr.title]="selectedLabel() || null">{{ selectedLabel() }}</span><app-icon name="down" size="sm" class="shrink-0" />
     </div>
     <ng-template ngComboboxPopup [combobox]="combobox" popupType="listbox">
       <ng-template
@@ -68,9 +69,9 @@ export interface SelectOption<T> {
               [label]="o.label"
               class="flex cursor-pointer items-center justify-between gap-2 rounded-[calc(var(--r)_*_8px)] px-2.5 py-2 text-[0.875rem] hover:bg-surface data-[active=true]:bg-surface data-[active=true]:outline data-[active=true]:outline-accent/60 aria-selected:font-semibold aria-selected:text-accent"
             >
-              <span>{{ o.label }}</span>
+              <span class="min-w-0 truncate" [attr.title]="o.label">{{ o.label }}</span>
               @if (o.value === value()) {
-                <app-icon name="check" size="sm" />
+                <app-icon name="check" size="sm" class="shrink-0" />
               }
             </div>
           }

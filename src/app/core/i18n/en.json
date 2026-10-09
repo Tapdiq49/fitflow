@@ -436,6 +436,8 @@
   "settings.autoMenu": "Auto menu",
   "settings.bedtime": "Bedtime",
   "settings.builtInProgram": "Built-in program",
+  "settings.restHeavySec": "Rest after heavy lifts (sec)",
+  "settings.restLightSec": "Rest after other exercises (sec)",
   "settings.calorieTargetKcal": "Calorie target (kcal)",
   "settings.dark": "Dark",
   "settings.data": "Data",
@@ -572,6 +574,21 @@
   "workout.reps": "Reps",
   "workout.saveAgain": "Save again",
   "workout.saved": "Saved",
+  "workout.resetWorkout": "Reset workout",
+  "workout.editSaved": "Edit",
+  "workout.savedRecord": "Saved workout record",
+  "workout.markedFromChecklist": "This workout was marked as done in the \"What should you do today?\" list, and no sets are recorded. To get the results into the history, fill in the sets and press \"Save workout\".",
+  "workout.resetConfirm": "This day's workout log and the results saved to the history will be deleted, and the workout starts over from the current plan. Continue?",
+  "workout.workoutReset": "Workout reset",
+  "workout.staleLog": "The workout saved {when} no longer matches the current plan (the plan changed). Restore the earlier plan to keep that record, or reset the workout and write it again with the current plan. To correct the old record as it is, press \"Edit\".",
+
+  "workout.staleMode": "A «{saved}» workout was saved {when}, but the «{now}» mode is active now, so they do not match. To edit it, either switch the mode in the settings back to «{saved}», or reset the workout and write it again with «{now}». To correct the old record as it is, press \"Edit\".",
+
+
+  "workout.whenToday": "today",
+
+
+  "workout.whenDate": "on {date}",
   "workout.saveWorkout": "Save workout",
   "workout.seconds": "Seconds",
   "workout.set": "Set",
@@ -585,6 +602,7 @@
   "workoutSvc.firstTimeChooseComfortable": "First time: choose a comfortable weight and keep 3–4 reps in reserve.",
   "workoutSvc.firstTimeStartWith": "First time: start with the weight your trainer told you.",
   "workoutSvc.noSetsWereRecorded": "No sets were recorded in the last workout.",
+  "workoutSvc.enterWeightFirst": "Enter the weight first (0 for a bodyweight exercise).",
   "workoutSvc.noSetWasRecorded": "No set was recorded — enter the number of reps",
   "workoutSvc.repsBelowNStay": "Reps are below {min} — stay at the same weight.",
   "workoutSvc.sameWeightAimFor": "Same weight — aim for +1 rep each set (increase when you reach {max}).",

@@ -130,10 +130,14 @@ export class TodayHeroComponent {
 
   protected async toggle(id: string): Promise<void> {
     const k = this.k();
-    if (id === 'workout' && !this.items().find((i) => i.id === id)?.done && !this.workout.get(k).savedAt) {
-      const ok = await this.confirm.ask(t('dash.markWorkoutAsDone'));
-      if (!ok) return;
+    if (id === 'workout') {
+      if (this.workout.get(k).savedAt) {
+        // A saved workout is undone as a whole, with the results it wrote into the history: the same as "Reset workout" on the workout page.
+        if (await this.confirm.ask(t('workout.resetConfirm'), { confirmLabel: t('workout.resetWorkout'), danger: true })) await this.workout.resetLog(k);
+        return;
+      }
+      if (!this.items().find((i) => i.id === id)?.done && !(await this.confirm.ask(t('dash.markWorkoutAsDone')))) return;
     }
-    this.day.toggle(k, id);
+    await this.day.toggle(k, id);
   }
 }

@@ -127,6 +127,103 @@ describe('WorkoutService, trainer mode', () => {
     expect(plans.gymDays('2026-09-28')).toEqual([1, 3, 5]); // earlier week, no plan yet
   });
 
+  it('lets a saved workout be redone after the plan of its day changed', async () => {
+    const k = '2026-10-05';
+    plans.saveWorkout(k, { 1: [ex('Squat')] });
+    await workout.setValue(k, 't:squat', 0, 'w', '60');
+    await workout.setValue(k, 't:squat', 0, 'r', '10');
+    expect(await workout.save(k)).toBe(1);
+    plans.saveWorkout(k, { 1: [ex('Row', 2)] });
+    expect(workout.isStale(k)).toBe(true);
+    // the old log has no such exercise: nothing happens, nothing throws
+    expect(await workout.addSet(k, 't:row')).toBe(true);
+    expect(store.peek(k)?.workout?.ex['t:row']).toBeUndefined();
+    expect(await workout.resetLog(k)).toBe(true);
+    expect(workout.isStale(k)).toBe(false);
+    expect(store.state().history['t:squat']).toBeUndefined();
+    expect(store.peek(k)?.checks['workout']).toBeUndefined();
+    await workout.addSet(k, 't:row');
+    expect(workout.get(k).ex['t:row'].sets).toHaveLength(3);
+  });
+
+  it('sees a saved trainer workout as outdated when the built-in program takes over (and the other way round)', async () => {
+    const k = '2026-10-05';
+    plans.saveWorkout(k, { 1: [ex('Squat')] });
+    await workout.setValue(k, 't:squat', 0, 'w', '60');
+    await workout.setValue(k, 't:squat', 0, 'r', '10');
+    expect(await workout.save(k)).toBe(1);
+    expect(workout.isStale(k)).toBe(false);
+    store.mutate((s) => (s.settings.workoutMode = 'program'));
+    expect(workout.isStale(k)).toBe(true);
+    expect(await workout.resetLog(k)).toBe(true);
+    expect(workout.isStale(k)).toBe(false);
+    expect(Object.keys(workout.get(k).ex).some((id) => id.startsWith('t:'))).toBe(false);
+  });
+
+  it('can throw away typed values that were never saved, and a checklist tick without a log', async () => {
+    const k = '2026-10-05';
+    plans.saveWorkout(k, { 1: [ex('Squat')] });
+    expect(workout.hasProgress(k)).toBe(false);
+    await workout.setValue(k, 't:squat', 0, 'w', '2');
+    expect(workout.hasProgress(k)).toBe(true);
+    expect(await workout.resetLog(k)).toBe(true);
+    expect(workout.hasProgress(k)).toBe(false);
+    expect(workout.get(k).ex['t:squat'].sets[0].w).toBe('');
+    store.mutateDay(k, (d) => (d.checks['workout'] = true));
+    expect(workout.hasProgress(k)).toBe(true);
+    expect(await workout.resetLog(k)).toBe(true);
+    expect(store.peek(k)?.checks['workout']).toBeUndefined();
+  });
+
+  it('keeps typed weight and reps in memory and sends them with the tick of the set', async () => {
+    const k = '2026-10-05';
+    plans.saveWorkout(k, { 1: [ex('Squat')] });
+    workout.setDraft(k, 't:squat', 0, 'w', '60');
+    workout.setDraft(k, 't:squat', 0, 'r', '10');
+    expect(workout.fieldValue(k, 't:squat', 0, 'w', '')).toBe('60');
+    expect(workout.hasDrafts(k)).toBe(true);
+    expect(store.peek(k)?.workout).toBeUndefined(); // typing stored nothing
+    expect(await workout.toggleSet(k, 't:squat', 0)).toBe(true);
+    expect(store.peek(k)!.workout!.ex['t:squat'].sets[0]).toMatchObject({ w: '60', r: '10', done: true });
+    expect(workout.hasDrafts(k)).toBe(false);
+  });
+
+  it('keeps the typed values when the tick is refused for a missing weight', async () => {
+    const k = '2026-10-05';
+    plans.saveWorkout(k, { 1: [ex('Squat')] });
+    workout.setDraft(k, 't:squat', 0, 'r', '10');
+    expect(await workout.toggleSet(k, 't:squat', 0)).toBe(false);
+    expect(workout.hasDrafts(k)).toBe(true);
+    expect(workout.fieldValue(k, 't:squat', 0, 'r', '')).toBe('10');
+  });
+
+  it('saves the typed values with the workout, ticked or not, and forgets a reset day\'s drafts', async () => {
+    const k = '2026-10-05';
+    plans.saveWorkout(k, { 1: [ex('Squat')] });
+    workout.setDraft(k, 't:squat', 0, 'w', '60');
+    workout.setDraft(k, 't:squat', 0, 'r', '10');
+    expect(await workout.save(k)).toBe(1);
+    expect(store.state().history['t:squat'][0].sets).toEqual([{ w: 60, r: 10 }]);
+    expect(workout.hasDrafts(k)).toBe(false);
+    workout.setDraft(k, 't:squat', 1, 'w', '5');
+    await workout.resetLog(k);
+    expect(workout.hasDrafts(k)).toBe(false);
+  });
+
+  it('does not accept a set, an exercise or a workout without a weight (0 is a weight)', async () => {
+    const k = '2026-10-05';
+    plans.saveWorkout(k, { 1: [ex('Squat')] });
+    expect(await workout.toggleSet(k, 't:squat', 0)).toBe(false);
+    expect(workout.get(k).ex['t:squat'].sets[0].done).toBe(false);
+    expect(workout.get(k).ex['t:squat'].sets[0].r).toBe(''); // the reps were not filled in either
+    await workout.setValue(k, 't:squat', 0, 'r', '10');
+    expect(await workout.toggleExercise(k, 't:squat')).toBe(false);
+    expect(await workout.save(k)).toBe(0);
+    await workout.setValue(k, 't:squat', 0, 'w', '0');
+    expect(await workout.save(k)).toBe(1);
+    expect(store.state().history['t:squat'][0].sets).toEqual([{ w: 0, r: 10 }]);
+  });
+
   it('saves a trainer workout into history', async () => {
     plans.saveWorkout('2026-10-05', { 1: [ex('Squat')] });
     workout.setValue('2026-10-05', 't:squat', 0, 'w', '60');

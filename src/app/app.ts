@@ -83,7 +83,8 @@ import { t } from './core/i18n/translate';
           </div>
           <div class="flex items-center gap-1.5 rounded-[calc(var(--r)_*_12px)] border border-border-soft bg-surface p-1">
             <button class="btn btn-ghost btn-icon" (click)="ui.shift(-1)" [attr.aria-label]="'app.previousDay' | t"><app-icon name="left" /></button>
-            <span class="px-2.5 font-semibold whitespace-nowrap phone:px-1 phone:text-[0.8125rem]">{{ dateLabel() }}</span>
+            <!-- Fixed width: the label changes length with the day and month names, and the buttons beside it must stay where they are. -->
+            <span class="inline-block w-[17ch] truncate px-1.5 text-center font-semibold whitespace-nowrap tabular-nums phone:w-[14ch] phone:px-1 phone:text-[0.8125rem]" [title]="dateLabel()">{{ dateLabel() }}</span>
             <button class="btn btn-ghost btn-icon" (click)="ui.shift(1)" [attr.aria-label]="'app.nextDay' | t"><app-icon name="right" /></button>
             <button class="btn btn-sm" (click)="ui.goToday()">{{ 'app.today' | t }}</button>
             <!-- Deferred: the dropdown (Aria + CDK overlay) stays out of the initial bundle. -->

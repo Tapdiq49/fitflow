@@ -436,6 +436,8 @@
   "settings.autoMenu": "Avto menyu",
   "settings.bedtime": "Yuxu saatı",
   "settings.builtInProgram": "Hazır proqram",
+  "settings.restHeavySec": "İstirahət: ağır hərəkətlərdən sonra (san)",
+  "settings.restLightSec": "İstirahət: digər hərəkətlərdən sonra (san)",
   "settings.calorieTargetKcal": "Kalori hədəfi (kcal)",
   "settings.dark": "Qaranlıq",
   "settings.data": "Məlumatlar",
@@ -572,6 +574,21 @@
   "workout.reps": "Təkrar",
   "workout.saveAgain": "Yenidən saxla",
   "workout.saved": "Saxlanılıb",
+  "workout.resetWorkout": "Məşqi sıfırla",
+  "workout.editSaved": "Redaktə et",
+  "workout.savedRecord": "Saxlanmış məşq qeydi",
+  "workout.markedFromChecklist": "Bu məşq «Bu gün nə etməlisən?» siyahısından tamamlanmış kimi işarələnib, setlər qeyd olunmayıb. Nəticələrin tarixçəyə düşməsi üçün setləri doldurub «Məşqi yadda saxla» düyməsini basın.",
+  "workout.resetConfirm": "Bu günün məşq qeydi və tarixçəyə yazılmış nəticələri silinəcək. Məşq cari plana görə təzədən başlayacaq. Davam edək?",
+  "workout.workoutReset": "Məşq sıfırlandı",
+  "workout.staleLog": "{when} saxlanmış məşq indiki planla uyğun gəlmir (plan dəyişib). Köhnə qeydi saxlamaq üçün planı əvvəlki halına qaytarın, ya da məşqi sıfırlayıb indiki planla yenidən yazın. Köhnə qeydi olduğu kimi düzəltmək üçün «Redaktə et» düyməsini basın.",
+
+  "workout.staleMode": "{when} «{saved}» məşqi saxlanıb, indi isə «{now}» rejimi aktivdir, ona görə üst-üstə düşmür. Bunu dəyişmək üçün ya ayarlarda rejimi «{saved}» rejiminə qaytarın, ya da məşqi sıfırlayıb «{now}» ilə yenidən yazın. Köhnə qeydi olduğu kimi düzəltmək üçün «Redaktə et» düyməsini basın.",
+
+
+  "workout.whenToday": "Bu gün",
+
+
+  "workout.whenDate": "{date} tarixində",
   "workout.saveWorkout": "Məşqi yadda saxla",
   "workout.seconds": "Saniyə",
   "workout.set": "Set",
@@ -585,6 +602,7 @@
   "workoutSvc.firstTimeChooseComfortable": "İlk dəfə: rahat çəki seç, 3–4 təkrar ehtiyatda saxla.",
   "workoutSvc.firstTimeStartWith": "İlk dəfə: trenerin dediyi çəki ilə başla.",
   "workoutSvc.noSetsWereRecorded": "Son məşqdə set qeyd olunmayıb.",
+  "workoutSvc.enterWeightFirst": "Əvvəl çəkini yaz (çəkisiz hərəkət üçün 0).",
   "workoutSvc.noSetWasRecorded": "Heç bir set qeyd olunmayıb — təkrar sayını daxil et",
   "workoutSvc.repsBelowNStay": "Təkrarlar {min}-dən aşağıdır — eyni çəkidə qal.",
   "workoutSvc.sameWeightAimFor": "Eyni çəki — hər setdə +1 təkrar hədəflə ({max}-ə çatanda artır).",
