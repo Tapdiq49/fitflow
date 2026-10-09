@@ -3,19 +3,22 @@ import { RequiresPermissionDirective } from '../../common/directives/requires-pe
 import { RouterLink } from '@angular/router';
 import { AuthStore } from '../../core/auth/auth.store';
 import { Lang, Unit } from '../../common/interfaces';
+import { UNITS, per100 } from '../../core/nutrition';
 import { ConfirmService } from '../../core/services/confirm.service';
 import { MIN_SEARCH_LENGTH, Page, PagedQuery, pageSlice, pagedResource } from '../../core/paging';
 import { FoodRepository, FoodRow } from '../../core/repositories/food.repository';
 import { FoodCatalogService, FoodEntry, foodEntryOf } from '../../core/services/food-catalog.service';
 import { ToastService } from '../../core/services/toast.service';
 import { F, inputValue, parseNum } from '../../core/utils';
-import { SelectComponent, SelectOption } from '../../shared/forms/select.component';
+import { SelectFieldComponent, SelectOption } from '../../shared/forms/select-field/select-field.component';
 import { IconComponent } from '../../shared/icon/icon.component';
 import { PaginationComponent } from '../../shared/pagination/pagination.component';
 import { TableCellDirective } from '../../common/directives/table-cell/table-cell.directive';
 import { DataTableComponent, TableColumn, TableMove } from '../../shared/table/data-table.component';
 import { TPipe } from '../../common/pipes/translate/t.pipe';
 import { t, td } from '../../core/i18n/translate';
+import { TextFieldComponent } from '../../shared/forms/text-field/text-field.component';
+import { NumberFieldComponent } from '../../shared/forms/number-field/number-field.component';
 
 const BLANK = { az: '', en: '', ru: '', unit: 'q' as Unit, k: '', p: '', c: '', f: '' };
 type Draft = typeof BLANK;
@@ -24,7 +27,7 @@ type TextField = Exclude<keyof Draft, 'unit'>;
 /** The food database reference list: system foods (locked) and the user's own (they can be changed and deleted); every food can be put in the order the user likes. Opened from the reference index. */
 @Component({
   selector: 'app-food-references-page',
-  imports: [RouterLink, DataTableComponent, IconComponent, PaginationComponent, SelectComponent, TableCellDirective, RequiresPermissionDirective, TPipe],
+  imports: [TextFieldComponent, NumberFieldComponent, RouterLink, DataTableComponent, IconComponent, PaginationComponent, SelectFieldComponent, TableCellDirective, RequiresPermissionDirective, TPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="flex flex-col gap-[18px]">
@@ -34,16 +37,16 @@ type TextField = Exclude<keyof Draft, 'unit'>;
       <div class="card" #form appRequires="references.edit">
         <div class="card-head"><h3><app-icon [name]="editingId() ? 'edit' : 'plus'" /> {{ (editingId() ? 'references.editFood' : 'references.addFood') | t }}</h3></div>
         <div class="grid grid-cols-[repeat(auto-fit,minmax(170px,1fr))] items-start gap-3 [&_[role=combobox]]:h-[2.625rem] [&_input]:h-[2.625rem]">
-          <label class="field">{{ 'references.nameAz' | t }}<input type="text" [value]="draft().az" (input)="set('az', $event)" (keydown.enter)="save()" /></label>
-          <label class="field">{{ 'references.nameEn' | t }}<input type="text" [value]="draft().en" (input)="set('en', $event)" (keydown.enter)="save()" /></label>
-          <label class="field">{{ 'references.nameRu' | t }}<input type="text" [value]="draft().ru" (input)="set('ru', $event)" (keydown.enter)="save()" /></label>
-          <div class="field">{{ 'references.unit' | t }}<app-select [label]="'references.unit' | t" [options]="unitOptions()" [value]="draft().unit" (valueChange)="setUnit($event)" /></div>
+          <label class="field">{{ 'references.nameAz' | t }}<app-text-field [value]="draft().az" (input)="set('az', $event)" (keydown.enter)="save()" /></label>
+          <label class="field">{{ 'references.nameEn' | t }}<app-text-field [value]="draft().en" (input)="set('en', $event)" (keydown.enter)="save()" /></label>
+          <label class="field">{{ 'references.nameRu' | t }}<app-text-field [value]="draft().ru" (input)="set('ru', $event)" (keydown.enter)="save()" /></label>
+          <div class="field">{{ 'references.unit' | t }}<app-select-field [label]="'references.unit' | t" [options]="unitOptions()" [value]="draft().unit" (valueChange)="setUnit($event)" /></div>
         </div>
         <div class="mt-3 grid grid-cols-[repeat(auto-fit,minmax(110px,1fr))] items-start gap-3 [&_input]:h-[2.625rem]">
-          <label class="field">{{ 'addMeal.kcal' | t }}<input type="text" inputmode="decimal" [value]="draft().k" (input)="set('k', $event)" (keydown.enter)="save()" /></label>
-          <label class="field">{{ 'dash.protein' | t }}<input type="text" inputmode="decimal" [value]="draft().p" (input)="set('p', $event)" (keydown.enter)="save()" /></label>
-          <label class="field">{{ 'dash.carbs' | t }}<input type="text" inputmode="decimal" [value]="draft().c" (input)="set('c', $event)" (keydown.enter)="save()" /></label>
-          <label class="field">{{ 'dash.fat' | t }}<input type="text" inputmode="decimal" [value]="draft().f" (input)="set('f', $event)" (keydown.enter)="save()" /></label>
+          <label class="field">{{ 'addMeal.kcal' | t }}<app-number-field decimal [value]="draft().k" (input)="set('k', $event)" (keydown.enter)="save()" /></label>
+          <label class="field">{{ 'dash.protein' | t }}<app-number-field decimal [value]="draft().p" (input)="set('p', $event)" (keydown.enter)="save()" /></label>
+          <label class="field">{{ 'dash.carbs' | t }}<app-number-field decimal [value]="draft().c" (input)="set('c', $event)" (keydown.enter)="save()" /></label>
+          <label class="field">{{ 'dash.fat' | t }}<app-number-field decimal [value]="draft().f" (input)="set('f', $event)" (keydown.enter)="save()" /></label>
         </div>
         <p class="text-muted" style="font-size: 0.75rem; margin: 10px 0 0">{{ 'references.macrosPer' | t: { a: perLabel() } }}</p>
         <div class="mt-3"><button class="btn btn-primary" [disabled]="busy()" (click)="save()">@if (busy()) { <span class="spinner"></span> } @else { <app-icon [name]="editingId() ? 'save' : 'plus'" size="sm" /> }{{ (editingId() ? 'common.save' : 'references.add') | t }}</button>@if (editingId()) { <button class="btn" style="margin-left: 8px" [disabled]="busy()" (click)="cancelEdit()">{{ 'common.cancel' | t }}</button> }</div>
@@ -67,7 +70,7 @@ type TextField = Exclude<keyof Draft, 'unit'>;
         @if (catalog.loadFailed()) {
           <div class="alert alert-warn mb-3" role="status"><app-icon name="alert" /><div>{{ 'references.loadFailed' | t }}</div></div>
         }
-        <input type="text" class="w-full" [value]="q.searchInput()" (input)="q.setSearch(val($event))" [placeholder]="'references.search' | t" [attr.aria-label]="'references.search' | t" />
+        <app-text-field class="w-full" [value]="q.searchInput()" (input)="q.setSearch(val($event))" [placeholder]="'references.search' | t" [label]="'references.search' | t" />
         <p class="text-muted mb-3" style="font-size: 0.75rem; margin: 6px 0 0">@if (searchTooShort()) { {{ 'references.searchMin' | t: { n: minSearch } }} }</p>
         <app-data-table [columns]="columns()" [rows]="view().rows" [rowKey]="rowKey" [emptyText]="'references.nothingFound' | t" [loading]="catalog.loading() || list.loading()" [loadingLabel]="'common.loading' | t" [reorderable]="!!auth.user()" [reorderLabel]="'references.drag' | t" (reorder)="reorder($event)">
           <ng-template appTableCell="actions" let-e>
@@ -146,8 +149,8 @@ export class FoodReferencesPage {
   /** Id of the own food being changed in the form; null = the form adds a new one. */
   protected readonly editingId = signal<string | null>(null);
   private readonly form = viewChild<ElementRef<HTMLElement>>('form');
-  protected readonly unitOptions = computed<SelectOption<Unit>[]>(() => (['q', 'ədəd', 'ölçü'] as const).map((u) => ({ value: u, label: td(u) })));
-  protected readonly perLabel = computed(() => (this.draft().unit === 'q' ? `100 ${td('q')}` : `1 ${td(this.draft().unit)}`));
+  protected readonly unitOptions = computed<SelectOption<Unit>[]>(() => UNITS.map((u) => ({ value: u, label: td(u) })));
+  protected readonly perLabel = computed(() => (per100(this.draft().unit) ? `100 ${td(this.draft().unit)}` : `1 ${td(this.draft().unit)}`));
 
   protected set(field: TextField, e: Event): void {
     const value = inputValue(e);

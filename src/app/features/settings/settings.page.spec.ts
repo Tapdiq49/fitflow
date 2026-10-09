@@ -2,13 +2,15 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { FakeAuthService } from '../../core/auth/fake-auth.service';
+import { AuthStore } from '../../core/auth/auth.store';
 import { StoreService } from '../../core/services/store.service';
 import { SettingsPage } from './settings.page';
 
 describe('SettingsPage required fields', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     localStorage.clear();
     TestBed.configureTestingModule({ providers: [provideRouter([]), { provide: AuthService, useClass: FakeAuthService }] });
+    await TestBed.inject(AuthStore).init(); // a guest: until the session is checked, nothing is saved to an account
     TestBed.inject(StoreService).mutate((s) => {
       s.settings.height = 180;
       s.settings.startWeight = 80;
@@ -26,12 +28,13 @@ describe('SettingsPage required fields', () => {
     const field = (label: string): HTMLInputElement => Array.from(root.querySelectorAll('.field')).find((l) => l.textContent?.includes(label))!.querySelector('input')!;
     const type = (el: HTMLInputElement, v: string): void => {
       el.value = v;
-      el.dispatchEvent(new Event('input'));
+      el.dispatchEvent(new Event('input', { bubbles: true }));
       fixture.detectChanges();
     };
     const save = async (): Promise<void> => {
       Array.from(root.querySelectorAll<HTMLButtonElement>('button')).find((b) => b.textContent?.includes('Yadda saxla'))!.click();
       fixture.detectChanges();
+      await new Promise((resolve) => setTimeout(resolve)); // saving waits for the account first (also as a guest): let its promises finish
       await fixture.whenStable();
       fixture.detectChanges();
     };

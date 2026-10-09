@@ -10,11 +10,12 @@ import { ToastService } from '../../core/services/toast.service';
 import { inputValue } from '../../core/utils';
 import { TPipe } from '../../common/pipes/translate/t.pipe';
 import { AuthShellComponent } from './auth-shell.component';
+import { TextFieldComponent } from '../../shared/forms/text-field/text-field.component';
 
 /** Target of the link in the password reset e-mail: the link signs the user in, here they choose a new password. */
 @Component({
   selector: 'app-reset-password-page',
-  imports: [RouterLink, AuthShellComponent, TPipe],
+  imports: [TextFieldComponent, RouterLink, AuthShellComponent, TPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @switch (store.status()) {
@@ -23,12 +24,12 @@ import { AuthShellComponent } from './auth-shell.component';
           <form class="flex flex-col gap-3.5" (submit)="submit($event)" novalidate>
             <label class="field">
               {{ 'auth.newPassword' | t }}
-              <input type="password" name="new-password" autocomplete="new-password" [value]="password()" (input)="password.set(inputValue($event))" />
+              <app-text-field type="password" name="new-password" autocomplete="new-password" [value]="password()" (input)="password.set(inputValue($event))" />
               <span class="font-normal">{{ 'auth.passwordRules' | t }}</span>
             </label>
             <label class="field">
               {{ 'auth.confirmPassword' | t }}
-              <input type="password" name="confirm-password" autocomplete="new-password" [value]="confirm()" (input)="confirm.set(inputValue($event))" />
+              <app-text-field type="password" name="confirm-password" autocomplete="new-password" [value]="confirm()" (input)="confirm.set(inputValue($event))" />
             </label>
             @if (error(); as e) {
               <div class="alert alert-bad" role="alert">{{ e }}</div>

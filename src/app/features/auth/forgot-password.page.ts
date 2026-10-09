@@ -7,10 +7,11 @@ import { AuthService } from '../../core/auth/auth.service';
 import { inputValue } from '../../core/utils';
 import { TPipe } from '../../common/pipes/translate/t.pipe';
 import { AuthShellComponent } from './auth-shell.component';
+import { TextFieldComponent } from '../../shared/forms/text-field/text-field.component';
 
 @Component({
   selector: 'app-forgot-password-page',
-  imports: [RouterLink, AuthShellComponent, TPipe],
+  imports: [TextFieldComponent, RouterLink, AuthShellComponent, TPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (sentTo(); as address) {
@@ -22,7 +23,7 @@ import { AuthShellComponent } from './auth-shell.component';
         <form class="flex flex-col gap-3.5" (submit)="submit($event)" novalidate>
           <label class="field">
             {{ 'auth.email' | t }}
-            <input type="email" name="email" autocomplete="email" autocapitalize="none" spellcheck="false" [value]="email()" (input)="email.set(inputValue($event))" />
+            <app-text-field type="email" name="email" autocomplete="email" autocapitalize="none" spellcheck="false" [value]="email()" (input)="email.set(inputValue($event))" />
           </label>
           @if (error(); as e) {
             <div class="alert alert-bad" role="alert">{{ e }}</div>

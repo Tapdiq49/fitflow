@@ -12,10 +12,12 @@ import { BusyDirective } from '../../common/directives/busy/busy.directive';
 import { BUSY } from '../../core/busy-keys';
 import { BodyBasicsFormComponent } from '../profile/body-basics-form.component';
 import { TPipe } from '../../common/pipes/translate/t.pipe';
+import { NumberFieldComponent } from '../../shared/forms/number-field/number-field.component';
+import { FieldValue } from '../../shared/forms/field-base/field-base';
 
 @Component({
   selector: 'app-body-card',
-  imports: [BusyDirective, IconComponent, ChartComponent, BodyBasicsFormComponent, RouterLink, TPipe],
+  imports: [NumberFieldComponent, BusyDirective, IconComponent, ChartComponent, BodyBasicsFormComponent, RouterLink, TPipe],
   host: { class: 'card' },
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -43,8 +45,8 @@ import { TPipe } from '../../common/pipes/translate/t.pipe';
     </div>
     <app-chart [config]="chart()" [small]="true" [empty]="'common.noWeightEntries' | t" />
     <div class="flex flex-wrap items-center gap-2" style="margin-top: 12px">
-      <input #kg type="text" inputmode="decimal" [placeholder]="'dash.todaysWeightKg' | t" style="flex: 1" />
-      <input #waist type="text" inputmode="decimal" [placeholder]="'dash.waistCm' | t" style="width: 110px" />
+      <app-number-field #kg style="flex: 1" decimal [placeholder]="'dash.todaysWeightKg' | t" />
+      <app-number-field #waist width="110px" decimal [placeholder]="'dash.waistCm' | t" />
       <button class="btn btn-primary" [appBusy]="BUSY.weight(weightDay())" (click)="add(kg, waist)"><app-icon name="plus" size="sm" />{{ 'common.addWeight' | t }}</button>
     </div>
     @let adv = advice();
@@ -78,7 +80,7 @@ export class BodyCardComponent {
     return this.ui.viewDate() > this.ui.today() ? this.ui.today() : this.ui.viewDate();
   }
 
-  protected async add(kg: HTMLInputElement, waist: HTMLInputElement): Promise<void> {
+  protected async add(kg: FieldValue, waist: FieldValue): Promise<void> {
     if (await this.body.save(this.weightDay(), parseNum(kg.value), parseNum(waist.value))) {
       kg.value = '';
       waist.value = '';

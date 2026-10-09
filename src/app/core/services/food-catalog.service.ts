@@ -4,6 +4,7 @@ import { AuthStore } from '../auth/auth.store';
 import { FOODS, FOOD_IDS } from '../data/foods';
 import { foodItem, foodOf, systemFoods } from '../food-book';
 import { td } from '../i18n/translate';
+import { per100 } from '../nutrition';
 import { Lang, MealItem, SystemFood, Unit } from '../../common/interfaces';
 import { FoodRepository, FoodRow, NewFoodRow } from '../repositories/food.repository';
 import { activeLang, clamp, rnd } from '../utils';
@@ -199,7 +200,7 @@ export class FoodCatalogService {
   toMealItem(id: string, amt: number): MealItem {
     const e = this.find(id);
     if (!e || (e.isSystem && foodOf(e.id))) return foodItem(id, amt);
-    const m = e.unit === 'q' ? amt / 100 : amt;
+    const m = per100(e.unit) ? amt / 100 : amt;
     return { name: e.name, amt: 1, k: rnd(e.k * m, 1), p: rnd(e.p * m, 1), c: rnd(e.c * m, 1), f: rnd(e.f * m, 1), amtLabel: `${rnd(amt, 1)} ${td(e.unit)}` };
   }
 }

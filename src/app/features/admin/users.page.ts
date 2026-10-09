@@ -13,12 +13,14 @@ import { AdminUsersService } from '../../core/services/admin-users.service';
 import { ConfirmService } from '../../core/services/confirm.service';
 import { ToastService } from '../../core/services/toast.service';
 import { activeLang, inputValue } from '../../core/utils';
-import { SelectComponent, SelectOption } from '../../shared/forms/select.component';
+import { SelectFieldComponent, SelectOption } from '../../shared/forms/select-field/select-field.component';
 import { IconComponent } from '../../shared/icon/icon.component';
 import { ModalComponent } from '../../shared/modal/modal.component';
 import { PaginationComponent } from '../../shared/pagination/pagination.component';
 import { DataTableComponent, TableColumn } from '../../shared/table/data-table.component';
 import { TableCellDirective } from '../../common/directives/table-cell/table-cell.directive';
+import { TextFieldComponent } from '../../shared/forms/text-field/text-field.component';
+import { FieldValue } from '../../shared/forms/field-base/field-base';
 
 /**
  * User management (administrators only): every account with its picture, e-mail, sign-up and last sign-in dates, and the actions
@@ -27,7 +29,7 @@ import { TableCellDirective } from '../../common/directives/table-cell/table-cel
  */
 @Component({
   selector: 'app-users-page',
-  imports: [NgTemplateOutlet, DataTableComponent, TableCellDirective, PaginationComponent, ModalComponent, SelectComponent, RequiresPermissionDirective, IconComponent, TPipe],
+  imports: [TextFieldComponent, NgTemplateOutlet, DataTableComponent, TableCellDirective, PaginationComponent, ModalComponent, SelectFieldComponent, RequiresPermissionDirective, IconComponent, TPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ng-template #avatar let-u let-size="size">
@@ -50,7 +52,7 @@ import { TableCellDirective } from '../../common/directives/table-cell/table-cel
       @if (users.loadFailed()) {
         <div class="alert alert-warn mb-3" role="status"><app-icon name="alert" /><div>{{ 'admin.loadFailed' | t }}</div></div>
       }
-      <input type="text" class="w-full" [value]="q.searchInput()" (input)="q.setSearch(val($event))" [placeholder]="'admin.search' | t" [attr.aria-label]="'admin.search' | t" />
+      <app-text-field class="w-full" [value]="q.searchInput()" (input)="q.setSearch(val($event))" [placeholder]="'admin.search' | t" [label]="'admin.search' | t" />
       <div class="mb-3"></div>
       <app-data-table [columns]="columns()" [rows]="view().rows" [rowKey]="rowKey" [emptyText]="'admin.empty' | t" [loading]="users.loading()" [loadingLabel]="'common.loading' | t">
         <ng-template appTableCell="user" let-u>
@@ -97,16 +99,16 @@ import { TableCellDirective } from '../../common/directives/table-cell/table-cel
 
           <div class="field" appRequires="users.assign_role">
             {{ 'admin.role' | t }}
-            <app-select [label]="'admin.role' | t" [options]="roleOptions()" [value]="u.roleId" [disabled]="u.id === me() || busy()" (valueChange)="changeRole(u, $event)" />
+            <app-select-field [label]="'admin.role' | t" [options]="roleOptions()" [value]="u.roleId" [disabled]="u.id === me() || busy()" (valueChange)="changeRole(u, $event)" />
           </div>
 
           <form class="flex flex-col gap-2" appRequires="users.edit_email" (submit)="saveEmail($event, u, email.value)" novalidate>
-            <label class="field">{{ 'admin.newEmail' | t }}<input #email type="text" inputmode="email" autocomplete="off" [value]="u.email" /></label>
+            <label class="field">{{ 'admin.newEmail' | t }}<app-text-field #email inputmode="email" autocomplete="off" [value]="u.email" /></label>
             <div><button type="submit" class="btn btn-primary btn-sm" [disabled]="busy()">{{ 'common.save' | t }}</button></div>
           </form>
 
           <form class="flex flex-col gap-2" appRequires="users.edit_password" (submit)="savePassword($event, u, pw)" novalidate>
-            <label class="field">{{ 'admin.newPassword' | t }}<input #pw type="password" autocomplete="new-password" /></label>
+            <label class="field">{{ 'admin.newPassword' | t }}<app-text-field #pw type="password" autocomplete="new-password" /></label>
             <small class="text-muted">{{ 'admin.passwordHint' | t }}</small>
             <div><button type="submit" class="btn btn-primary btn-sm" [disabled]="busy()">{{ 'common.save' | t }}</button></div>
           </form>
@@ -178,7 +180,7 @@ export class UsersPage {
     if (await this.act(() => this.users.setEmail(u.id, email))) this.toast.show(t('admin.emailSaved'));
   }
 
-  protected async savePassword(e: Event, u: AdminUser, input: HTMLInputElement): Promise<void> {
+  protected async savePassword(e: Event, u: AdminUser, input: FieldValue): Promise<void> {
     e.preventDefault();
     if (!isStrongPassword(input.value)) {
       this.toast.show(t('auth.error.weak_password'));

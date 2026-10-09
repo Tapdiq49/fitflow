@@ -2,10 +2,10 @@ import { ChangeDetectionStrategy, Component, computed, effect, input, model, sig
 import { Combobox, ComboboxPopup, ComboboxWidget } from '@angular/aria/combobox';
 import { Grid, GridCell, GridRow } from '@angular/aria/grid';
 import { CdkConnectedOverlay, CdkOverlayOrigin } from '@angular/cdk/overlay';
-import { activeTimeFormat, fmtTime, fromMin, toMin } from '../../core/utils';
-import { IconComponent } from '../icon/icon.component';
-import { TPipe } from '../../common/pipes/translate/t.pipe';
-import { POPUP_PANEL, POPUP_POSITIONS } from './popup';
+import { activeTimeFormat, fmtTime, fromMin, toMin } from '../../../core/utils';
+import { IconComponent } from '../../icon/icon.component';
+import { TPipe } from '../../../common/pipes/translate/t.pipe';
+import { POPUP_PANEL, POPUP_POSITIONS } from '../popup/popup';
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 const COLS = 6;

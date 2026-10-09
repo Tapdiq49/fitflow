@@ -18,10 +18,10 @@ import { TargetSyncService } from './core/services/target-sync.service';
 import { FoodRepository } from './core/repositories/food.repository';
 import { PlanRepository } from './core/repositories/plan.repository';
 import { AdminUsersRepository } from './core/repositories/admin-users.repository';
-import { SupabaseAdminUsersRepository } from './core/repositories/supabase-admin-users.repository';
 import { SupabasePlanRepository } from './core/repositories/supabase-plan.repository';
 import { UserDataRepository } from './core/repositories/user-data.repository';
 import { SupabaseUserDataRepository } from './core/repositories/supabase-user-data.repository';
+import { SupabaseAdminUsersRepository } from './core/repositories/supabase-admin-users.repository';
 import { SupabaseFoodRepository } from './core/repositories/supabase-food.repository';
 
 export const appConfig: ApplicationConfig = {

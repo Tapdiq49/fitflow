@@ -12,11 +12,12 @@ import { inputValue } from '../../core/utils';
 import { IconComponent } from '../../shared/icon/icon.component';
 import { TPipe } from '../../common/pipes/translate/t.pipe';
 import { AvatarComponent } from '../auth/avatar.component';
+import { TextFieldComponent } from '../../shared/forms/text-field/text-field.component';
 
 /** Account page: picture, username, password. Reached from the avatar menu; guests are sent to sign in. */
 @Component({
   selector: 'app-profile-page',
-  imports: [AvatarComponent, IconComponent, RequiresPermissionDirective, TPipe],
+  imports: [TextFieldComponent, AvatarComponent, IconComponent, RequiresPermissionDirective, TPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (auth.user(); as u) {
@@ -43,13 +44,13 @@ import { AvatarComponent } from '../auth/avatar.component';
 
           <div class="field" style="margin-top: 20px">
             {{ 'auth.email' | t }}
-            <input type="text" [value]="u.email" disabled />
+            <app-text-field [value]="u.email" disabled />
           </div>
 
           <form class="flex flex-col gap-3" style="margin-top: 14px" (submit)="saveUsername($event)" novalidate>
             <label class="field">
               {{ 'auth.username' | t }}
-              <input type="text" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" [value]="username()" (input)="username.set(inputValue($event))" (blur)="checkUsername()" />
+              <app-text-field name="username" autocomplete="username" autocapitalize="none" spellcheck="false" [value]="username()" (input)="username.set(inputValue($event))" (focusout)="checkUsername()" />
               <span class="font-normal">{{ 'auth.usernameRules' | t }}</span>
             </label>
             @if (usernameError(); as e) {
@@ -65,16 +66,16 @@ import { AvatarComponent } from '../auth/avatar.component';
             <form class="flex flex-col gap-3" (submit)="savePassword($event)" novalidate>
               <label class="field">
                 {{ 'profile.currentPassword' | t }}
-                <input type="password" name="current-password" autocomplete="current-password" [value]="current()" (input)="current.set(inputValue($event))" />
+                <app-text-field type="password" name="current-password" autocomplete="current-password" [value]="current()" (input)="current.set(inputValue($event))" />
               </label>
               <label class="field">
                 {{ 'auth.newPassword' | t }}
-                <input type="password" name="new-password" autocomplete="new-password" [value]="next()" (input)="next.set(inputValue($event))" />
+                <app-text-field type="password" name="new-password" autocomplete="new-password" [value]="next()" (input)="next.set(inputValue($event))" />
                 <span class="font-normal">{{ 'auth.passwordRules' | t }}</span>
               </label>
               <label class="field">
                 {{ 'auth.confirmPassword' | t }}
-                <input type="password" name="confirm-password" autocomplete="new-password" [value]="confirm()" (input)="confirm.set(inputValue($event))" />
+                <app-text-field type="password" name="confirm-password" autocomplete="new-password" [value]="confirm()" (input)="confirm.set(inputValue($event))" />
               </label>
               @if (passwordError(); as e) {
                 <div class="alert alert-bad" role="alert">{{ e }}</div>

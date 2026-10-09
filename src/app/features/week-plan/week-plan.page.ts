@@ -1,7 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal, signal } from '@angular/core';
 import { RequiresPermissionDirective } from '../../common/directives/requires-permission/requires-permission.directive';
 import { SLOTS } from '../../core/data/meals';
-import { TRAINER_PLAN, TRAINER_SLOTS, trainerExId } from '../../core/data/trainer-plan';
+import { trainerExId } from '../../core/data/trainer-exercise';
+import { TRAINER_PLAN, TRAINER_SLOTS } from '../../core/data/trainer-plan';
 import { MealItem, SlotId, TrainerMeal, WeekPlan, WorkoutWeekPlan } from '../../common/interfaces';
 import { PlanKind } from '../../core/repositories/plan.repository';
 import { PlanSyncService } from '../../core/services/plan-sync.service';
@@ -9,18 +10,20 @@ import { DayService } from '../../core/services/day.service';
 import { StoreService } from '../../core/services/store.service';
 import { ToastService } from '../../core/services/toast.service';
 import { TrainerPlanService } from '../../core/services/trainer-plan.service';
-import { DateU, F, clamp, dayName, fromMin, inputValue, parseNum, toMin } from '../../core/utils';
-import { itemMacros, realItems, sumMacros } from '../../core/nutrition';
+import { DateU, F, clamp, dayName, fromMin, inputValue, parseNum, sameJson, toMin } from '../../core/utils';
+import { itemMacros, mealNameFromItems, realItems, sumMacros } from '../../core/nutrition';
 import { MealItemsComponent } from '../../shared/meal-items/meal-items.component';
 import { RouterLink } from '@angular/router';
 import { Listbox, Option } from '@angular/aria/listbox';
 import { Tab, TabContent, TabList, TabPanel, Tabs } from '@angular/aria/tabs';
 import { IconComponent } from '../../shared/icon/icon.component';
 import { BodyBasicsFormComponent } from '../profile/body-basics-form.component';
-import { TimePickerComponent } from '../../shared/forms/time-picker.component';
+import { TimePickerComponent } from '../../shared/forms/time-picker/time-picker.component';
 import { TPipe } from '../../common/pipes/translate/t.pipe';
 import { TimePipe } from '../../common/pipes/format/time.pipe';
 import { t, td } from '../../core/i18n/translate';
+import { TextFieldComponent } from '../../shared/forms/text-field/text-field.component';
+import { NumberFieldComponent } from '../../shared/forms/number-field/number-field.component';
 
 interface ExRow {
   name: string;
@@ -40,7 +43,7 @@ interface Row {
 
 @Component({
   selector: 'app-week-plan-page',
-  imports: [RouterLink, BodyBasicsFormComponent, Tabs, TabList, Tab, TabPanel, TabContent, Listbox, Option, IconComponent, TimePickerComponent, MealItemsComponent, RequiresPermissionDirective, TPipe, TimePipe],
+  imports: [TextFieldComponent, NumberFieldComponent, RouterLink, BodyBasicsFormComponent, Tabs, TabList, Tab, TabPanel, TabContent, Listbox, Option, IconComponent, TimePickerComponent, MealItemsComponent, RequiresPermissionDirective, TPipe, TimePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div ngTabs class="flex flex-col gap-[18px]">
@@ -89,8 +92,10 @@ interface Row {
         }
       </div>
 
-      <div ngTabPanel value="meal" appRequires="plan.edit" class="flex flex-col gap-[18px] inert:hidden">
+      <!-- appRequires sits on a wrapper inside the panel, not on the panel: both set the inert attribute of their element, and the permission one would wipe the tab's. -->
+      <div ngTabPanel value="meal" class="inert:hidden">
       <ng-template ngTabContent>
+      <div appRequires="plan.edit" class="flex flex-col gap-[18px]">
       @for (day of days; track day) {
         <div class="card">
           <div class="card-head">
@@ -102,13 +107,17 @@ interface Row {
           <div class="flex flex-wrap items-start gap-4">
           <div class="min-w-[18.75rem] flex-1">
           @for (r of draft()[day]; track r.slot; let i = $index) {
-            <div class="mb-2 grid grid-cols-[110px_112px_1fr_36px] items-center gap-2 phone:grid-cols-[90px_1fr_36px]">
+            <!-- One meal: the line under it runs the whole width of the row. -->
+            <div class="mb-5 border-b border-border-soft pb-1.5">
+            <div class="mb-3.5 grid grid-cols-[110px_112px_1fr_36px] items-center gap-2 phone:grid-cols-[90px_1fr_36px]">
               <span class="text-[0.8125rem] text-text-2">{{ slotLabel(r.slot) }}</span>
               <app-time-picker [label]="'common.time' | t" [value]="r.time" (valueChange)="setTime(day, i, $event)" />
-              <input type="text" [value]="r.text" (input)="setText(day, i, $event)" [placeholder]="'plan.eGBuckwheat4' | t" class="phone:col-span-3" />
+              <app-text-field class="phone:col-span-3" [value]="r.text" (input)="setText(day, i, $event)" [placeholder]="'plan.eGBuckwheat4' | t" />
               <button class="btn btn-ghost btn-icon btn-sm" (click)="removeMeal(day, r.slot)" [attr.aria-label]="('common.delete' | t) + ': ' + slotLabel(r.slot)"><app-icon name="x" size="sm" /></button>
             </div>
-            <app-meal-items class="mb-3" [items]="r.items" (itemsChange)="setItems(day, i, $event)" />
+            <!-- Lines up with the time and the name above: it starts after the meal label column (110px + the 8px gap) and ends before the delete button (36px + gap). -->
+            <app-meal-items class="ml-[118px] mr-[44px] phone:mx-0" [items]="r.items" (itemsChange)="setItems(day, i, $event)" />
+            </div>
           }
           @if (unusedSlots(day); as free) {
             @if (free.length) {
@@ -141,11 +150,13 @@ interface Row {
           <button class="btn btn-danger" [disabled]="saving()" (click)="clear()"><app-icon name="trash" size="sm" />{{ 'plan.revertToPreviousWeeksPlan' | t }}</button>
         }
       </div>
+      </div>
       </ng-template>
       </div>
 
-      <div ngTabPanel value="workout" appRequires="plan.edit" class="flex flex-col gap-[18px] inert:hidden">
+      <div ngTabPanel value="workout" class="inert:hidden">
       <ng-template ngTabContent>
+      <div appRequires="plan.edit" class="flex flex-col gap-[18px]">
         <div class="card">
           <div class="card-head"><h3 id="gym-days-title"><app-icon name="calendar" /> {{ 'plan.gymDays' | t }}</h3></div>
           <div
@@ -170,10 +181,10 @@ interface Row {
             <div class="card-head"><h3>{{ dayLabel(day) }}</h3></div>
             @for (r of wDraft()[day]; track $index; let i = $index) {
               <div class="mb-2 grid grid-cols-[1fr_64px_64px_64px_36px] items-center gap-2 phone:grid-cols-[1fr_56px_56px_56px_36px]">
-                <input type="text" [value]="r.name" (input)="setEx(day, i, 'name', $event)" [placeholder]="'plan.exerciseNameEG' | t" [attr.aria-label]="'common.exercise' | t" />
-                <input type="text" inputmode="numeric" class="text-center" [value]="r.sets" (input)="setEx(day, i, 'sets', $event)" [placeholder]="'plan.sets' | t" [attr.aria-label]="'plan.numberOfSets' | t" />
-                <input type="text" inputmode="numeric" class="text-center" [value]="r.min" (input)="setEx(day, i, 'min', $event)" [placeholder]="'plan.min' | t" [attr.aria-label]="'plan.minReps' | t" />
-                <input type="text" inputmode="numeric" class="text-center" [value]="r.max" (input)="setEx(day, i, 'max', $event)" [placeholder]="'plan.max' | t" [attr.aria-label]="'plan.maxReps' | t" />
+                <app-text-field [value]="r.name" (input)="setEx(day, i, 'name', $event)" [placeholder]="'plan.exerciseNameEG' | t" [label]="'common.exercise' | t" />
+                <app-number-field inputClass="text-center" [value]="r.sets" (input)="setEx(day, i, 'sets', $event)" [placeholder]="'plan.sets' | t" [label]="'plan.numberOfSets' | t" />
+                <app-number-field inputClass="text-center" [value]="r.min" (input)="setEx(day, i, 'min', $event)" [placeholder]="'plan.min' | t" [label]="'plan.minReps' | t" />
+                <app-number-field inputClass="text-center" [value]="r.max" (input)="setEx(day, i, 'max', $event)" [placeholder]="'plan.max' | t" [label]="'plan.maxReps' | t" />
                 <button class="btn btn-ghost btn-icon btn-sm" (click)="removeEx(day, i)" [attr.aria-label]="'plan.deleteExercise' | t"><app-icon name="x" size="sm" /></button>
               </div>
             }
@@ -186,6 +197,7 @@ interface Row {
             <button class="btn btn-danger" [disabled]="saving()" (click)="clearWorkout()"><app-icon name="trash" size="sm" />{{ 'plan.revertToPreviousWeeks' | t }}</button>
           }
         </div>
+      </div>
       </ng-template>
       </div>
     </div>
@@ -219,13 +231,22 @@ export class WeekPlanPage {
     return (meal ? this.own() : this.wOwn()) ? 'own' : 'previous';
   });
   protected readonly planStateLabel = computed(() => t(({ own: 'plan.planWrittenForThis', previous: 'plan.previousWeeksPlanIn', empty: 'plan.noPlanEntered' } as const)[this.planState()]));
-  /** Editable copy of the trainer workout in effect for the selected week. */
-  protected readonly wDraft = linkedSignal<Record<number, ExRow[]>>(() => this.toExRows(this.plans.workoutFor(this.week())));
-  /** Gym weekdays chosen for the selected week — the only days the trainer workout is entered for. */
-  protected readonly wDays = linkedSignal<number[]>(() => this.plans.gymDays(this.week()));
+  /**
+   * The stored plans of the selected week. Compared by value: any change to the app state (the dark mode, the language, a setting)
+   * copies the state, so the plan object is a new one every time even when nothing in it changed, and the editors below would be
+   * reset to it, losing what was typed and not saved.
+   */
+  private readonly storedWorkout = computed(() => this.plans.workoutFor(this.week()), { equal: sameJson });
+  private readonly storedGymDays = computed(() => this.plans.gymDays(this.week()), { equal: sameJson });
+  private readonly storedMeals = computed(() => this.plans.planFor(this.week()), { equal: sameJson });
 
-  /** Editable copy of the plan in effect for the selected week; re-synced when the week or stored plans change. */
-  protected readonly draft = linkedSignal<Record<number, Row[]>>(() => this.toRows(this.plans.planFor(this.week())));
+  /** Editable copy of the trainer workout in effect for the selected week. */
+  protected readonly wDraft = linkedSignal<Record<number, ExRow[]>>(() => this.toExRows(this.storedWorkout()));
+  /** Gym weekdays chosen for the selected week — the only days the trainer workout is entered for. */
+  protected readonly wDays = linkedSignal<number[]>(() => this.storedGymDays());
+
+  /** Editable copy of the plan in effect for the selected week; re-synced when the week or the stored plan really changes. */
+  protected readonly draft = linkedSignal<Record<number, Row[]>>(() => this.toRows(this.storedMeals()));
 
   protected dayLabel(d: number): string {
     return `${t('plan.dayN', { d })} · ${dayName(d - 1)} · ${DateU.short(DateU.add(this.week(), d - 1))}`;
@@ -287,8 +308,11 @@ export class WeekPlanPage {
     this.patch(day, i, { text: inputValue(e) });
   }
 
+  /** The foods changed. A name that was made from the foods (or is still empty) follows them; a name the user wrote stays. */
   protected setItems(day: number, i: number, items: MealItem[]): void {
-    this.patch(day, i, { items });
+    const row = this.draft()[day][i];
+    const followsFoods = !row.text.trim() || row.text === mealNameFromItems(row.items);
+    this.patch(day, i, { items, ...(followsFoods ? { text: mealNameFromItems(items) } : {}) });
   }
 
   /** Calories and macros of everything planned for a day; null while nothing with a number is planned. */
@@ -317,8 +341,8 @@ export class WeekPlanPage {
       plan[d] = this.draft()[d]
         .filter((r) => r.text.trim() || r.items.length)
         .map((r) => {
-          // A meal without a name is called after its kind; one without foods keeps a placeholder item with the name (see realItems).
-          const name = r.text.trim() || this.slotLabel(r.slot);
+          // A meal whose name was cleared is called after its foods; one without foods keeps a placeholder item with the name (see realItems).
+          const name = r.text.trim() || mealNameFromItems(r.items);
           const items = r.items.length ? r.items : [{ amt: 1, name, amtLabel: '', k: 0, p: 0, c: 0, f: 0 }];
           return { slot: r.slot, time: r.time, name, items };
         })

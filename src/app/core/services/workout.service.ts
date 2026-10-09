@@ -1,7 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { EXERCISES, PROGRAM } from '../data/program';
-import { TRAINER_EX_PREFIX } from '../data/trainer-plan';
-import { DayRecord, Exercise, HistoryEntry, Recommendation, WorkoutLog } from '../../common/interfaces';
+import { TRAINER_EX_PREFIX } from '../data/trainer-exercise';
+import { DayRecord, Exercise, HistoryEntry, Recommendation, WorkoutLog, newDay } from '../../common/interfaces';
 import { DateU, F, parseNum, rnd, toMin } from '../utils';
 import { BUSY } from '../busy-keys';
 import { DataSyncService } from './data-sync.service';
@@ -279,7 +279,7 @@ export class WorkoutService {
       BUSY.exercise(k, id),
     );
     if (missingWeight) this.toast.show(t('workoutSvc.enterWeightFirst'));
-    return saved;
+    return saved && !missingWeight;
   }
 
   /**
@@ -353,13 +353,11 @@ export class WorkoutService {
         s.history[e.id].push({ date: k, sets: e.sets });
         s.history[e.id].sort((a, b) => a.date.localeCompare(b.date));
       }
-      const d = s.days[k];
-      if (d) {
-        const log = this.ensureIn(d, k);
-        sent = this.applyDrafts(log, k);
-        log.savedAt = Date.now();
-        d.checks['workout'] = true;
-      }
+      const d = (s.days[k] ??= newDay());
+      const log = this.ensureIn(d, k);
+      sent = this.applyDrafts(log, k);
+      log.savedAt = Date.now();
+      d.checks['workout'] = true;
     }, BUSY.toggle(k, 'workout'));
     if (!saved) return 0;
     this.dropDrafts(sent);

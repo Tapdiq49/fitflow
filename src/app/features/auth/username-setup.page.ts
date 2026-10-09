@@ -7,18 +7,19 @@ import { AuthStore } from '../../core/auth/auth.store';
 import { inputValue } from '../../core/utils';
 import { TPipe } from '../../common/pipes/translate/t.pipe';
 import { AuthShellComponent } from './auth-shell.component';
+import { TextFieldComponent } from '../../shared/forms/text-field/text-field.component';
 
 /** First sign-in with Google: the account has no username yet. */
 @Component({
   selector: 'app-username-setup-page',
-  imports: [RouterLink, AuthShellComponent, TPipe],
+  imports: [TextFieldComponent, RouterLink, AuthShellComponent, TPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-auth-shell [heading]="'auth.chooseUsernameTitle' | t" [subtitle]="'auth.chooseUsernameText' | t">
       <form class="flex flex-col gap-3.5" (submit)="submit($event)" novalidate>
         <label class="field">
           {{ 'auth.username' | t }}
-          <input type="text" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" [value]="username()" (input)="username.set(inputValue($event))" />
+          <app-text-field name="username" autocomplete="username" autocapitalize="none" spellcheck="false" [value]="username()" (input)="username.set(inputValue($event))" />
           <span class="font-normal">{{ 'auth.usernameRules' | t }}</span>
         </label>
         @if (error(); as e) {

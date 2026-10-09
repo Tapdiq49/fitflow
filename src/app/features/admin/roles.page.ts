@@ -10,6 +10,7 @@ import { PermissionService } from '../../core/services/permission.service';
 import { ToastService } from '../../core/services/toast.service';
 import { inputValue } from '../../core/utils';
 import { IconComponent } from '../../shared/icon/icon.component';
+import { TextFieldComponent } from '../../shared/forms/text-field/text-field.component';
 
 const NEW = 'new';
 
@@ -20,7 +21,7 @@ const NEW = 'new';
  */
 @Component({
   selector: 'app-roles-page',
-  imports: [RequiresPermissionDirective, IconComponent, TPipe],
+  imports: [TextFieldComponent, RequiresPermissionDirective, IconComponent, TPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="card">
@@ -76,8 +77,8 @@ const NEW = 'new';
           }
 
           <div class="flex flex-col gap-3" [attr.inert]="locked() ? '' : null" [class.opacity-70]="locked()">
-            <label class="field">{{ 'roles.name' | t }}<input type="text" maxlength="60" [value]="name()" (input)="name.set(val($event))" /></label>
-            <label class="field">{{ 'roles.description' | t }}<input type="text" maxlength="200" [value]="description()" (input)="description.set(val($event))" /></label>
+            <label class="field">{{ 'roles.name' | t }}<app-text-field maxlength="60" [value]="name()" (input)="name.set(val($event))" /></label>
+            <label class="field">{{ 'roles.description' | t }}<app-text-field maxlength="200" [value]="description()" (input)="description.set(val($event))" /></label>
 
             @for (g of groups; track g.module) {
               <fieldset class="m-0 rounded-[calc(var(--r)_*_10px)] border border-border-soft p-3">

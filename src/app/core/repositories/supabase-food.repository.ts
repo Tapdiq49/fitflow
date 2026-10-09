@@ -15,8 +15,8 @@ type DbUnit = DbFood['unit'];
 
 const COLUMNS_BASE = 'id, code, names, unit, kcal, protein, carbs, fat, role, step, min_amount, max_amount';
 const COLUMNS = `${COLUMNS_BASE}, position`;
-const UNIT_TO_DB: Record<Unit, DbUnit> = { q: 'g', 'ədəd': 'piece', 'ölçü': 'scoop' };
-const UNIT_FROM_DB: Record<DbUnit, Unit> = { g: 'q', piece: 'ədəd', scoop: 'ölçü' };
+const UNIT_TO_DB: Record<Unit, DbUnit> = { q: 'g', ml: 'ml', 'ədəd': 'piece', 'x/q': 'tbsp', 'ç.q': 'tsp', 'ölçü': 'scoop' };
+const UNIT_FROM_DB: Record<DbUnit, Unit> = { g: 'q', ml: 'ml', piece: 'ədəd', tbsp: 'x/q', tsp: 'ç.q', scoop: 'ölçü' };
 
 const num = (v: number | string | null): number | null => (v === null ? null : Number(v));
 

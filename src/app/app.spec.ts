@@ -45,7 +45,7 @@ describe('App', () => {
     const [h, w, a] = Array.from(el.querySelectorAll<HTMLInputElement>('app-body-basics-dialog input'));
     const type = (i: HTMLInputElement, v: string): void => {
       i.value = v;
-      i.dispatchEvent(new Event('input'));
+      i.dispatchEvent(new Event('input', { bubbles: true }));
     };
     type(h, '20'); // out of range: stays open
     type(w, '80');
@@ -58,6 +58,7 @@ describe('App', () => {
     type(h, '178');
     Array.from(el.querySelectorAll<HTMLButtonElement>('app-body-basics-dialog button')).find((b) => b.textContent?.includes('Yadda saxla'))!.click();
     fixture.detectChanges();
+    await new Promise((resolve) => setTimeout(resolve)); // saving goes to the account first: let its promises finish
     await fixture.whenStable();
     expect(store.settings()).toMatchObject({ height: 178, startWeight: 80, age: 30, sex: 'male' });
     expect(el.querySelector('app-body-basics-dialog')).toBeNull();

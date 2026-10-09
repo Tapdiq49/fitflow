@@ -16,20 +16,22 @@ import { TrainerPlanService } from '../../core/services/trainer-plan.service';
 import { DEFAULT_SETTINGS, SETTINGS_RANGE, StoreService } from '../../core/services/store.service';
 import { ToastService } from '../../core/services/toast.service';
 import { UiService } from '../../core/services/ui.service';
-import { DateU, F, inputValue, parseNum } from '../../core/utils';
+import { DateU, F, inputValue, parseNum, sameJson } from '../../core/utils';
 import { IconComponent } from '../../shared/icon/icon.component';
-import { DatePickerComponent } from '../../shared/forms/date-picker.component';
-import { SelectComponent, SelectOption } from '../../shared/forms/select.component';
-import { TimePickerComponent } from '../../shared/forms/time-picker.component';
+import { DatePickerComponent } from '../../shared/forms/date-picker/date-picker.component';
+import { SelectFieldComponent, SelectOption } from '../../shared/forms/select-field/select-field.component';
+import { TimePickerComponent } from '../../shared/forms/time-picker/time-picker.component';
 import { TPipe } from '../../common/pipes/translate/t.pipe';
 import { t } from '../../core/i18n/translate';
+import { TextFieldComponent } from '../../shared/forms/text-field/text-field.component';
+import { NumberFieldComponent } from '../../shared/forms/number-field/number-field.component';
 
 type NumField = 'height' | 'startWeight' | 'age' | 'kcalTarget' | 'proteinTarget' | 'restHeavySec' | 'restLightSec';
 type OptionField = 'mealsPerDay' | 'menuMode' | 'workoutMode' | 'theme' | 'goal' | 'targetMode';
 
 @Component({
   selector: 'app-settings-page',
-  imports: [RouterLink, IconComponent, DatePickerComponent, SelectComponent, TimePickerComponent, RequiresPermissionDirective, TPipe],
+  imports: [TextFieldComponent, NumberFieldComponent, RouterLink, IconComponent, DatePickerComponent, SelectFieldComponent, TimePickerComponent, RequiresPermissionDirective, TPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="flex flex-col gap-[18px]">
@@ -56,16 +58,16 @@ type OptionField = 'mealsPerDay' | 'menuMode' | 'workoutMode' | 'theme' | 'goal'
       <div class="card" appRequires="settings.edit">
         <div class="card-head"><h3><app-icon name="settings" /> {{ 'settings.profileAndTargets' | t }}</h3></div>
         <div class="grid grid-cols-4 items-start gap-3 tablet:grid-cols-2 phone:grid-cols-1 [&_[role=combobox]]:h-[2.625rem] [&_input]:h-[2.625rem]">
-          <label class="field">{{ 'settings.heightCm' | t }}<input type="text" inputmode="numeric" [value]="form().height ?? ''" [attr.aria-invalid]="errors().height ? 'true' : null" (input)="setNum('height', $event)" />@if (errors().height; as e) { <small class="text-bad">{{ e }}</small> }</label>
-          <label class="field">{{ 'settings.startingWeightKg' | t }}<input type="text" inputmode="decimal" [value]="form().startWeight ?? ''" [attr.aria-invalid]="errors().startWeight ? 'true' : null" (input)="setNum('startWeight', $event)" />@if (errors().startWeight; as e) { <small class="text-bad">{{ e }}</small> }</label>
+          <label class="field">{{ 'settings.heightCm' | t }}<app-number-field [value]="form().height ?? ''" [invalid]="!!errors().height" (input)="setNum('height', $event)" />@if (errors().height; as e) { <small class="text-bad">{{ e }}</small> }</label>
+          <label class="field">{{ 'settings.startingWeightKg' | t }}<app-number-field decimal [value]="form().startWeight ?? ''" [invalid]="!!errors().startWeight" (input)="setNum('startWeight', $event)" />@if (errors().startWeight; as e) { <small class="text-bad">{{ e }}</small> }</label>
           @if (latestLog(); as log) {
             <div class="field">
               {{ 'settings.currentWeightKg' | t }}
-              <input type="text" [value]="log.kg" disabled [attr.aria-label]="'settings.currentWeightKg' | t" />
+              <app-text-field [value]="log.kg" disabled [label]="'settings.currentWeightKg' | t" />
               <small class="text-muted">{{ 'settings.currentWeightHint' | t: { date: F.short(log.date) } }} <a routerLink="/body">{{ 'nav.body' | t }}</a></small>
             </div>
           }
-          <label class="field">{{ 'settings.age' | t }}<input type="text" inputmode="numeric" [value]="form().age ?? ''" [attr.aria-invalid]="errors().age ? 'true' : null" (input)="setNum('age', $event)" />@if (errors().age; as e) { <small class="text-bad">{{ e }}</small> }</label>
+          <label class="field">{{ 'settings.age' | t }}<app-number-field [value]="form().age ?? ''" [invalid]="!!errors().age" (input)="setNum('age', $event)" />@if (errors().age; as e) { <small class="text-bad">{{ e }}</small> }</label>
           <div class="field" role="radiogroup" [attr.aria-label]="'settings.sex' | t">
             {{ 'settings.sex' | t }}
             <div class="flex gap-2">
@@ -77,35 +79,35 @@ type OptionField = 'mealsPerDay' | 'menuMode' | 'workoutMode' | 'theme' | 'goal'
           </div>
           <div class="field">
             {{ 'settings.goal' | t }}
-            <app-select [label]="'settings.goal' | t" [options]="goalOptions()" [value]="form().goal" (valueChange)="setOption('goal', $event)" />
+            <app-select-field [label]="'settings.goal' | t" [options]="goalOptions()" [value]="form().goal" (valueChange)="setOption('goal', $event)" />
           </div>
           <div class="field">
             {{ 'settings.targetMode' | t }}
-            <app-select [label]="'settings.targetMode' | t" [options]="targetModes()" [value]="form().targetMode" (valueChange)="setOption('targetMode', $event)" />
+            <app-select-field [label]="'settings.targetMode' | t" [options]="targetModes()" [value]="form().targetMode" (valueChange)="setOption('targetMode', $event)" />
           </div>
-          <label class="field">{{ 'settings.calorieTargetKcal' | t }}<input type="text" inputmode="numeric" [placeholder]="std.kcalTarget" [disabled]="targetAuto()" [value]="targetAuto() ? suggestion()!.kcal : form().kcalTarget" [attr.aria-invalid]="errors().kcalTarget ? 'true' : null" (input)="setNum('kcalTarget', $event)" />@if (errors().kcalTarget; as e) { <small class="text-bad">{{ e }}</small> }</label>
-          <label class="field">{{ 'settings.proteinTargetG' | t }}<input type="text" inputmode="numeric" [placeholder]="std.proteinTarget" [disabled]="targetAuto()" [value]="targetAuto() ? suggestion()!.protein : form().proteinTarget" [attr.aria-invalid]="errors().proteinTarget ? 'true' : null" (input)="setNum('proteinTarget', $event)" />@if (errors().proteinTarget; as e) { <small class="text-bad">{{ e }}</small> }</label>
+          <label class="field">{{ 'settings.calorieTargetKcal' | t }}<app-number-field [placeholder]="std.kcalTarget" [disabled]="targetAuto()" [value]="targetAuto() ? suggestion()!.kcal : form().kcalTarget" [invalid]="!!errors().kcalTarget" (input)="setNum('kcalTarget', $event)" />@if (errors().kcalTarget; as e) { <small class="text-bad">{{ e }}</small> }</label>
+          <label class="field">{{ 'settings.proteinTargetG' | t }}<app-number-field [placeholder]="std.proteinTarget" [disabled]="targetAuto()" [value]="targetAuto() ? suggestion()!.protein : form().proteinTarget" [invalid]="!!errors().proteinTarget" (input)="setNum('proteinTarget', $event)" />@if (errors().proteinTarget; as e) { <small class="text-bad">{{ e }}</small> }</label>
           <div class="field">
             {{ 'settings.mealsPerDay' | t }}
             <!-- One select for both modes: swapping two selects in an @if destroys a half-loaded popup (NG0950). -->
-            <app-select [label]="'settings.mealsPerDay' | t" [options]="trainerMode() ? planCounts : mealCounts" [value]="trainerMode() ? planMeals().hi : form().mealsPerDay" [disabled]="trainerMode()" (valueChange)="setOption('mealsPerDay', $event)" />
+            <app-select-field [label]="'settings.mealsPerDay' | t" [options]="trainerMode() ? planCounts : mealCounts" [value]="trainerMode() ? planMeals().hi : form().mealsPerDay" [disabled]="trainerMode()" (valueChange)="setOption('mealsPerDay', $event)" />
             @if (trainerMode()) {
               <small class="text-muted">@if (planMeals().lo !== planMeals().hi) { {{ 'settings.mealsVary' | t: { a: planMeals().lo + '–' + planMeals().hi } }} }{{ 'settings.mealsFromTrainerPlan' | t }} <a routerLink="/plan">{{ 'nav.weeklyPlan' | t }}</a></small>
             }
           </div>
           <div class="field">
             {{ 'settings.menuMode' | t }}
-            <app-select [label]="'settings.menuMode' | t" [options]="menuModes()" [disabled]="!!safetyIssue()" [value]="safetyIssue() ? 'trainer' : form().menuMode" (valueChange)="setOption('menuMode', $event)" />
+            <app-select-field [label]="'settings.menuMode' | t" [options]="menuModes()" [disabled]="!!safetyIssue()" [value]="safetyIssue() ? 'trainer' : form().menuMode" (valueChange)="setOption('menuMode', $event)" />
           </div>
           <div class="field">
             {{ 'settings.workoutMode' | t }}
-            <app-select [label]="'settings.workoutMode' | t" [options]="workoutModes()" [disabled]="!!safetyIssue()" [value]="safetyIssue() ? 'trainer' : form().workoutMode" (valueChange)="setOption('workoutMode', $event)" />
+            <app-select-field [label]="'settings.workoutMode' | t" [options]="workoutModes()" [disabled]="!!safetyIssue()" [value]="safetyIssue() ? 'trainer' : form().workoutMode" (valueChange)="setOption('workoutMode', $event)" />
           </div>
-          <label class="field">{{ 'settings.restHeavySec' | t }}<input type="text" inputmode="numeric" [placeholder]="std.restHeavySec" [value]="form().restHeavySec" [attr.aria-invalid]="errors().restHeavySec ? 'true' : null" (input)="setNum('restHeavySec', $event)" />@if (errors().restHeavySec; as e) { <small class="text-bad">{{ e }}</small> }</label>
-          <label class="field">{{ 'settings.restLightSec' | t }}<input type="text" inputmode="numeric" [placeholder]="std.restLightSec" [value]="form().restLightSec" [attr.aria-invalid]="errors().restLightSec ? 'true' : null" (input)="setNum('restLightSec', $event)" />@if (errors().restLightSec; as e) { <small class="text-bad">{{ e }}</small> }</label>
+          <label class="field">{{ 'settings.restHeavySec' | t }}<app-number-field [placeholder]="std.restHeavySec" [value]="form().restHeavySec" [invalid]="!!errors().restHeavySec" (input)="setNum('restHeavySec', $event)" />@if (errors().restHeavySec; as e) { <small class="text-bad">{{ e }}</small> }</label>
+          <label class="field">{{ 'settings.restLightSec' | t }}<app-number-field [placeholder]="std.restLightSec" [value]="form().restLightSec" [invalid]="!!errors().restLightSec" (input)="setNum('restLightSec', $event)" />@if (errors().restLightSec; as e) { <small class="text-bad">{{ e }}</small> }</label>
           <div class="field">
             {{ 'settings.appearance' | t }}
-            <app-select [label]="'settings.appearance' | t" [options]="themes()" [value]="form().theme" (valueChange)="setOption('theme', $event)" />
+            <app-select-field [label]="'settings.appearance' | t" [options]="themes()" [value]="form().theme" (valueChange)="setOption('theme', $event)" />
           </div>
           <div class="field">{{ 'settings.workoutTime' | t }}<app-time-picker [label]="'settings.workoutTime' | t" [value]="form().workoutTime" (valueChange)="setTime('workoutTime', $event)" /></div>
           <div class="field">{{ 'settings.wakeUpTime' | t }}<app-time-picker [label]="'settings.wakeUpTime' | t" [value]="form().wakeTime" (valueChange)="setTime('wakeTime', $event)" /></div>
@@ -202,7 +204,17 @@ export class SettingsPage {
   /** A trainer-plan day has 0 to 7 meals. */
   protected readonly planCounts: SelectOption<number>[] = [0, 1, 2, 3, 4, 5, 6, 7].map((n) => ({ value: n, label: String(n) }));
   /** Editable draft, re-synced whenever the stored settings change. */
-  protected readonly form = linkedSignal<Settings>(() => ({ ...this.store.settings() }));
+  protected readonly form = linkedSignal<Settings, Settings>({
+    source: () => this.store.settings(),
+    // Only a setting that changed in the store (the dark mode from the gear panel, the language, ...) replaces its value in the draft;
+    // what the user typed into the other fields and has not saved yet stays.
+    computation: (now, previous) => {
+      if (!previous) return { ...now };
+      const next: Record<string, unknown> = { ...previous.value };
+      for (const key of Object.keys(now) as (keyof Settings)[]) if (!sameJson(now[key], previous.source[key])) next[key] = now[key];
+      return next as unknown as Settings;
+    },
+  });
 
   /** Two buttons instead of a dropdown: a person whose sex is not entered yet has no option to show as selected. */
   protected readonly sexes: { value: Sex; label: string }[] = [

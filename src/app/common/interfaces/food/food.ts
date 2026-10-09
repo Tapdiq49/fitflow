@@ -1,7 +1,8 @@
 import type { Lang } from '../settings/settings';
 import type { AppState } from '../state/app-state';
 
-export type Unit = 'q' | 'ədəd' | 'ölçü';
+/** Grams and millilitres (the numbers of a food are per 100), pieces, tablespoons (x/q), teaspoons (ç.q) and scoops (per one). */
+export type Unit = 'q' | 'ml' | 'ədəd' | 'x/q' | 'ç.q' | 'ölçü';
 
 export type FoodRole = 'protein' | 'carb' | 'fat' | 'fruit' | 'veg' | 'dairy' | 'supp';
 

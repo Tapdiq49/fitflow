@@ -1,10 +1,10 @@
 import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { SelectComponent, SelectOption } from './select.component';
+import { SelectFieldComponent, SelectOption } from './select-field.component';
 
 @Component({
-  imports: [SelectComponent],
-  template: `<app-select label="Theme" [options]="options" [(value)]="value" />`,
+  imports: [SelectFieldComponent],
+  template: `<app-select-field label="Theme" [options]="options" [(value)]="value" />`,
 })
 class Host {
   readonly options: SelectOption<string>[] = [
@@ -15,7 +15,7 @@ class Host {
   readonly value = signal('light');
 }
 
-describe('SelectComponent', () => {
+describe('SelectFieldComponent', () => {
   let fixture: ComponentFixture<Host>;
   const trigger = (): HTMLElement => fixture.nativeElement.querySelector('[role=combobox]');
   const options = (): HTMLElement[] => Array.from(document.querySelectorAll<HTMLElement>('[role=option]'));

@@ -18,8 +18,8 @@ import { StoreService } from './core/services/store.service';
 import { GuestNoticeComponent } from './features/auth/guest-notice.component';
 import { UserMenuComponent } from './features/auth/user-menu.component';
 import { DisplaySettingsComponent } from './features/appearance/display-settings.component';
-import { SelectComponent } from './shared/forms/select.component';
-import type { SelectOption } from './shared/forms/select.component';
+import { SelectFieldComponent } from './shared/forms/select-field/select-field.component';
+import type { SelectOption } from './shared/forms/select-field/select-field.component';
 import { IconComponent } from './shared/icon/icon.component';
 import { OverlaysComponent } from './shared/overlays/overlays.component';
 import { TPipe } from './common/pipes/translate/t.pipe';
@@ -27,7 +27,7 @@ import { t } from './core/i18n/translate';
 
 @Component({
   selector: 'app-root',
-  imports: [NgTemplateOutlet, RouterOutlet, RouterLink, RouterLinkActive, IconComponent, SelectComponent, OverlaysComponent, AddMealDialog, DayDetailDialog, BodyBasicsDialog, GuestNoticeComponent, UserMenuComponent, DisplaySettingsComponent, TPipe],
+  imports: [NgTemplateOutlet, RouterOutlet, RouterLink, RouterLinkActive, IconComponent, SelectFieldComponent, OverlaysComponent, AddMealDialog, DayDetailDialog, BodyBasicsDialog, GuestNoticeComponent, UserMenuComponent, DisplaySettingsComponent, TPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <!-- On /auth pages the shell is only hidden, never removed: destroying the half-loaded deferred language select throws. -->
@@ -89,7 +89,7 @@ import { t } from './core/i18n/translate';
             <button class="btn btn-sm" (click)="ui.goToday()">{{ 'app.today' | t }}</button>
             <!-- Deferred: the dropdown (Aria + CDK overlay) stays out of the initial bundle. -->
             @defer (on idle) {
-              <app-select class="w-[4.875rem] [&_[role=combobox]]:h-9 [&_[role=combobox]]:text-[0.8125rem] [&_[role=combobox]]:font-semibold" [label]="'app.language' | t" [options]="langOptions" [value]="i18n.lang()" (valueChange)="i18n.setLang($event)" />
+              <app-select-field class="w-[4.875rem] [&_[role=combobox]]:h-9 [&_[role=combobox]]:text-[0.8125rem] [&_[role=combobox]]:font-semibold" [label]="'app.language' | t" [options]="langOptions" [value]="i18n.lang()" (valueChange)="i18n.setLang($event)" />
             } @placeholder {
               <span class="grid h-9 w-[4.875rem] place-items-center rounded-[calc(var(--r)_*_9px)] border border-border text-[0.8125rem] font-semibold">{{ i18n.lang().toUpperCase() }}</span>
             }

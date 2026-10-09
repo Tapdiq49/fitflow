@@ -8,10 +8,11 @@ import { inputValue } from '../../core/utils';
 import { TPipe } from '../../common/pipes/translate/t.pipe';
 import { AuthShellComponent } from './auth-shell.component';
 import { OAuthButtonsComponent } from './oauth-buttons.component';
+import { TextFieldComponent } from '../../shared/forms/text-field/text-field.component';
 
 @Component({
   selector: 'app-sign-up-page',
-  imports: [RouterLink, AuthShellComponent, OAuthButtonsComponent, TPipe],
+  imports: [TextFieldComponent, RouterLink, AuthShellComponent, OAuthButtonsComponent, TPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (sentTo(); as address) {
@@ -23,16 +24,16 @@ import { OAuthButtonsComponent } from './oauth-buttons.component';
         <form class="flex flex-col gap-3.5" (submit)="submit($event)" novalidate>
           <label class="field">
             {{ 'auth.email' | t }} *
-            <input type="email" name="email" autocomplete="email" autocapitalize="none" spellcheck="false" [value]="email()" (input)="email.set(inputValue($event))" />
+            <app-text-field type="email" name="email" autocomplete="email" autocapitalize="none" spellcheck="false" [value]="email()" (input)="email.set(inputValue($event))" />
           </label>
           <label class="field">
             {{ 'auth.password' | t }} *
-            <input type="password" name="new-password" autocomplete="new-password" [value]="password()" (input)="password.set(inputValue($event))" />
+            <app-text-field type="password" name="new-password" autocomplete="new-password" [value]="password()" (input)="password.set(inputValue($event))" />
             <span class="font-normal">{{ 'auth.passwordRules' | t }}</span>
           </label>
           <label class="field">
             {{ 'auth.username' | t }} *
-            <input type="text" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" [value]="username()" (input)="username.set(inputValue($event))" (blur)="checkUsername()" />
+            <app-text-field name="username" autocomplete="username" autocapitalize="none" spellcheck="false" [value]="username()" (input)="username.set(inputValue($event))" (focusout)="checkUsername()" />
             <span class="font-normal">{{ 'auth.usernameRules' | t }}</span>
           </label>
           <fieldset class="m-0 flex flex-col gap-1.5 border-0 p-0">

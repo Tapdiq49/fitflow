@@ -5,7 +5,7 @@ import { RequiresPermissionDirective } from '../../common/directives/requires-pe
 import { TPipe } from '../../common/pipes/translate/t.pipe';
 import { t } from '../../core/i18n/translate';
 import { ThemeService } from '../../core/services/theme.service';
-import { POPUP_PANEL } from '../../shared/forms/popup';
+import { POPUP_PANEL } from '../../shared/forms/popup/popup';
 import { IconComponent } from '../../shared/icon/icon.component';
 
 /** Below the button, end edges aligned (the button sits at the end of the header). */

@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { menuTotals } from '../nutrition';
 import { DateU } from '../utils';
+import { SettingsService } from './settings.service';
 import { StoreService } from './store.service';
 import { DayService } from './day.service';
 import { TrainerPlanService } from './trainer-plan.service';
@@ -208,14 +209,15 @@ describe('MenuService, trainer mode', () => {
     expect(store.peek(past)?.menu?.map((m) => m.name)).toEqual(before);
   });
 
-  it('keeps past days on the settings they were lived under', () => {
+  it('keeps past days on the settings they were lived under', async () => {
     const past = '2026-01-05';
     const future = DateU.monday(DateU.add(DateU.today(), 14));
     day.ensureDay(past);
     day.ensureDay(future);
     const at = (k: string) => day.timeline(k).find((i) => i.id === 'workout')?.time;
     expect(at(past)).toBe('18:00');
-    store.updateSettings({ ...store.settings(), workoutTime: '21:00', showCreatine: false });
+    // SettingsService freezes the past days with the old times before the new ones apply
+    expect(await TestBed.inject(SettingsService).save({ ...store.settings(), workoutTime: '21:00', showCreatine: false })).toBe(true);
     expect(at(past)).toBe('18:00');
     expect(day.timeline(past).some((i) => i.id === 'creatine')).toBe(true);
     expect(at(future)).toBe('21:00');

@@ -4,7 +4,7 @@ import { NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { lineChart, lineSeries, ACCENT } from '../../core/charts';
 import { EXERCISES, HEAVY_LIFTS, PROGRAM, SAFETY } from '../../core/data/program';
-import { TRAINER_EX_PREFIX } from '../../core/data/trainer-plan';
+import { TRAINER_EX_PREFIX } from '../../core/data/trainer-exercise';
 import { Variant } from '../../common/interfaces';
 import { ProgramService } from '../../core/services/program.service';
 import { RestTimerService } from '../../core/services/rest-timer.service';
@@ -18,14 +18,15 @@ import { ConfirmService } from '../../core/services/confirm.service';
 import { IconComponent } from '../../shared/icon/icon.component';
 import { BusyDirective } from '../../common/directives/busy/busy.directive';
 import { BUSY } from '../../core/busy-keys';
-import { SelectComponent, SelectOption } from '../../shared/forms/select.component';
-import { TimePickerComponent } from '../../shared/forms/time-picker.component';
+import { SelectFieldComponent, SelectOption } from '../../shared/forms/select-field/select-field.component';
+import { TimePickerComponent } from '../../shared/forms/time-picker/time-picker.component';
 import { TPipe, TdPipe } from '../../common/pipes/translate/t.pipe';
 import { t } from '../../core/i18n/translate';
+import { NumberFieldComponent } from '../../shared/forms/number-field/number-field.component';
 
 @Component({
   selector: 'app-workout-page',
-  imports: [BusyDirective, IconComponent, SelectComponent, TimePickerComponent, ChartComponent, CardioCardComponent, NgTemplateOutlet, RouterLink, RequiresPermissionDirective, TPipe, TdPipe],
+  imports: [NumberFieldComponent, BusyDirective, IconComponent, SelectFieldComponent, TimePickerComponent, ChartComponent, CardioCardComponent, NgTemplateOutlet, RouterLink, RequiresPermissionDirective, TPipe, TdPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="flex flex-col gap-[18px]">
@@ -146,7 +147,7 @@ import { t } from '../../core/i18n/translate';
         <div class="card-head">
           <h3><app-icon name="trend" /> {{ 'workout.progressChart' | t }}</h3>
           @if (historyIds().length) {
-            <app-select class="w-[13.75rem] max-w-full" [label]="'workout.progressChart' | t" [options]="chartOptions()" [value]="chartId()!" (valueChange)="selectedChart.set($event)" />
+            <app-select-field class="w-[13.75rem] max-w-full" [label]="'workout.progressChart' | t" [options]="chartOptions()" [value]="chartId()!" (valueChange)="selectedChart.set($event)" />
           }
         </div>
         @if (historyIds().length) {
@@ -232,11 +233,11 @@ import { t } from '../../core/i18n/translate';
                       <td class="w-[2.125rem] font-bold text-muted">{{ i + 1 }}</td>
                       @if (!c.timed) {
                         <td>
-                          <input class="w-full text-center font-semibold" type="text" inputmode="decimal" [value]="workout.fieldValue(k(), c.id, i, 'w', s.w)" [placeholder]="'common.kg' | t" (input)="workout.setDraft(k(), c.id, i, 'w', val($event))" />
+                          <app-number-field class="w-full" inputClass="text-center font-semibold" decimal [value]="workout.fieldValue(k(), c.id, i, 'w', s.w)" [placeholder]="'common.kg' | t" (input)="workout.setDraft(k(), c.id, i, 'w', val($event))" />
                         </td>
                       }
                       <td>
-                        <input class="w-full text-center font-semibold" type="text" inputmode="numeric" [value]="workout.fieldValue(k(), c.id, i, 'r', s.r)" [placeholder]="c.ex.min + '–' + c.ex.max" (input)="workout.setDraft(k(), c.id, i, 'r', val($event))" />
+                        <app-number-field class="w-full" inputClass="text-center font-semibold" [value]="workout.fieldValue(k(), c.id, i, 'r', s.r)" [placeholder]="c.ex.min + '–' + c.ex.max" (input)="workout.setDraft(k(), c.id, i, 'r', val($event))" />
                       </td>
                       <td class="w-10">
                         <button class="check" role="checkbox" [attr.aria-checked]="s.done" [class.check-on]="s.done" [appBusy]="BUSY.set(k(), c.id, i)" (click)="toggleSet(c.id, i)" [attr.aria-label]="'workout.setCompleted' | t"><app-icon name="check" /></button>

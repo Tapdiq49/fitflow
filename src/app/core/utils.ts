@@ -132,6 +132,9 @@ export const nowHM = (): string => {
   return fromMin(d.getHours() * 60 + d.getMinutes());
 };
 /** Parses user input, accepting a comma as decimal separator. Returns NaN when invalid. */
+/** Same value, whatever the object identity. `StoreService` copies its whole state on every change, so objects read from it are new each time. */
+export const sameJson = (a: unknown, b: unknown): boolean => JSON.stringify(a) === JSON.stringify(b);
+
 export const parseNum = (v: string | number | null | undefined): number => {
   const n = parseFloat(String(v ?? '').replace(',', '.'));
   return Number.isFinite(n) ? n : NaN;

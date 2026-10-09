@@ -8,14 +8,15 @@ import { F, inputValue, parseNum } from '../../core/utils';
 import { IconComponent } from '../../shared/icon/icon.component';
 import { BusyDirective } from '../../common/directives/busy/busy.directive';
 import { BUSY } from '../../core/busy-keys';
-import { TimePickerComponent } from '../../shared/forms/time-picker.component';
+import { TimePickerComponent } from '../../shared/forms/time-picker/time-picker.component';
 import { TPipe } from '../../common/pipes/translate/t.pipe';
 import { t } from '../../core/i18n/translate';
+import { NumberFieldComponent } from '../../shared/forms/number-field/number-field.component';
 
 /** The four headline cards: Calories, Protein, Water, Sleep. */
 @Component({
   selector: 'app-stat-cards',
-  imports: [BusyDirective, IconComponent, TimePickerComponent, TPipe],
+  imports: [NumberFieldComponent, BusyDirective, IconComponent, TimePickerComponent, TPipe],
   host: { class: 'grid grid-cols-4 gap-4 laptop:grid-cols-2 phone:gap-2.5' },
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -46,16 +47,7 @@ import { t } from '../../core/i18n/translate';
         }
       </div>
       <div class="grid grid-cols-[1fr_auto] gap-1.5">
-        <input
-          type="text"
-          inputmode="numeric"
-          class="min-w-0 text-center"
-          [value]="customMl()"
-          (input)="customMl.set(val($event))"
-          (keydown.enter)="addCustomWater()"
-          [placeholder]="'dash.otherAmountMl' | t"
-          [attr.aria-label]="'dash.otherAmountMl' | t"
-        />
+        <app-number-field class="min-w-0" inputClass="text-center" [value]="customMl()" (input)="customMl.set(val($event))" (keydown.enter)="addCustomWater()" [placeholder]="'dash.otherAmountMl' | t" [label]="'dash.otherAmountMl' | t" />
         <button class="btn btn-sm" [disabled]="!customMl().trim()" [appBusy]="BUSY.water(k(), 'custom')" (click)="addCustomWater()" [attr.aria-label]="'dash.addWater' | t"><app-icon name="plus" size="sm" /></button>
       </div>
       <button class="btn btn-ghost btn-sm" [disabled]="!canUndo()" [appBusy]="BUSY.water(k(), 'undo')" (click)="day.undoWater(k())">{{ 'dash.undoLast' | t }}</button>

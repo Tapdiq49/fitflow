@@ -9,10 +9,11 @@ import { IconComponent } from '../../shared/icon/icon.component';
 import { BusyDirective } from '../../common/directives/busy/busy.directive';
 import { BUSY } from '../../core/busy-keys';
 import { TPipe } from '../../common/pipes/translate/t.pipe';
+import { NumberFieldComponent } from '../../shared/forms/number-field/number-field.component';
 
 @Component({
   selector: 'app-cardio-card',
-  imports: [BusyDirective, IconComponent, TPipe],
+  imports: [NumberFieldComponent, BusyDirective, IconComponent, TPipe],
   host: { class: 'card' },
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -37,13 +38,7 @@ import { TPipe } from '../../common/pipes/translate/t.pipe';
         <div class="flex flex-wrap items-center gap-2" style="margin-top: 12px">
           <label class="field" style="flex: 1" [appBusy]="BUSY.cardio(k())">
             {{ 'common.minutes' | t }}
-            <input
-              type="text"
-              inputmode="numeric"
-              [value]="cardio().minutes"
-              [placeholder]="cardio().type === 'jog' ? '20–25' : '20–30'"
-              (change)="day.setCardio(k(), { minutes: val($event) })"
-            />
+            <app-number-field [value]="cardio().minutes" [placeholder]="cardio().type === 'jog' ? '20–25' : '20–30'" (change)="day.setCardio(k(), { minutes: val($event) })" />
           </label>
           <button class="btn" [class.btn-done]="cardio().done" [class.btn-primary]="!cardio().done" style="align-self: flex-end" [appBusy]="BUSY.toggle(k(), 'cardio')" (click)="day.toggleCardio(k())">
             <app-icon name="check" size="sm" />{{ cardio().done ? ('dash.done' | t) : ('dash.completeCardio' | t) }}

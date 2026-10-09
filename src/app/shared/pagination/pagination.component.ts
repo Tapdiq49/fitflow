@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { PAGE_SIZES, lastPageOf } from '../../core/paging';
 import { t } from '../../core/i18n/translate';
-import { SelectComponent, SelectOption } from '../forms/select.component';
+import { SelectFieldComponent, SelectOption } from '../forms/select-field/select-field.component';
 import { IconComponent } from '../icon/icon.component';
 import { TPipe } from '../../common/pipes/translate/t.pipe';
 
@@ -15,13 +15,13 @@ import { TPipe } from '../../common/pipes/translate/t.pipe';
  */
 @Component({
   selector: 'app-pagination',
-  imports: [SelectComponent, IconComponent, TPipe],
+  imports: [SelectFieldComponent, IconComponent, TPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="mt-3 flex flex-wrap items-center justify-between gap-3 text-[0.8125rem]">
       <label class="flex items-center gap-2 text-muted">
         {{ 'pagination.perPage' | t }}
-        <app-select class="w-[5.5rem] [&_[role=combobox]]:h-9" [label]="'pagination.perPage' | t" [options]="sizeOptions()" [value]="pageSize()" (valueChange)="pageSizeChange.emit($event)" />
+        <app-select-field class="w-[5.5rem] [&_[role=combobox]]:h-9" [label]="'pagination.perPage' | t" [options]="sizeOptions()" [value]="pageSize()" (valueChange)="pageSizeChange.emit($event)" />
       </label>
       <span class="text-muted">{{ range() }}</span>
       <div class="flex items-center gap-1.5">

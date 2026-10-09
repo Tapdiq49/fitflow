@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { DateU } from '../../core/utils';
+import { AuthStore } from '../../core/auth/auth.store';
 import { StoreService } from '../../core/services/store.service';
 import { TrainerPlanService } from '../../core/services/trainer-plan.service';
 import { WeekPlanPage } from './week-plan.page';
@@ -11,6 +12,7 @@ describe('WeekPlanPage tabs and gym days', () => {
   const render = async (): Promise<void> => {
     fixture.detectChanges();
     await fixture.whenStable();
+    await new Promise((resolve) => setTimeout(resolve)); // saving goes to the account first: let its promises finish
     fixture.detectChanges();
   };
 
@@ -19,6 +21,7 @@ describe('WeekPlanPage tabs and gym days', () => {
   beforeEach(async () => {
     localStorage.clear();
     TestBed.configureTestingModule({ providers: [provideRouter([])] });
+    await TestBed.inject(AuthStore).init(); // a guest: until the session is checked, nothing is saved to an account
     fixture = TestBed.createComponent(WeekPlanPage);
     await render();
   });
@@ -39,11 +42,11 @@ describe('WeekPlanPage tabs and gym days', () => {
     expect(q('.alert-info')[0].textContent).toContain('boyunu');
     const [h, w, a] = q<HTMLInputElement>('.alert-info input');
     h.value = '180';
-    h.dispatchEvent(new Event('input'));
+    h.dispatchEvent(new Event('input', { bubbles: true }));
     w.value = '85';
-    w.dispatchEvent(new Event('input'));
+    w.dispatchEvent(new Event('input', { bubbles: true }));
     a.value = '35';
-    a.dispatchEvent(new Event('input'));
+    a.dispatchEvent(new Event('input', { bubbles: true }));
     q<HTMLButtonElement>('.alert-info [role=radio]')[1].click(); // female
     q<HTMLButtonElement>('.alert-info button').find((b) => b.textContent?.includes('Yadda saxla'))!.click();
     await render();
@@ -59,7 +62,7 @@ describe('WeekPlanPage tabs and gym days', () => {
 
   it('adds a meal to a day and removes another, then saves the new number of meals', async () => {
     const first = (): HTMLElement => q('.card')[1]; // Monday
-    const rows = (): number => first().querySelectorAll('input[type=text]').length;
+    const rows = (): number => first().querySelectorAll('app-text-field[class*="col-span-3"] input').length; // the name field of each meal (the foods have inputs of their own)
     expect(rows()).toBe(0); // a new user starts with an empty plan
     expect(first().textContent).toContain('Təklif'); // and the built-in plan is only offered
 
@@ -73,10 +76,24 @@ describe('WeekPlanPage tabs and gym days', () => {
     await render();
     expect(rows()).toBe(6);
 
-    first().querySelector<HTMLButtonElement>('button[aria-label^="Sil"]')!.click();
+    first().querySelector<HTMLButtonElement>('button[aria-label^="Sil:"]')!.click(); // the delete button of a meal (a food's has no colon)
     await render();
     expect(rows()).toBe(5);
     expect(Array.from(first().querySelectorAll('button')).some((b) => b.textContent?.includes('Səhər yeməyi'))).toBe(true); // the removed meal can be added back
+  });
+
+  it('keeps what was typed and not saved when an unrelated setting changes (dark mode, language)', async () => {
+    const first = (): HTMLElement => q('.card')[1];
+    Array.from(first().querySelectorAll<HTMLButtonElement>('button')).find((b) => b.textContent?.includes('Təklifi əlavə et'))!.click();
+    await render();
+    const name = (): HTMLInputElement => first().querySelector<HTMLInputElement>('app-text-field[class*="col-span-3"] input')!;
+    name().value = 'Mənim səhərim';
+    name().dispatchEvent(new Event('input', { bubbles: true }));
+    await render();
+
+    TestBed.inject(StoreService).mutate((s) => (s.settings.theme = 'dark')); // copies the whole state
+    await render();
+    expect(name().value).toBe('Mənim səhərim');
   });
 
   it('picks gym days with the multi-select listbox and saves them', async () => {
@@ -91,6 +108,7 @@ describe('WeekPlanPage tabs and gym days', () => {
     expect(days.map((d) => d.getAttribute('aria-selected') === 'true')).toEqual([true, false, false, false, true, true, false]);
 
     q<HTMLButtonElement>('button.btn-primary').find((b) => b.textContent?.includes('Məşq planını'))!.click();
+    await render(); // saving goes to the account first (also as a guest)
     expect(TestBed.inject(TrainerPlanService).gymDays(DateU.monday(DateU.today()))).toEqual([1, 5, 6]);
     expect(TestBed.inject(StoreService).state().workoutPlans).not.toEqual({});
   });

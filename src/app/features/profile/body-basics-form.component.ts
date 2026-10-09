@@ -6,6 +6,7 @@ import { StoreService } from '../../core/services/store.service';
 import { parseNum } from '../../core/utils';
 import { IconComponent } from '../../shared/icon/icon.component';
 import { TPipe } from '../../common/pipes/translate/t.pipe';
+import { NumberFieldComponent } from '../../shared/forms/number-field/number-field.component';
 
 /**
  * Height, starting weight, age and sex with a save button; used by the sign-in dialog and in place of the numbers that depend on them.
@@ -14,13 +15,13 @@ import { TPipe } from '../../common/pipes/translate/t.pipe';
  */
 @Component({
   selector: 'app-body-basics-form',
-  imports: [IconComponent, TPipe],
+  imports: [NumberFieldComponent, IconComponent, TPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] items-end gap-3 [&_input]:h-[2.625rem]">
-      <label class="field">{{ 'settings.heightCm' | t }}<input #h type="text" inputmode="numeric" [value]="known.height ?? ''" (keydown.enter)="save(h.value, w.value, a.value)" /></label>
-      <label class="field">{{ 'common.weightKg' | t }}<input #w type="text" inputmode="decimal" [value]="known.startWeight ?? ''" (keydown.enter)="save(h.value, w.value, a.value)" /></label>
-      <label class="field">{{ 'settings.age' | t }}<input #a type="text" inputmode="numeric" [value]="known.age ?? ''" (keydown.enter)="save(h.value, w.value, a.value)" /></label>
+      <label class="field">{{ 'settings.heightCm' | t }}<app-number-field #h [value]="known.height ?? ''" (keydown.enter)="save(h.value, w.value, a.value)" /></label>
+      <label class="field">{{ 'common.weightKg' | t }}<app-number-field #w decimal [value]="known.startWeight ?? ''" (keydown.enter)="save(h.value, w.value, a.value)" /></label>
+      <label class="field">{{ 'settings.age' | t }}<app-number-field #a [value]="known.age ?? ''" (keydown.enter)="save(h.value, w.value, a.value)" /></label>
       <div class="field" role="radiogroup" [attr.aria-label]="'settings.sex' | t">
         {{ 'settings.sex' | t }}
         <div class="flex gap-2">

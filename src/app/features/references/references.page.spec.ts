@@ -45,7 +45,7 @@ describe('reference lists', () => {
   const rowsOf = (root: HTMLElement): HTMLElement[] => Array.from(root.querySelectorAll<HTMLElement>('tbody tr'));
   const type = (el: HTMLInputElement, value: string): void => {
     el.value = value;
-    el.dispatchEvent(new Event('input'));
+    el.dispatchEvent(new Event('input', { bubbles: true }));
   };
   const buttonWithLabel = (root: HTMLElement, label: string): HTMLButtonElement =>
     root.querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`)!;

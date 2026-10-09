@@ -108,7 +108,7 @@ export interface Database {
           /** Stable key of a system food; null for user foods. */
           code: string | null;
           names: Record<string, string>;
-          unit: 'g' | 'piece' | 'scoop';
+          unit: 'g' | 'ml' | 'piece' | 'tbsp' | 'tsp' | 'scoop';
           kcal: number;
           protein: number;
           carbs: number;
@@ -124,7 +124,7 @@ export interface Database {
         Insert: {
           user_id: string;
           names: Record<string, string>;
-          unit: 'g' | 'piece' | 'scoop';
+          unit: 'g' | 'ml' | 'piece' | 'tbsp' | 'tsp' | 'scoop';
           kcal: number;
           protein: number;
           carbs: number;
@@ -132,7 +132,7 @@ export interface Database {
         };
         Update: {
           names?: Record<string, string>;
-          unit?: 'g' | 'piece' | 'scoop';
+          unit?: 'g' | 'ml' | 'piece' | 'tbsp' | 'tsp' | 'scoop';
           kcal?: number;
           protein?: number;
           carbs?: number;

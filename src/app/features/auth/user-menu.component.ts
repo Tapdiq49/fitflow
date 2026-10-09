@@ -8,7 +8,7 @@ import { t } from '../../core/i18n/translate';
 import { SessionService } from '../../core/services/session.service';
 import { ToastService } from '../../core/services/toast.service';
 import { AvatarComponent } from './avatar.component';
-import { POPUP_PANEL } from '../../shared/forms/popup';
+import { POPUP_PANEL } from '../../shared/forms/popup/popup';
 import { IconComponent } from '../../shared/icon/icon.component';
 import { TPipe } from '../../common/pipes/translate/t.pipe';
 

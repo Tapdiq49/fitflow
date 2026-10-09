@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FOOD_IDS } from '../../core/data/foods';
 import { MealItem } from '../../common/interfaces';
-import { itemAmount, itemMacros, itemName, sumMacros } from '../../core/nutrition';
+import { itemAmount, itemMacros, itemName, per100, sumMacros } from '../../core/nutrition';
 import { DayService } from '../../core/services/day.service';
 import { FoodCatalogService } from '../../core/services/food-catalog.service';
 import { ToastService } from '../../core/services/toast.service';
@@ -11,37 +11,40 @@ import { IconComponent } from '../../shared/icon/icon.component';
 import { BusyDirective } from '../../common/directives/busy/busy.directive';
 import { BUSY } from '../../core/busy-keys';
 import { ModalComponent } from '../../shared/modal/modal.component';
-import { SelectComponent, SelectOption } from '../../shared/forms/select.component';
-import { TimePickerComponent } from '../../shared/forms/time-picker.component';
+import { SelectFieldComponent, SelectOption } from '../../shared/forms/select-field/select-field.component';
+import { TimePickerComponent } from '../../shared/forms/time-picker/time-picker.component';
 import { TPipe, TdPipe } from '../../common/pipes/translate/t.pipe';
 import { t, td } from '../../core/i18n/translate';
+import { TextFieldComponent } from '../../shared/forms/text-field/text-field.component';
+import { NumberFieldComponent } from '../../shared/forms/number-field/number-field.component';
+import { FieldValue } from '../../shared/forms/field-base/field-base';
 
 @Component({
   selector: 'app-add-meal-dialog',
-  imports: [BusyDirective, ModalComponent, IconComponent, SelectComponent, TimePickerComponent, TPipe, TdPipe],
+  imports: [TextFieldComponent, NumberFieldComponent, BusyDirective, ModalComponent, IconComponent, SelectFieldComponent, TimePickerComponent, TPipe, TdPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-modal [heading]="'addMeal.addMeal' | t" (closed)="close()">
       <div class="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-3">
-        <label class="field">{{ 'addMeal.mealName' | t }}<input #name type="text" value="Əlavə yemək" /></label>
+        <label class="field">{{ 'addMeal.mealName' | t }}<app-text-field #name value="Əlavə yemək" /></label>
         <div class="field">{{ 'addMeal.time' | t }}<app-time-picker [label]="'addMeal.time' | t" [(value)]="time" /></div>
       </div>
 
       <div class="section-title" style="margin-top: 16px">{{ 'addMeal.addFoodFromDatabase' | t }}</div>
       <div class="flex flex-wrap items-center gap-2">
-        <app-select class="min-w-[11.25rem] flex-1" [label]="'addMeal.addFoodFromDatabase' | t" [options]="foodOptions()" [(value)]="foodId" />
-        <input #amt type="text" inputmode="decimal" style="width: 90px" [value]="defaultAmount()" />
+        <app-select-field class="min-w-[11.25rem] flex-1" [label]="'addMeal.addFoodFromDatabase' | t" [options]="foodOptions()" [(value)]="foodId" />
+        <app-number-field #amt width="90px" decimal [value]="defaultAmount()" />
         <span class="text-muted">{{ foodUnit() | td }}</span>
         <button class="btn btn-sm" (click)="addFood(amt.value)" [attr.aria-label]="'addMeal.add' | t"><app-icon name="plus" size="sm" /></button>
       </div>
 
       <div class="section-title" style="margin-top: 16px">{{ 'addMeal.orCustomFoodEnter' | t }}</div>
       <div class="flex flex-wrap items-center gap-2">
-        <input #cname type="text" [placeholder]="'addMeal.name' | t" style="flex: 1; min-width: 120px" />
-        <input #ck type="text" inputmode="numeric" [placeholder]="'addMeal.kcal' | t" style="width: 70px" />
-        <input #cp type="text" inputmode="decimal" [placeholder]="'addMeal.p' | t" style="width: 60px" />
-        <input #cc type="text" inputmode="decimal" [placeholder]="'addMeal.c' | t" style="width: 60px" />
-        <input #cf type="text" inputmode="decimal" [placeholder]="'addMeal.f' | t" style="width: 60px" />
+        <app-text-field #cname style="flex: 1; min-width: 120px" [placeholder]="'addMeal.name' | t" />
+        <app-number-field #ck width="70px" [placeholder]="'addMeal.kcal' | t" />
+        <app-number-field #cp width="60px" decimal [placeholder]="'addMeal.p' | t" />
+        <app-number-field #cc width="60px" decimal [placeholder]="'addMeal.c' | t" />
+        <app-number-field #cf width="60px" decimal [placeholder]="'addMeal.f' | t" />
         <button class="btn btn-sm" (click)="addCustom(cname, ck, cp, cc, cf)" [attr.aria-label]="'addMeal.add' | t"><app-icon name="plus" size="sm" /></button>
       </div>
 
@@ -107,7 +110,7 @@ export class AddMealDialog {
 
   protected readonly foodId = signal(FOOD_IDS[0]);
   protected readonly foodUnit = computed(() => this.catalog.find(this.foodId())?.unit ?? 'q');
-  protected readonly defaultAmount = computed(() => (this.foodUnit() === 'q' ? 100 : 1));
+  protected readonly defaultAmount = computed(() => (per100(this.foodUnit()) ? 100 : 1));
   protected readonly items = signal<MealItem[]>([]);
   protected readonly total = computed(() => sumMacros(this.items().map(itemMacros)));
 
@@ -120,14 +123,14 @@ export class AddMealDialog {
     this.items.update((l) => [...l, this.catalog.toMealItem(this.foodId(), amt)]);
   }
 
-  protected addCustom(...inputs: HTMLInputElement[]): void {
+  protected addCustom(...inputs: FieldValue[]): void {
     const [n, k, p, c, f] = inputs;
     const name = n.value.trim();
     if (!name) {
       this.toast.show(t('addMeal.enterFoodName'));
       return;
     }
-    const num = (el: HTMLInputElement): number => parseNum(el.value) || 0;
+    const num = (el: FieldValue): number => parseNum(el.value) || 0;
     this.items.update((l) => [...l, { name, amt: 1, k: num(k), p: num(p), c: num(c), f: num(f), amtLabel: '1 porsiya' }]);
     inputs.forEach((el) => (el.value = ''));
   }

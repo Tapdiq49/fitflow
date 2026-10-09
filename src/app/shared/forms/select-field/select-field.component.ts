@@ -2,8 +2,8 @@ import { ChangeDetectionStrategy, Component, effect, input, model, signal, untra
 import { Combobox, ComboboxPopup, ComboboxWidget } from '@angular/aria/combobox';
 import { Listbox, Option } from '@angular/aria/listbox';
 import { CdkConnectedOverlay, CdkOverlayOrigin } from '@angular/cdk/overlay';
-import { IconComponent } from '../icon/icon.component';
-import { POPUP_PANEL, POPUP_POSITIONS } from './popup';
+import { IconComponent } from '../../icon/icon.component';
+import { POPUP_PANEL, POPUP_POSITIONS } from '../popup/popup';
 
 export interface SelectOption<T> {
   value: T;
@@ -18,11 +18,11 @@ export interface SelectOption<T> {
  * A label wider than the field is cut with an ellipsis (in the field and in the list) and shows in full as a tooltip on hover.
  *
  * ```html
- * <app-select [label]="'settings.appearance' | t" [options]="themes()" [(value)]="theme" />
+ * <app-select-field [label]="'settings.appearance' | t" [options]="themes()" [(value)]="theme" />
  * ```
  */
 @Component({
-  selector: 'app-select',
+  selector: 'app-select-field',
   imports: [Combobox, ComboboxPopup, ComboboxWidget, Listbox, Option, CdkConnectedOverlay, CdkOverlayOrigin, IconComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block min-w-0' },
@@ -38,7 +38,7 @@ export interface SelectOption<T> {
       class="flex h-full w-full cursor-pointer items-center justify-between gap-2 rounded-[calc(var(--r)_*_9px)] border bg-bg px-2.5 py-2 text-left text-[0.875rem] font-medium text-text outline-none [transition:border-color_.2s] focus-visible:border-accent aria-disabled:cursor-not-allowed aria-disabled:border-border-soft aria-disabled:bg-surface-2 aria-disabled:text-muted aria-disabled:opacity-70"
       [class]="open() ? 'border-accent' : 'border-border'"
     >
-      <span class="min-w-0 truncate" [attr.title]="selectedLabel() || null">{{ selectedLabel() }}</span><app-icon name="down" size="sm" class="shrink-0" />
+      <span class="min-w-0 truncate" [class.text-muted]="!selectedLabel()" [attr.title]="selectedLabel() || null">{{ selectedLabel() || placeholder() }}</span><app-icon name="down" size="sm" class="shrink-0" />
     </div>
     <ng-template ngComboboxPopup [combobox]="combobox" popupType="listbox">
       <ng-template
@@ -58,7 +58,7 @@ export interface SelectOption<T> {
           selectionMode="explicit"
           [activeDescendant]="listbox.activeDescendant()"
           [attr.aria-label]="label()"
-          [value]="[value()]"
+          [value]="selected()"
           (valueChange)="pick($event)"
           [class]="panel + ' max-h-[17.5rem] p-1'"
         >
@@ -80,18 +80,25 @@ export interface SelectOption<T> {
     </ng-template>
   `,
 })
-export class SelectComponent<T> {
+export class SelectFieldComponent<T> {
   readonly value = model.required<T>();
   readonly options = input.required<readonly SelectOption<T>[]>();
   /** Accessible name; the visible caption usually sits above the field. */
   readonly label = input.required<string>();
   readonly disabled = input(false);
+  /** Shown (muted) while the value is not one of the options, e.g. an empty value that stands for "nothing chosen yet". */
+  readonly placeholder = input('');
 
   protected readonly open = signal(false);
   protected readonly panel = POPUP_PANEL;
   protected readonly positions = POPUP_POSITIONS;
   private readonly combobox = viewChild.required<Combobox>('combobox');
   private readonly listbox = viewChild<Listbox<T>>('listbox');
+
+  /** The value as the list expects it: nothing selected (not `['']`) while the value is none of the options. */
+  protected selected(): T[] {
+    return this.options().some((o) => o.value === this.value()) ? [this.value()] : [];
+  }
 
   protected selectedLabel(): string {
     return this.options().find((o) => o.value === this.value())?.label ?? '';

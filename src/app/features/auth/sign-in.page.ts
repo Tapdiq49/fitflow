@@ -7,21 +7,22 @@ import { t } from '../../core/i18n/translate';
 import { TPipe } from '../../common/pipes/translate/t.pipe';
 import { AuthShellComponent } from './auth-shell.component';
 import { OAuthButtonsComponent } from './oauth-buttons.component';
+import { TextFieldComponent } from '../../shared/forms/text-field/text-field.component';
 
 @Component({
   selector: 'app-sign-in-page',
-  imports: [RouterLink, AuthShellComponent, OAuthButtonsComponent, TPipe],
+  imports: [TextFieldComponent, RouterLink, AuthShellComponent, OAuthButtonsComponent, TPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-auth-shell [heading]="'auth.signIn' | t" [subtitle]="'auth.signInSubtitle' | t">
       <form class="flex flex-col gap-3.5" (submit)="submit($event)" novalidate>
         <label class="field">
           {{ 'auth.identifier' | t }}
-          <input type="text" name="identifier" autocomplete="username" autocapitalize="none" spellcheck="false" [value]="identifier()" (input)="identifier.set(inputValue($event))" />
+          <app-text-field name="identifier" autocomplete="username" autocapitalize="none" spellcheck="false" [value]="identifier()" (input)="identifier.set(inputValue($event))" />
         </label>
         <label class="field">
           {{ 'auth.password' | t }}
-          <input type="password" name="password" autocomplete="current-password" [value]="password()" (input)="password.set(inputValue($event))" />
+          <app-text-field type="password" name="password" autocomplete="current-password" [value]="password()" (input)="password.set(inputValue($event))" />
         </label>
         <div class="text-right text-[0.8125rem]"><a routerLink="/auth/forgot-password">{{ 'auth.forgotPassword' | t }}</a></div>
         @if (error(); as e) {
