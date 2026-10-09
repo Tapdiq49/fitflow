@@ -9,7 +9,9 @@ import { DayService } from '../../core/services/day.service';
 import { StoreService } from '../../core/services/store.service';
 import { ToastService } from '../../core/services/toast.service';
 import { TrainerPlanService } from '../../core/services/trainer-plan.service';
-import { DateU, clamp, dayName, fromMin, inputValue, parseNum, toMin } from '../../core/utils';
+import { DateU, F, clamp, dayName, fromMin, inputValue, parseNum, toMin } from '../../core/utils';
+import { itemMacros, realItems, sumMacros } from '../../core/nutrition';
+import { MealItemsComponent } from '../../shared/meal-items/meal-items.component';
 import { RouterLink } from '@angular/router';
 import { Listbox, Option } from '@angular/aria/listbox';
 import { Tab, TabContent, TabList, TabPanel, Tabs } from '@angular/aria/tabs';
@@ -30,15 +32,15 @@ interface ExRow {
 interface Row {
   slot: SlotId;
   time: string;
+  /** The name of the meal. */
   text: string;
-  /** Meal as it was when the editor opened — kept when the text is untouched, so its macros survive. */
-  name0: string;
-  items0: MealItem[];
+  /** The foods of the meal, each with its amount and macros. */
+  items: MealItem[];
 }
 
 @Component({
   selector: 'app-week-plan-page',
-  imports: [RouterLink, BodyBasicsFormComponent, Tabs, TabList, Tab, TabPanel, TabContent, Listbox, Option, IconComponent, TimePickerComponent, RequiresPermissionDirective, TPipe, TimePipe],
+  imports: [RouterLink, BodyBasicsFormComponent, Tabs, TabList, Tab, TabPanel, TabContent, Listbox, Option, IconComponent, TimePickerComponent, MealItemsComponent, RequiresPermissionDirective, TPipe, TimePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div ngTabs class="flex flex-col gap-[18px]">
@@ -91,7 +93,12 @@ interface Row {
       <ng-template ngTabContent>
       @for (day of days; track day) {
         <div class="card">
-          <div class="card-head"><h3>{{ dayLabel(day) }}</h3></div>
+          <div class="card-head">
+            <h3>{{ dayLabel(day) }}</h3>
+            @if (dayTotal(day); as total) {
+              <span class="text-[0.8125rem] font-semibold text-text-2 tabular-nums">{{ 'common.total' | t }}: {{ 'dash.nKcalNG' | t: { a: F.round(total.k), b: F.round(total.p) } }}</span>
+            }
+          </div>
           <div class="flex flex-wrap items-start gap-4">
           <div class="min-w-[18.75rem] flex-1">
           @for (r of draft()[day]; track r.slot; let i = $index) {
@@ -101,6 +108,7 @@ interface Row {
               <input type="text" [value]="r.text" (input)="setText(day, i, $event)" [placeholder]="'plan.eGBuckwheat4' | t" class="phone:col-span-3" />
               <button class="btn btn-ghost btn-icon btn-sm" (click)="removeMeal(day, r.slot)" [attr.aria-label]="('common.delete' | t) + ': ' + slotLabel(r.slot)"><app-icon name="x" size="sm" /></button>
             </div>
+            <app-meal-items class="mb-3" [items]="r.items" (itemsChange)="setItems(day, i, $event)" />
           }
           @if (unusedSlots(day); as free) {
             @if (free.length) {
@@ -196,6 +204,7 @@ export class WeekPlanPage {
   protected readonly tab = signal<string | undefined>('meal');
   protected readonly days = [1, 2, 3, 4, 5, 6, 7];
   protected readonly dayName = dayName;
+  protected readonly F = F;
   protected readonly week = signal(DateU.monday(DateU.today()));
   protected readonly own = computed(() => this.plans.hasOwn(this.week()));
   protected readonly label = computed(() => `${DateU.short(this.week())} – ${DateU.short(DateU.add(this.week(), 6))}`);
@@ -243,7 +252,7 @@ export class WeekPlanPage {
   protected readonly weekEmpty = computed(() => this.days.every((d) => !this.draft()[d].length));
 
   protected addSuggestion(day: number): void {
-    const rows = (TRAINER_PLAN[day] ?? []).map((m): Row => ({ slot: m.slot, time: m.time, text: m.name, name0: m.name, items0: structuredClone(m.items) }));
+    const rows = (TRAINER_PLAN[day] ?? []).map((m): Row => ({ slot: m.slot, time: m.time, text: m.name, items: structuredClone(realItems(m)) }));
     this.draft.update((d) => ({ ...d, [day]: rows.sort((a, b) => a.time.localeCompare(b.time)) }));
   }
 
@@ -266,7 +275,7 @@ export class WeekPlanPage {
 
   protected addMeal(day: number, slot: SlotId): void {
     if (this.draft()[day].some((r) => r.slot === slot)) return;
-    const row: Row = { slot, time: this.defaultTime(slot), text: '', name0: '', items0: [] };
+    const row: Row = { slot, time: this.defaultTime(slot), text: '', items: [] };
     this.draft.update((d) => ({ ...d, [day]: [...d[day], row].sort((a, b) => a.time.localeCompare(b.time)) }));
   }
 
@@ -276,6 +285,16 @@ export class WeekPlanPage {
 
   protected setText(day: number, i: number, e: Event): void {
     this.patch(day, i, { text: inputValue(e) });
+  }
+
+  protected setItems(day: number, i: number, items: MealItem[]): void {
+    this.patch(day, i, { items });
+  }
+
+  /** Calories and macros of everything planned for a day; null while nothing with a number is planned. */
+  protected dayTotal(day: number): ReturnType<typeof sumMacros> | null {
+    const total = sumMacros(this.draft()[day].flatMap((r) => r.items).map(itemMacros));
+    return total.k || total.p || total.c || total.f ? total : null;
   }
 
   protected setTime(day: number, i: number, time: string): void {
@@ -296,10 +315,11 @@ export class WeekPlanPage {
     const plan: WeekPlan = {};
     for (const d of this.days) {
       plan[d] = this.draft()[d]
-        .filter((r) => r.text.trim())
+        .filter((r) => r.text.trim() || r.items.length)
         .map((r) => {
-          const name = r.text.trim();
-          const items = name === r.name0 ? r.items0 : [{ amt: 1, name, amtLabel: '', k: 0, p: 0, c: 0, f: 0 }];
+          // A meal without a name is called after its kind; one without foods keeps a placeholder item with the name (see realItems).
+          const name = r.text.trim() || this.slotLabel(r.slot);
+          const items = r.items.length ? r.items : [{ amt: 1, name, amtLabel: '', k: 0, p: 0, c: 0, f: 0 }];
           return { slot: r.slot, time: r.time, name, items };
         })
         .sort((a, b) => a.time.localeCompare(b.time));
@@ -378,7 +398,7 @@ export class WeekPlanPage {
   private toRows(plan: WeekPlan): Record<number, Row[]> {
     const rows: Record<number, Row[]> = {};
     for (const d of this.days) {
-      rows[d] = (plan[d] ?? []).map((m): Row => ({ slot: m.slot, time: m.time, text: m.name, name0: m.name, items0: m.items })).sort((a, b) => a.time.localeCompare(b.time));
+      rows[d] = (plan[d] ?? []).map((m): Row => ({ slot: m.slot, time: m.time, text: m.name, items: realItems(m) })).sort((a, b) => a.time.localeCompare(b.time));
     }
     return rows;
   }

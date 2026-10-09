@@ -17,6 +17,13 @@ export function itemMacros(it: MealItem): Macros {
   return { k: Number(it.k) || 0, p: Number(it.p) || 0, c: Number(it.c) || 0, f: Number(it.f) || 0 };
 }
 
+/**
+ * The foods of a trainer-plan meal that were really entered. A meal that was only given a name was saved with one placeholder item
+ * (the name, all numbers 0) so it has something to show; the editor does not list that one, and puts it back when nothing else is left.
+ */
+export const realItems = (meal: { name: string; items: MealItem[] }): MealItem[] =>
+  meal.items.filter((it) => !(!it.food && !it.k && !it.p && !it.c && !it.f && (it.name ?? '') === meal.name));
+
 export const sumMacros = (list: Macros[]): Macros =>
   list.reduce((a, m) => ({ k: a.k + m.k, p: a.p + m.p, c: a.c + m.c, f: a.f + m.f }), ZERO);
 
