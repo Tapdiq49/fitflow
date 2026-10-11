@@ -10,6 +10,7 @@ Single-user fitness tracker: workouts, generated daily menu, weight, digestion, 
 - Do not change exercises, progression increments, phase/RIR limits or `SAFETY` text in `src/app/core/data/program.ts` and `ProgramService.phase()` without the user's explicit approval — they encode post-surgery (varicocele) loading caution. Propose the change instead.
 - Supabase holds authentication (2026-10-07) and the data migrated since: profile, settings, weekly plans, foods, and (2026-10-09) days, weights and exercise history. Migrate any other data only when the user says so; keep every read/write behind `StoreService` / `DataSyncService` and a repository port so the swap stays in one place. Do not add another backend (no Firebase) or Supabase Storage without asking. Supabase Realtime is approved (2026-10-09) for when live updates are needed, but only behind a port with the SDK in the adapter, so a NestJS move stays an adapter swap (`backend-migration-rules.md`, rule 12).
 - Ask before adding a runtime dependency to `package.json`.
+- Branch names carry a type prefix and a short English kebab-case name: `feature/` (new behaviour), `fix/` (bug fix), `docs/` (documentation, `AGENTS.md`, planning output), `refactor/`, `test/`, `chore/` (tooling, config); e.g. `feature/water-target-setting`. Pick the prefix by the main purpose of the change.
 
 ## Where things are
 
