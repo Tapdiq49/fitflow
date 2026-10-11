@@ -1,4 +1,5 @@
 import type { Unit, Macros } from '../food/food';
+import type { Lang } from '../settings/settings';
 
 export type TemplateKey = 'breakfast' | 'snack' | 'lunch' | 'pre' | 'post' | 'dinner';
 
@@ -11,6 +12,20 @@ export interface MealTemplate {
   main?: string;
   light?: boolean;
   items: ReadonlyArray<readonly [string, number]>;
+}
+
+/** A meal template as the backend sends it. Kept in the saved state (`AppState.mealCache`) so the menu generator also works offline. */
+export interface SystemMealTemplate {
+  /** Stable key saved menus refer to (`Meal.templateId`). */
+  code: string;
+  slot: TemplateKey;
+  /** Place inside its slot. */
+  position: number;
+  names: Partial<Record<Lang, string>>;
+  main: string | null;
+  light: boolean;
+  /** Food code and amount of every food. */
+  items: [string, number][];
 }
 
 export interface MealItem {

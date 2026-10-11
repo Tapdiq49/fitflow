@@ -23,6 +23,9 @@ import { UserDataRepository } from './core/repositories/user-data.repository';
 import { SupabaseUserDataRepository } from './core/repositories/supabase-user-data.repository';
 import { SupabaseAdminUsersRepository } from './core/repositories/supabase-admin-users.repository';
 import { SupabaseFoodRepository } from './core/repositories/supabase-food.repository';
+import { MealRepository } from './core/repositories/meal.repository';
+import { SupabaseMealRepository } from './core/repositories/supabase-meal.repository';
+import { MealCatalogService } from './core/services/meal-catalog.service';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -33,6 +36,7 @@ export const appConfig: ApplicationConfig = {
     // The single place that picks the auth backend; a NestJS implementation replaces SupabaseAuthService here.
     { provide: AuthService, useClass: SupabaseAuthService },
     { provide: FoodRepository, useClass: SupabaseFoodRepository },
+    { provide: MealRepository, useClass: SupabaseMealRepository },
     { provide: PlanRepository, useClass: SupabasePlanRepository },
     { provide: UserDataRepository, useClass: SupabaseUserDataRepository },
     { provide: AdminUsersRepository, useClass: SupabaseAdminUsersRepository },
@@ -42,9 +46,10 @@ export const appConfig: ApplicationConfig = {
     provideAppInitializer(() => {
       void inject(AuthStore).init();
     }),
-    // Loads the food list at start: meals on every screen show the food names the backend sends.
+    // Loads the food list and the meal templates at start: meals on every screen show the names the backend sends.
     provideAppInitializer(() => {
       inject(FoodCatalogService);
+      inject(MealCatalogService);
       inject(BodyBasicsSyncService);
       inject(PlanSyncService);
       inject(DataSyncService);

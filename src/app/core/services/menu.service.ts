@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
-import { SLOTS, TEMPLATES } from '../data/meals';
+import { SLOTS } from '../data/meals';
+import { templatesOf } from '../meal-book';
 import { foodItem, foodOf } from '../food-book';
 import { DayType, FoodRole, Meal, MealItem, MealTemplate, SlotId, TemplateKey } from '../../common/interfaces';
 import { itemMacros, menuTotals } from '../nutrition';
@@ -201,8 +202,11 @@ export class MenuService {
 
   private pool(slot: SlotId, slots: SlotId[]): MealTemplate[] {
     const key = (SLOTS[slot].pool ?? slot) as TemplateKey;
-    const pool = TEMPLATES[key] ?? [];
-    return slot === 'dinner' && slots.includes('post') ? pool.filter((t) => t.light) : pool;
+    const pool = templatesOf(key);
+    if (slot !== 'dinner' || !slots.includes('post')) return pool;
+    // After a training meal the evening meal is a light one; with none left the whole pool is offered.
+    const light = pool.filter((t) => t.light);
+    return light.length ? light : pool;
   }
 
   private buildMeal(slot: SlotId, tpl: MealTemplate, type: DayType): Meal {

@@ -32,6 +32,7 @@ export const routes: Routes = [
       { path: 'references', title: 'nav.references', canActivate: [permissionGuard('references.view')], loadComponent: () => import('./features/references/references.page').then((m) => m.ReferencesPage) },
       // One route per list in REFERENCE_LISTS (features/references/reference-lists.ts): path is 'references/<id>'.
       { path: 'references/foods', title: 'references.foods', canActivate: [permissionGuard('references.view')], loadComponent: () => import('./features/references/food-references.page').then((m) => m.FoodReferencesPage) },
+      { path: 'references/meals', title: 'references.meals', canActivate: [permissionGuard('references.view')], loadComponent: () => import('./features/references/meal-references.page').then((m) => m.MealReferencesPage) },
       { path: 'profile', title: 'profile.title', canActivate: [accountGuard, permissionGuard('profile.view')], loadComponent: () => import('./features/profile/profile.page').then((m) => m.ProfilePage) },
       { path: 'admin/users', title: 'nav.users', canActivate: [permissionGuard('users.view', { pack: 'admin' })], loadComponent: () => import('./features/admin/users.page').then((m) => m.UsersPage) },
       { path: 'admin/roles', title: 'nav.roles', canActivate: [permissionGuard('roles.view', { pack: 'admin' })], loadComponent: () => import('./features/admin/roles.page').then((m) => m.RolesPage) },

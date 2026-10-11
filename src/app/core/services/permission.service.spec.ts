@@ -28,6 +28,7 @@ describe('PermissionService', () => {
     for (const p of APP_PERMISSIONS) expect(perms.can(p), p).toBe(true);
     expect(perms.can('users.view')).toBe(false);
     expect(perms.can('roles.edit')).toBe(false);
+    expect(perms.can('meals.edit')).toBe(false); // the meal templates are shared: only a role that is given the permission changes them
   });
 
   it('gives an account exactly what its role holds', async () => {

@@ -140,6 +140,40 @@ export interface Database {
         };
         Relationships: [];
       };
+      meal_templates: {
+        Row: {
+          id: string;
+          code: string;
+          slot: 'breakfast' | 'snack' | 'lunch' | 'pre' | 'post' | 'dinner';
+          /** Place of the pool in the day (1 = breakfast … 6 = dinner); worked out by the database. */
+          slot_rank: number;
+          position: number;
+          names: Record<string, string>;
+          main: string | null;
+          light: boolean;
+          items: [string, number][];
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          code: string;
+          slot: 'breakfast' | 'snack' | 'lunch' | 'pre' | 'post' | 'dinner';
+          position: number;
+          names: Record<string, string>;
+          main: string | null;
+          light: boolean;
+          items: [string, number][];
+        };
+        Update: {
+          slot?: 'breakfast' | 'snack' | 'lunch' | 'pre' | 'post' | 'dinner';
+          position?: number;
+          names?: Record<string, string>;
+          main?: string | null;
+          light?: boolean;
+          items?: [string, number][];
+        };
+        Relationships: [];
+      };
     };
     Views: {
       /** `foods` plus the current visitor's own place in the list (food_order); null = not placed. */

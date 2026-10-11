@@ -20,6 +20,7 @@ export const PERMISSIONS = [
   'calendar.view',
   'references.view',
   'references.edit',
+  'meals.edit',
   'settings.view',
   'settings.edit',
   'settings.export',
@@ -42,8 +43,8 @@ export const PERMISSIONS = [
 
 export type PermissionId = (typeof PERMISSIONS)[number];
 
-/** Areas that manage the system itself. Guests and the default role never get them. */
-export const ADMIN_MODULES: readonly string[] = ['users', 'roles'];
+/** Areas that manage the system itself (accounts, roles, the meal templates everyone shares). Guests and the default role never get them. */
+export const ADMIN_MODULES: readonly string[] = ['users', 'roles', 'meals'];
 
 export const moduleOf = (id: string): string => id.slice(0, id.indexOf('.'));
 export const actionOf = (id: string): string => id.slice(id.indexOf('.') + 1);

@@ -1,5 +1,6 @@
 import { Injector } from '@angular/core';
 import { FoodCatalogService } from '../../core/services/food-catalog.service';
+import { MealCatalogService } from '../../core/services/meal-catalog.service';
 
 /** One manageable list in the reference index. */
 export interface ReferenceList {
@@ -24,5 +25,12 @@ export const REFERENCE_LISTS: readonly ReferenceList[] = [
     label: 'references.foods',
     summary: 'references.foodsSummary',
     count: (injector) => injector.get(FoodCatalogService).entries().length,
+  },
+  {
+    id: 'meals',
+    icon: 'leaf',
+    label: 'references.meals',
+    summary: 'references.mealsSummary',
+    count: (injector) => injector.get(MealCatalogService).entries().length,
   },
 ];

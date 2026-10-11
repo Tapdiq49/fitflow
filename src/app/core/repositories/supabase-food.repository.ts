@@ -55,7 +55,7 @@ const toPageRow = (r: PageRow): FoodRow => {
 };
 
 /** Characters that would change the meaning of a PostgREST filter or an ilike pattern are dropped from the search text. */
-const cleanTerm = (text: string): string => text.replace(/[%_*,()"\\]/g, ' ').replace(/\s+/g, ' ').trim();
+export const cleanTerm = (text: string): string => text.replace(/[%_*,()"\\]/g, ' ').replace(/\s+/g, ' ').trim();
 
 /**
  * One page of the food list in the user's order: placed foods first, then the rest (system foods, then own) by name. The language is part of

@@ -34,6 +34,7 @@ const BY_CODE: Record<string, AuthErrorCode> = {
 const BY_SQLSTATE: Record<string, AuthErrorCode> = {
   '23505': 'username_taken', // unique_violation on profiles_username_key
   '23514': 'invalid_username', // check_violation on profiles_username_format
+  '42501': 'forbidden', // insufficient_privilege: a Row Level Security policy refused the write (e.g. meals.edit missing)
 };
 
 interface ErrorLike {

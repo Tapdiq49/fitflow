@@ -7,7 +7,10 @@ import { AuthStore } from '../../core/auth/auth.store';
 import { FakeAuthService } from '../../core/auth/fake-auth.service';
 import { FakeFoodRepository } from '../../core/repositories/fake-food.repository';
 import { FoodRepository } from '../../core/repositories/food.repository';
+import { FakeMealRepository } from '../../core/repositories/fake-meal.repository';
+import { MealRepository } from '../../core/repositories/meal.repository';
 import { FoodCatalogService } from '../../core/services/food-catalog.service';
+import { MealCatalogService } from '../../core/services/meal-catalog.service';
 import { ConfirmService } from '../../core/services/confirm.service';
 import { FoodReferencesPage } from './food-references.page';
 import { ReferencesPage } from './references.page';
@@ -23,17 +26,20 @@ describe('reference lists', () => {
 
   beforeEach(() => {
     localStorage.clear();
-    TestBed.configureTestingModule({ providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting(), { provide: AuthService, useClass: FakeAuthService }, { provide: FoodRepository, useClass: FakeFoodRepository }] });
+    TestBed.configureTestingModule({ providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting(), { provide: AuthService, useClass: FakeAuthService }, { provide: FoodRepository, useClass: FakeFoodRepository }, { provide: MealRepository, useClass: FakeMealRepository }] });
   });
 
-  it('shows the index as a grid with the food database as its first card, linking to its own page', async () => {
+  it('shows the index as a grid with a card per list, each linking to its own page', async () => {
     const fixture = TestBed.createComponent(ReferencesPage);
     await render(fixture);
     const cards = Array.from<HTMLAnchorElement>(fixture.nativeElement.querySelectorAll('a.card'));
-    expect(cards).toHaveLength(1);
+    expect(cards).toHaveLength(2);
     expect(cards[0].getAttribute('href')).toBe('/references/foods');
     expect(cards[0].textContent).toContain('Qida bazası');
     expect(cards[0].textContent).toContain(`${TestBed.inject(FoodCatalogService).entries().length} yazı`);
+    expect(cards[1].getAttribute('href')).toBe('/references/meals');
+    expect(cards[1].textContent).toContain('Hazır yeməklər');
+    expect(cards[1].textContent).toContain(`${TestBed.inject(MealCatalogService).entries().length} yazı`);
   });
 
   const signIn = async (): Promise<void> => {

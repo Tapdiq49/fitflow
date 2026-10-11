@@ -1,3 +1,5 @@
+import { signal } from '@angular/core';
+import type { Lang } from '../../common/interfaces/settings/settings';
 import { activeLang } from '../utils';
 import az from './az.json';
 
@@ -71,6 +73,12 @@ const CONTENT_KEY = new Map<string, string>(
     .map(([key, text]) => [text, key]),
 );
 
+/**
+ * Names of content that comes from the backend (the meal templates) in every language, keyed by the Azerbaijani text a saved menu holds.
+ * A signal, read by `td`, so texts follow a load of the templates. It is checked before the built-in keys: a template renamed on the backend shows its new name.
+ */
+export const contentNames = signal<ReadonlyMap<string, Partial<Record<Lang, string>>>>(new Map());
+
 const fill = (text: string, params?: Record<string, string | number | null | undefined>): string =>
   params ? text.replace(/\{(\w+)\}/g, (_, k: string) => String(params[k] ?? '')) : text;
 
@@ -82,6 +90,8 @@ export function t(key: string, params?: Record<string, string | number | null | 
 
 /** Translation of built-in content text given in Azerbaijani (food, meal, tip …); unknown text (e.g. typed by the user) is returned unchanged. */
 export function td(text: string): string {
+  const names = contentNames().get(text);
+  if (names) return names[activeLang()] || text;
   const key = CONTENT_KEY.get(text);
   return key ? t(key) : text;
 }

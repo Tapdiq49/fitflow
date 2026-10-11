@@ -124,6 +124,7 @@ export class StoreService {
     return {
       settings,
       foodCache: Array.isArray(s.foodCache) ? s.foodCache : [],
+      mealCache: Array.isArray(s.mealCache) ? s.mealCache : [],
       workoutPlans: s.workoutPlans && typeof s.workoutPlans === 'object' ? s.workoutPlans : {},
       weekPlans: s.weekPlans && typeof s.weekPlans === 'object' ? s.weekPlans : {},
       days: s.days && typeof s.days === 'object' ? s.days : {},
