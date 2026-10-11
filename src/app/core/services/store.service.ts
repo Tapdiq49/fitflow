@@ -22,6 +22,7 @@ export const SETTINGS_RANGE = {
   proteinTarget: { min: PROTEIN_MIN, max: PROTEIN_MAX },
   restHeavySec: { min: 10, max: 600 },
   restLightSec: { min: 10, max: 600 },
+  waterTarget: { min: 500, max: 6000 },
 } as const;
 
 export const DEFAULT_SETTINGS: Omit<Settings, 'programStart'> = {
@@ -59,6 +60,7 @@ export const DEFAULT_SETTINGS: Omit<Settings, 'programStart'> = {
   sleepTime: '23:30',
   restHeavySec: 150,
   restLightSec: 90,
+  waterTarget: 1500,
   guestNoticeDismissedAt: '',
 };
 
@@ -166,6 +168,7 @@ export class StoreService {
         proteinTarget: clamp(f.proteinTarget, SETTINGS_RANGE.proteinTarget.min, SETTINGS_RANGE.proteinTarget.max),
         restHeavySec: clamp(Math.round(f.restHeavySec), SETTINGS_RANGE.restHeavySec.min, SETTINGS_RANGE.restHeavySec.max),
         restLightSec: clamp(Math.round(f.restLightSec), SETTINGS_RANGE.restLightSec.min, SETTINGS_RANGE.restLightSec.max),
+        waterTarget: clamp(Math.round(f.waterTarget), SETTINGS_RANGE.waterTarget.min, SETTINGS_RANGE.waterTarget.max),
         mealsPerDay: clamp(Math.round(f.mealsPerDay), 3, 6),
         programStart: DateU.monday(f.programStart),
       };

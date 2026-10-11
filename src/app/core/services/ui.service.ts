@@ -45,8 +45,12 @@ export class UiService {
     this.viewDate.update((k) => DateU.add(k, n));
   }
 
+  /** Counts the presses of "Today": a page that browses on its own (the week plan) returns to the selected day even when the day itself did not change. */
+  readonly todayPresses = signal(0);
+
   goToday(): void {
     this.viewDate.set(this.today());
+    this.todayPresses.update((n) => n + 1);
   }
 
   /** Rolls over to the new day at midnight if the user was looking at "today". */

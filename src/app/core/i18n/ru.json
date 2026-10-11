@@ -438,6 +438,7 @@
   "settings.bedtime": "Время сна",
   "settings.builtInProgram": "Готовая программа",
   "settings.restHeavySec": "Отдых после тяжёлых упражнений (сек)",
+  "settings.waterTarget": "Дневная цель по воде (мл)",
   "settings.restLightSec": "Отдых после остальных упражнений (сек)",
   "settings.calorieTargetKcal": "Цель по калориям (ккал)",
   "settings.dark": "Тёмная",

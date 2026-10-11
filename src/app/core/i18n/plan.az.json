@@ -1,6 +1,8 @@
 {
   "plan.addExercise": "Hərəkət əlavə et",
   "plan.chooseAtLeastOneGymDay": "Ən azı bir məşq günü seç",
+  "plan.emptyGymDays": "{days} üçün hərəkət planı yazılmayıb. Hərəkət yazın və ya məşq günlərindən çıxarın.",
+  "plan.workoutSavedEmptyDays": "Plan saxlanıldı, amma {days} üçün hərəkət planı yazılmayıb",
   "plan.dayN": "{d}-ci gün",
   "plan.deleteExercise": "Hərəkəti sil",
   "plan.eGBuckwheat4": "məs. Qreçka (4 X/Q) + 2 xiyar",
@@ -18,7 +20,7 @@
   "plan.numberOfSets": "Set sayı",
   "plan.planWrittenForThis": "Bu həftə üçün yazılmış plan",
   "plan.previousWeek": "Əvvəlki həftə",
-  "plan.previousWeeksPlanIn": "Əvvəlki həftənin planı istifadə olunur",
+  "plan.previousWeeksPlanIn": "Bu həftə üçün ayrıca plan yoxdur, əvvəlki plan davam edir",
   "plan.previousWeeksPlanRestored": "Əvvəlki həftənin planı bərpa edildi",
   "plan.previousWeeksWorkoutRestored": "Əvvəlki həftənin məşqi bərpa edildi",
   "plan.revertToPreviousWeeks": "Əvvəlki həftənin məşqinə qaytar",

@@ -438,6 +438,7 @@
   "settings.bedtime": "Bedtime",
   "settings.builtInProgram": "Built-in program",
   "settings.restHeavySec": "Rest after heavy lifts (sec)",
+  "settings.waterTarget": "Daily water target (ml)",
   "settings.restLightSec": "Rest after other exercises (sec)",
   "settings.calorieTargetKcal": "Calorie target (kcal)",
   "settings.dark": "Dark",

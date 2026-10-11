@@ -1,6 +1,8 @@
 {
   "plan.addExercise": "Add exercise",
   "plan.chooseAtLeastOneGymDay": "Choose at least one gym day",
+  "plan.emptyGymDays": "No exercise plan written for {days}. Add exercises or remove it from the gym days.",
+  "plan.workoutSavedEmptyDays": "Plan saved, but no exercise plan written for {days}",
   "plan.dayN": "Day {d}",
   "plan.deleteExercise": "Delete exercise",
   "plan.eGBuckwheat4": "e.g. Buckwheat (4 tbsp) + 2 cucumbers",
@@ -18,7 +20,7 @@
   "plan.numberOfSets": "Number of sets",
   "plan.planWrittenForThis": "Plan written for this week",
   "plan.previousWeek": "Previous week",
-  "plan.previousWeeksPlanIn": "The previous week's plan is in use",
+  "plan.previousWeeksPlanIn": "No separate plan for this week, the earlier plan continues",
   "plan.previousWeeksPlanRestored": "Previous week's plan restored",
   "plan.previousWeeksWorkoutRestored": "Previous week's workout restored",
   "plan.revertToPreviousWeeks": "Revert to the previous week's workout",

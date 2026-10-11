@@ -89,6 +89,8 @@ export interface Settings {
   /** Rest timer after a set, in seconds: after the heavy lifts (squat, leg press, bench, Romanian deadlift) and after every other exercise. */
   restHeavySec: number;
   restLightSec: number;
+  /** Daily water target in millilitres. */
+  waterTarget: number;
   programStart: string;
   /** Local date key of the day the guest notice was closed; '' = never. It comes back after a week. */
   guestNoticeDismissedAt: string;

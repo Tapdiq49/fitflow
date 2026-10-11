@@ -28,7 +28,7 @@ import { t } from '../../core/i18n/translate';
 import { TextFieldComponent } from '../../shared/forms/text-field/text-field.component';
 import { NumberFieldComponent } from '../../shared/forms/number-field/number-field.component';
 
-type NumField = 'height' | 'startWeight' | 'age' | 'kcalTarget' | 'proteinTarget' | 'restHeavySec' | 'restLightSec';
+type NumField = 'height' | 'startWeight' | 'age' | 'kcalTarget' | 'proteinTarget' | 'restHeavySec' | 'restLightSec' | 'waterTarget';
 type OptionField = 'mealsPerDay' | 'menuMode' | 'workoutMode' | 'theme' | 'goal' | 'targetMode';
 
 @Component({
@@ -101,6 +101,7 @@ type OptionField = 'mealsPerDay' | 'menuMode' | 'workoutMode' | 'theme' | 'goal'
             {{ 'settings.menuMode' | t }}
             <app-select-field [label]="'settings.menuMode' | t" [options]="menuModes()" [disabled]="!!safetyIssue()" [value]="safetyIssue() ? 'trainer' : form().menuMode" (valueChange)="setOption('menuMode', $event)" />
           </div>
+          <label class="field">{{ 'settings.waterTarget' | t }}<app-number-field [placeholder]="std.waterTarget" [value]="form().waterTarget" [invalid]="!!errors().waterTarget" (input)="setNum('waterTarget', $event)" />@if (errors().waterTarget; as e) { <small class="text-bad">{{ e }}</small> }</label>
           <div class="field">
             {{ 'settings.workoutMode' | t }}
             <app-select-field [label]="'settings.workoutMode' | t" [options]="workoutModes()" [disabled]="!!safetyIssue()" [value]="safetyIssue() ? 'trainer' : form().workoutMode" (valueChange)="setOption('workoutMode', $event)" />
@@ -328,7 +329,7 @@ export class SettingsPage {
   }
 
   /** The numbers with a sensible standard value: an empty field means the standard (see DEFAULT_SETTINGS). */
-  private static readonly HAS_STANDARD: readonly NumField[] = ['kcalTarget', 'proteinTarget', 'restHeavySec', 'restLightSec'];
+  private static readonly HAS_STANDARD: readonly NumField[] = ['kcalTarget', 'proteinTarget', 'restHeavySec', 'restLightSec', 'waterTarget'];
 
   /** Height, starting weight, age, sex and the program start are required; the two targets fall back to the standard when empty. Any out-of-range value is reported, never replaced. */
   private validate(): boolean {

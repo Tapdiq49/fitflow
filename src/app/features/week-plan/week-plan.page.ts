@@ -9,6 +9,7 @@ import { PlanSyncService } from '../../core/services/plan-sync.service';
 import { DayService } from '../../core/services/day.service';
 import { StoreService } from '../../core/services/store.service';
 import { ToastService } from '../../core/services/toast.service';
+import { UiService } from '../../core/services/ui.service';
 import { TrainerPlanService } from '../../core/services/trainer-plan.service';
 import { DateU, F, clamp, dayName, fromMin, inputValue, parseNum, sameJson, toMin } from '../../core/utils';
 import { itemMacros, mealNameFromItems, realItems, sumMacros } from '../../core/nutrition';
@@ -175,6 +176,9 @@ interface Row {
             }
           </div>
           <p class="text-muted" style="font-size: 0.75rem; margin: 10px 0 0">{{ 'plan.gymDaysHint' | t }}</p>
+          @if (emptyGymDays().length) {
+            <div class="alert alert-warn" role="status" style="margin-top: 10px"><app-icon name="alert" /><div>{{ 'plan.emptyGymDays' | t: { days: emptyGymDays().join(', ') } }}</div></div>
+          }
         </div>
         @for (day of wDays(); track day) {
           <div class="card">
@@ -209,6 +213,7 @@ export class WeekPlanPage {
   /** A save or clear is on its way to the account; the buttons wait for it. */
   protected readonly saving = signal(false);
   private readonly day = inject(DayService);
+  private readonly ui = inject(UiService);
   private readonly toast = inject(ToastService);
 
   protected readonly store = inject(StoreService);
@@ -217,7 +222,11 @@ export class WeekPlanPage {
   protected readonly days = [1, 2, 3, 4, 5, 6, 7];
   protected readonly dayName = dayName;
   protected readonly F = F;
-  protected readonly week = signal(DateU.monday(DateU.today()));
+  /** Monday of the week shown: that of the day selected in the header; the week arrows move away from it, "Today" brings it back. */
+  protected readonly week = linkedSignal(() => {
+    this.ui.todayPresses();
+    return DateU.monday(this.ui.viewDate());
+  });
   protected readonly own = computed(() => this.plans.hasOwn(this.week()));
   protected readonly label = computed(() => `${DateU.short(this.week())} – ${DateU.short(DateU.add(this.week(), 6))}`);
 
@@ -244,6 +253,12 @@ export class WeekPlanPage {
   protected readonly wDraft = linkedSignal<Record<number, ExRow[]>>(() => this.toExRows(this.storedWorkout()));
   /** Gym weekdays chosen for the selected week — the only days the trainer workout is entered for. */
   protected readonly wDays = linkedSignal<number[]>(() => this.storedGymDays());
+  /** Chosen gym days that have no exercise written yet, as weekday names. */
+  protected readonly emptyGymDays = computed(() =>
+    this.wDays()
+      .filter((d) => !(this.wDraft()[d] ?? []).some((r) => r.name.trim()))
+      .map((d) => dayName(d - 1)),
+  );
 
   /** Editable copy of the plan in effect for the selected week; re-synced when the week or the stored plan really changes. */
   protected readonly draft = linkedSignal<Record<number, Row[]>>(() => this.toRows(this.storedMeals()));
@@ -390,7 +405,8 @@ export class WeekPlanPage {
     }
     if (!(await this.remote('workout', plan))) return;
     this.plans.saveWorkout(this.week(), plan);
-    this.toast.show(t('plan.workoutPlanSaved'));
+    const empty = this.emptyGymDays();
+    this.toast.show(empty.length ? t('plan.workoutSavedEmptyDays', { days: empty.join(', ') }) : t('plan.workoutPlanSaved'));
   }
 
   protected async clearWorkout(): Promise<void> {

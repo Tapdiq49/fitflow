@@ -1,6 +1,8 @@
 {
   "plan.addExercise": "Добавить упражнение",
   "plan.chooseAtLeastOneGymDay": "Выбери хотя бы один день тренировки",
+  "plan.emptyGymDays": "План упражнений не написан: {days}. Добавь упражнения или убери день из дней зала.",
+  "plan.workoutSavedEmptyDays": "План сохранён, но план упражнений не написан: {days}",
   "plan.dayN": "День {d}",
   "plan.deleteExercise": "Удалить упражнение",
   "plan.eGBuckwheat4": "напр. Гречка (4 ст. л.) + 2 огурца",
@@ -18,7 +20,7 @@
   "plan.numberOfSets": "Число подходов",
   "plan.planWrittenForThis": "План, записанный на эту неделю",
   "plan.previousWeek": "Предыдущая неделя",
-  "plan.previousWeeksPlanIn": "Используется план прошлой недели",
+  "plan.previousWeeksPlanIn": "Отдельного плана на эту неделю нет, действует прежний",
   "plan.previousWeeksPlanRestored": "План прошлой недели восстановлен",
   "plan.previousWeeksWorkoutRestored": "Тренировка прошлой недели восстановлена",
   "plan.revertToPreviousWeeks": "Вернуть тренировку прошлой недели",

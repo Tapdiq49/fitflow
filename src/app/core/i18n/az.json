@@ -438,6 +438,7 @@
   "settings.bedtime": "Yuxu saatı",
   "settings.builtInProgram": "Hazır proqram",
   "settings.restHeavySec": "İstirahət: ağır hərəkətlərdən sonra (san)",
+  "settings.waterTarget": "Günlük su hədəfi (ml)",
   "settings.restLightSec": "İstirahət: digər hərəkətlərdən sonra (san)",
   "settings.calorieTargetKcal": "Kalori hədəfi (kkal)",
   "settings.dark": "Qaranlıq",

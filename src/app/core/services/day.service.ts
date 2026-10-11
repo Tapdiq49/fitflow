@@ -17,7 +17,6 @@ import { WorkoutService } from './workout.service';
 import { t, td } from '../i18n/translate';
 
 /** Daily water target in ml (trainer: minimum 1.5 L). */
-const WATER_TARGET_ML = 1500;
 /** Settings the auto-menu generator reads (see MenuService). */
 const AUTO_MENU_SETTINGS = ['kcalTarget', 'proteinTarget', 'mealsPerDay', 'useWhey', 'workoutTime', 'wakeTime'] as const satisfies readonly (keyof Settings)[];
 /** Largest single drink accepted from the manual field (guards against typos like 3500 → 35000). */
@@ -79,7 +78,7 @@ export class DayService {
   }
 
   waterTarget(_k?: string): number {
-    return WATER_TARGET_ML;
+    return this.store.settings().waterTarget;
   }
 
   timeline(k: string): TimelineItem[] {
