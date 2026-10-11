@@ -77,6 +77,12 @@ export interface Settings {
   dateFormat: DateFormat;
   lang: Lang;
   showCreatine: boolean;
+  /** Weekdays (1 = Monday) that carry the easy walk entry (17:00); empty = never. */
+  walkDays: number[];
+  walkTime: string;
+  /** Weekdays (1 = Monday) that carry the stretching / mobility entry; empty = never. */
+  mobilityDays: number[];
+  mobilityTime: string;
   workoutTime: string;
   wakeTime: string;
   sleepTime: string;

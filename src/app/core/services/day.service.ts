@@ -117,10 +117,10 @@ export class DayService {
         sub: d.cardio.type === 'jog' ? t('day.easyJog2025') : t('day.briskWalk2030'),
         done: d.cardio.done,
       });
-    } else {
-      items.push({ id: 'walk', time: '17:00', label: t('day.easyWalk'), sub: t('day.68ThousandSteps'), done: !!d.checks['walk'] });
-      items.push({ id: 'mobility', time: '20:30', label: t('day.stretchingPerMobility'), sub: t('day.10MinutesHipsBack'), done: !!d.checks['mobility'] });
     }
+    const dow = DateU.dow(k);
+    if (s.walkDays.includes(dow)) items.push({ id: 'walk', time: s.walkTime, label: t('day.easyWalk'), sub: t('day.68ThousandSteps'), done: !!d.checks['walk'] });
+    if (s.mobilityDays.includes(dow)) items.push({ id: 'mobility', time: s.mobilityTime, label: t('day.stretchingPerMobility'), sub: t('day.10MinutesHipsBack'), done: !!d.checks['mobility'] });
     items.push({ id: 'sleep', time: s.sleepTime, label: t('common.sleep'), sub: t('day.target79Hours'), done: !!d.checks['sleep'] });
     items.sort((a, b) => a.time.localeCompare(b.time));
     const wt = this.waterTarget(k);

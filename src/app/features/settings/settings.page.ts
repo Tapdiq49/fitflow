@@ -16,7 +16,8 @@ import { TrainerPlanService } from '../../core/services/trainer-plan.service';
 import { DEFAULT_SETTINGS, SETTINGS_RANGE, StoreService } from '../../core/services/store.service';
 import { ToastService } from '../../core/services/toast.service';
 import { UiService } from '../../core/services/ui.service';
-import { DateU, F, inputValue, parseNum, sameJson } from '../../core/utils';
+import { MultiselectFieldComponent } from '../../shared/forms/multiselect-field/multiselect-field.component';
+import { DateU, F, dayName, inputValue, parseNum, sameJson } from '../../core/utils';
 import { CheckboxComponent } from '../../shared/forms/checkbox/checkbox.component';
 import { IconComponent } from '../../shared/icon/icon.component';
 import { DatePickerComponent } from '../../shared/forms/date-picker/date-picker.component';
@@ -32,7 +33,7 @@ type OptionField = 'mealsPerDay' | 'menuMode' | 'workoutMode' | 'theme' | 'goal'
 
 @Component({
   selector: 'app-settings-page',
-  imports: [CheckboxComponent, TextFieldComponent, NumberFieldComponent, RouterLink, IconComponent, DatePickerComponent, SelectFieldComponent, TimePickerComponent, RequiresPermissionDirective, TPipe],
+  imports: [MultiselectFieldComponent, CheckboxComponent, TextFieldComponent, NumberFieldComponent, RouterLink, IconComponent, DatePickerComponent, SelectFieldComponent, TimePickerComponent, RequiresPermissionDirective, TPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="flex flex-col gap-[18px]">
@@ -113,6 +114,14 @@ type OptionField = 'mealsPerDay' | 'menuMode' | 'workoutMode' | 'theme' | 'goal'
           <div class="field">{{ 'settings.workoutTime' | t }}<app-time-picker [label]="'settings.workoutTime' | t" [value]="form().workoutTime" (valueChange)="setTime('workoutTime', $event)" /></div>
           <div class="field">{{ 'settings.wakeUpTime' | t }}<app-time-picker [label]="'settings.wakeUpTime' | t" [value]="form().wakeTime" (valueChange)="setTime('wakeTime', $event)" /></div>
           <div class="field">{{ 'settings.bedtime' | t }}<app-time-picker [label]="'settings.bedtime' | t" [value]="form().sleepTime" (valueChange)="setTime('sleepTime', $event)" /></div>
+          <div class="field">{{ 'settings.walkDays' | t }}<app-multiselect-field [label]="'settings.walkDays' | t" [placeholder]="'settings.noDays' | t" [options]="dayOptions()" [value]="form().walkDays" (valueChange)="setDays('walkDays', $event)" /></div>
+          @if (form().walkDays.length) {
+            <div class="field">{{ 'settings.walkTime' | t }}<app-time-picker [label]="'settings.walkTime' | t" [value]="form().walkTime" (valueChange)="setTime('walkTime', $event)" /></div>
+          }
+          <div class="field">{{ 'settings.mobilityDays' | t }}<app-multiselect-field [label]="'settings.mobilityDays' | t" [placeholder]="'settings.noDays' | t" [options]="dayOptions()" [value]="form().mobilityDays" (valueChange)="setDays('mobilityDays', $event)" /></div>
+          @if (form().mobilityDays.length) {
+            <div class="field">{{ 'settings.mobilityTime' | t }}<app-time-picker [label]="'settings.mobilityTime' | t" [value]="form().mobilityTime" (valueChange)="setTime('mobilityTime', $event)" /></div>
+          }
           <div class="field" [title]="'settings.perBCycleAnd' | t">{{ 'settings.programStart' | t }}<app-date-picker [label]="'settings.programStart' | t" [value]="form().programStart" (valueChange)="setProgramStart($event)" />@if (errors().programStart; as e) { <small class="text-bad">{{ e }}</small> }</div>
         </div>
         @if (implausible(); as bmi) {
@@ -185,6 +194,7 @@ export class SettingsPage {
   protected readonly std = DEFAULT_SETTINGS;
   protected readonly obeseBmi = OBESE_BMI;
   protected readonly F = F;
+  protected readonly dayOptions = computed<SelectOption<number>[]>(() => [1, 2, 3, 4, 5, 6, 7].map((d) => ({ value: d, label: dayName(d - 1) })));
   private readonly body = inject(BodyService);
   private readonly plans = inject(TrainerPlanService);
   private readonly basicsSync = inject(BodyBasicsSyncService);
@@ -345,7 +355,7 @@ export class SettingsPage {
     return Object.keys(errors).length === 0;
   }
 
-  protected setTime(field: 'workoutTime' | 'wakeTime' | 'sleepTime', v: string): void {
+  protected setTime(field: 'workoutTime' | 'wakeTime' | 'sleepTime' | 'walkTime' | 'mobilityTime', v: string): void {
     if (v) this.form.update((f) => ({ ...f, [field]: v }));
   }
 
@@ -355,6 +365,10 @@ export class SettingsPage {
 
   protected setCreatine(on: boolean): void {
     this.form.update((f) => ({ ...f, showCreatine: on }));
+  }
+
+  protected setDays(field: 'walkDays' | 'mobilityDays', days: number[]): void {
+    this.form.update((f) => ({ ...f, [field]: [...days].sort((a, b) => a - b) }));
   }
 
   protected setWhey(on: boolean): void {
