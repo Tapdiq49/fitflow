@@ -17,10 +17,13 @@ import { TPipe } from '../../common/pipes/translate/t.pipe';
 import { t } from '../../core/i18n/translate';
 import { NumberFieldComponent } from '../../shared/forms/number-field/number-field.component';
 import { FieldValue } from '../../shared/forms/field-base/field-base';
+import { WeightEntry } from '../../common/interfaces';
+import { TableCellDirective } from '../../common/directives/table-cell/table-cell.directive';
+import { DataTableComponent, TableColumn } from '../../shared/table/data-table.component';
 
 @Component({
   selector: 'app-body-page',
-  imports: [NumberFieldComponent, BusyDirective, IconComponent, ChartComponent, DatePickerComponent, BodyBasicsFormComponent, RequiresPermissionDirective, TPipe],
+  imports: [DataTableComponent, TableCellDirective, NumberFieldComponent, BusyDirective, IconComponent, ChartComponent, DatePickerComponent, BodyBasicsFormComponent, RequiresPermissionDirective, TPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @let st = stats();
@@ -83,29 +86,11 @@ import { FieldValue } from '../../shared/forms/field-base/field-base';
 
       <div class="card">
         <div class="card-head"><h3>{{ 'body.history' | t }}</h3></div>
-        @if (history().length) {
-          <div class="overflow-x-auto" style="border: 0">
-            <table class="tbl">
-              <thead>
-                <tr><th>{{ 'body.date' | t }}</th><th class="tbl-num">{{ 'common.weight' | t }}</th><th class="tbl-num">{{ 'common.waist' | t }}</th><th></th></tr>
-              </thead>
-              <tbody>
-                @for (w of history(); track w.date) {
-                  <tr>
-                    <td>{{ F.long(w.date) }}</td>
-                    <td class="tbl-num">{{ 'common.nKg' | t: { a: F.kg(w.kg) } }}</td>
-                    <td class="tbl-num">{{ w.waist ? F.kg(w.waist) + ' sm' : '—' }}</td>
-                    <td class="tbl-num">
-                      <button class="btn btn-ghost btn-icon btn-sm btn-danger" appRequires="body.edit" [appBusy]="BUSY.weight(w.date)" (click)="remove(w.date)" [attr.aria-label]="'common.delete' | t"><app-icon name="trash" size="sm" /></button>
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
-        } @else {
-          <div class="empty">{{ 'body.noEntriesYet' | t }}</div>
-        }
+        <app-data-table [columns]="columns()" [rows]="history()" [rowKey]="rowKey" [emptyText]="'body.noEntriesYet' | t">
+          <ng-template appTableCell="actions" let-w>
+            <button class="btn btn-ghost btn-icon btn-sm btn-danger" appRequires="body.edit" [appBusy]="BUSY.weight(w.date)" (click)="remove(w.date)" [attr.aria-label]="'common.delete' | t"><app-icon name="trash" size="sm" /></button>
+          </ng-template>
+        </app-data-table>
       </div>
     </div>
   `,
@@ -124,6 +109,13 @@ export class BodyPage {
   protected readonly stats = computed(() => this.body.stats(this.ui.viewDate()));
   protected readonly advice = computed(() => this.body.advice(this.stats()));
   protected readonly history = computed(() => [...this.body.sorted()].reverse());
+  protected readonly rowKey = (w: WeightEntry): string => w.date;
+  protected readonly columns = computed<TableColumn<WeightEntry>[]>(() => [
+    { id: 'date', header: t('body.date'), value: (w) => F.long(w.date) },
+    { id: 'weight', header: t('common.weight'), class: 'tbl-num', value: (w) => t('common.nKg', { a: F.kg(w.kg) }) },
+    { id: 'waist', header: t('common.waist'), class: 'tbl-num', value: (w) => (w.waist ? `${F.kg(w.waist)} sm` : '—') },
+    { id: 'actions', header: '', class: 'tbl-num' },
+  ]);
   protected readonly bmi = computed(() => {
     const st = this.stats();
     const height = this.store.settings().height;
