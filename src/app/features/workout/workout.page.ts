@@ -46,8 +46,8 @@ import { NumberFieldComponent } from '../../shared/forms/number-field/number-fie
             <span class="text-muted">{{ 'workout.nPerNExercises' | t: { a: doneCount(), b: cards().length } }}</span>
           </div>
           <!-- Trainer mode: bottom-aligned so the button sits on the same line as the captioned time fields. -->
-          <div class="flex flex-wrap gap-2" [class]="workout.isTrainer() ? 'items-end [&_.btn]:h-10 [&_[role=combobox]]:h-10' : 'items-center'">
-            @if (workout.isTrainer() && !workout.isStale(k())) {
+          <div class="flex flex-wrap gap-2" [class]="typedTimes() ? 'items-end [&_.btn]:h-10 [&_[role=combobox]]:h-10' : 'items-center'">
+            @if (typedTimes() && !workout.isStale(k())) {
               <div class="flex flex-wrap items-end gap-2">
                 <div class="field w-[7.5rem]" [appBusy]="BUSY.workoutTime(k(), 'startTime')">{{ 'workout.started' | t }}<app-time-picker [label]="'workout.started' | t" [value]="log().startTime ?? ''" (valueChange)="workout.setTime(k(), 'startTime', $event)" /></div>
                 <div class="field w-[7.5rem]" [appBusy]="BUSY.workoutTime(k(), 'endTime')">{{ 'workout.finished' | t }}<app-time-picker [label]="'workout.finished' | t" [value]="log().endTime ?? ''" (valueChange)="workout.setTime(k(), 'endTime', $event)" /></div>
@@ -60,10 +60,10 @@ import { NumberFieldComponent } from '../../shared/forms/number-field/number-fie
               <!-- The "saved" badge sits next to the title. -->
             } @else if (log().startedAt) {
               <span class="text-[1.375rem] font-extrabold text-accent tabular-nums">{{ elapsed() }}</span>
-            } @else if (!workout.isTrainer()) {
+            } @else if (!typedTimes() && !isFuture()) {
               <button class="btn btn-primary" appRequires="workout.edit" [appBusy]="BUSY.workoutStart(k())" (click)="workout.start(k())"><app-icon name="play" size="sm" />{{ 'common.startWorkout' | t }}</button>
             }
-            @if (!workout.isStale(k()) || editing()) {
+            @if ((!workout.isStale(k()) || editing()) && !isFuture()) {
             <button class="btn" appRequires="workout.edit" [class.btn-primary]="!log().savedAt" [appBusy]="BUSY.toggle(k(), 'workout')" (click)="workout.save(k())">
               <app-icon name="save" size="sm" />{{ log().savedAt ? ('workout.saveAgain' | t) : ('workout.saveWorkout' | t) }}
             </button>
@@ -76,6 +76,10 @@ import { NumberFieldComponent } from '../../shared/forms/number-field/number-fie
         </div>
 
         <ng-container *ngTemplateOutlet="safetyTpl" />
+
+        @if (isFuture()) {
+          <div class="alert alert-info" role="status"><app-icon name="info" /><div>{{ 'workout.futureDayLocked' | t }}</div></div>
+        }
 
         @if (markedFromList()) {
           <div class="alert alert-info mb-4"><app-icon name="info" /><div>{{ 'workout.markedFromChecklist' | t }}</div></div>
@@ -191,7 +195,7 @@ import { NumberFieldComponent } from '../../shared/forms/number-field/number-fie
     </div>
 
     <ng-template #cardsTpl>
-        <div class="grid grid-cols-2 gap-4 tablet:grid-cols-1">
+        <div class="grid grid-cols-2 gap-4 tablet:grid-cols-1" [attr.inert]="isFuture() ? '' : null" [class.opacity-60]="isFuture()">
           @for (c of cards(); track c.id; let idx = $index) {
             <div class="rounded-card border bg-surface p-4 [transition:border-color_.2s]" appRequires="workout.edit" [class]="c.done ? 'border-good/40' : 'border-border-soft'">
               <div class="flex flex-wrap items-start justify-between gap-3">
@@ -290,6 +294,9 @@ export class WorkoutPage {
   private readonly confirm = inject(ConfirmService);
 
   protected readonly k = this.ui.viewDate;
+  protected readonly isFuture = computed(() => this.workout.isFuture(this.k()));
+  /** Start and end time are typed by hand: always in trainer mode, and on a past day, where no clock can run any more. Nothing on a future day. */
+  protected readonly typedTimes = computed(() => !this.isFuture() && (this.workout.isTrainer() || this.k() < this.ui.today()));
   protected readonly type = computed(() => this.program.dayType(this.k()));
   protected readonly variant = computed(() => this.program.variant(this.k()));
   protected readonly phase = computed(() => this.program.phase(this.k()));
@@ -415,7 +422,8 @@ export class WorkoutPage {
   }
 
   protected async toggleSet(id: string, i: number): Promise<void> {
-    if (await this.workout.toggleSet(this.k(), id, i)) {
+    // The rest timer is for the day being trained; a set filled in afterwards on a past day starts none.
+    if ((await this.workout.toggleSet(this.k(), id, i)) && this.k() === this.ui.today()) {
       const s = this.store.settings();
       this.rest.start(HEAVY_LIFTS.has(id) ? s.restHeavySec : s.restLightSec);
     }

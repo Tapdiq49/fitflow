@@ -566,6 +566,7 @@
   "workout.finished": "Конец",
   "workout.fullBodyN": "FULL BODY {a}",
   "workout.goToThatDay": "Перейти к этому дню",
+  "workout.futureDayLocked": "Этот день ещё не наступил: результат тренировки можно записать в этот день или позже.",
   "workout.goToWeeklyPlan": "Перейти к плану недели",
   "workout.heaviestSetKg": "Самый тяжёлый подход (кг)",
   "workout.lastWorkoutN": "Прошлая тренировка{a}",

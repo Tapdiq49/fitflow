@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { ProgramService } from './program.service';
 import { StoreService } from './store.service';
 import { TrainerPlanService } from './trainer-plan.service';
+import { DateU } from '../utils';
 import { WorkoutService } from './workout.service';
 
 describe('WorkoutService.recommend', () => {
@@ -258,5 +259,54 @@ describe('WorkoutService trainer times', () => {
     const wo = store.peek('2026-10-07')!.workout!;
     expect(wo.startedAt).toBeNull();
     expect(wo.startTime).toBe('18:00');
+  });
+});
+
+describe('WorkoutService, future and past days', () => {
+  let store: StoreService;
+  let workout: WorkoutService;
+  const future = DateU.add(DateU.today(), 3);
+  const lastMonday = DateU.monday(DateU.add(DateU.today(), -7));
+  const past = DateU.add(lastMonday, 2); // the built-in program trains on Monday, Wednesday and Friday
+
+  beforeEach(() => {
+    localStorage.clear();
+    TestBed.configureTestingModule({});
+    store = TestBed.inject(StoreService);
+    workout = TestBed.inject(WorkoutService);
+  });
+
+  it('records nothing on a day that has not come yet', async () => {
+    const id = workout.exercises(future)[0].id;
+    expect(workout.isFuture(future)).toBe(true);
+    expect(await workout.setValue(future, id, 0, 'w', '50')).toBe(false);
+    expect(await workout.toggleSet(future, id, 0)).toBe(false);
+    expect(await workout.save(future)).toBe(0);
+    expect(store.peek(future)?.workout ?? null).toBeNull();
+    expect(store.state().history[id]).toBeUndefined();
+  });
+
+  it('lets a past day be filled in afterwards, stamped with that day and not with the moment of typing', async () => {
+    const id = workout.exercises(past)[0].id;
+    expect(await workout.setValue(past, id, 0, 'w', '40')).toBe(true);
+    expect(await workout.setValue(past, id, 0, 'r', '10')).toBe(true);
+    expect(await workout.toggleSet(past, id, 0)).toBe(true);
+    const log = store.peek(past)!.workout!;
+    expect(log.startedAt).toBeNull(); // no clock runs on a past day
+    expect(await workout.save(past)).toBeGreaterThan(0);
+    const saved = store.peek(past)!.workout!.savedAt!;
+    expect(DateU.key(new Date(saved))).toBe(past);
+  });
+
+  it('keeps the history in date order when an older day is filled in last', async () => {
+    const friday = DateU.add(lastMonday, 4); // Monday and Friday carry the same variant
+    const id = workout.exercises(friday)[0].id;
+    const older = lastMonday;
+    for (const k of [friday, older]) {
+      await workout.setValue(k, id, 0, 'w', '40');
+      await workout.setValue(k, id, 0, 'r', '10');
+      await workout.save(k);
+    }
+    expect(store.state().history[id].map((h) => h.date)).toEqual([older, friday]);
   });
 });

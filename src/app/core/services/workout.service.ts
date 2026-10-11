@@ -47,6 +47,16 @@ export class WorkoutService {
     return this.isTrainer() ? t('common.gym') : `FB ${this.program.variantOf(k)}`;
   }
 
+  /** A day that has not come yet: its plan can be read, but no result is recorded on it. */
+  isFuture(k: string): boolean {
+    return k > DateU.today();
+  }
+
+  /** Moment a result of day `k` counts as made: now on today, noon of that day when it is filled in afterwards. */
+  private momentOf(k: string): number {
+    return k === DateU.today() ? Date.now() : new Date(`${k}T12:00:00`).getTime();
+  }
+
   isTrainer(): boolean {
     return this.store.effectiveWorkoutMode() === 'trainer';
   }
@@ -135,6 +145,10 @@ export class WorkoutService {
    * forgotten once it is stored. `fn` may return false to change nothing (the typed values are kept then).
    */
   private async commitWorkout(k: string, fn: (wo: WorkoutLog) => unknown, busyKey: string): Promise<boolean> {
+    if (this.isFuture(k)) {
+      this.toast.show(t('workout.futureDayLocked'));
+      return false;
+    }
     let sent: Draft[] = [];
     let aborted = false;
     const saved = await this.data.commitDay(
@@ -162,7 +176,7 @@ export class WorkoutService {
             if (s.w === '' && rec.w != null) s.w = String(rec.w);
           });
         }
-        if (!this.isTrainer()) wo.startedAt ??= Date.now();
+        if (!this.isTrainer() && k === DateU.today()) wo.startedAt ??= Date.now(); // the clock runs only on the day itself
         return true;
       },
       BUSY.workoutStart(k),
@@ -225,7 +239,7 @@ export class WorkoutService {
         }
         s.done = !s.done;
         if (s.done && s.r === '') s.r = String(this.defOf(id).min);
-        if (!this.isTrainer()) wo.startedAt ??= Date.now();
+        if (!this.isTrainer() && k === DateU.today()) wo.startedAt ??= Date.now();
         done = s.done;
         return true;
       },
@@ -325,6 +339,10 @@ export class WorkoutService {
 
   /** Writes logged sets into the per-exercise history. Returns the number of exercises saved. */
   async save(k: string): Promise<number> {
+    if (this.isFuture(k)) {
+      this.toast.show(t('workout.futureDayLocked'));
+      return 0;
+    }
     const wo = structuredClone(this.get(k));
     this.applyDrafts(wo, k); // what is typed counts, whether or not a set was ticked
     if (Object.keys(wo.ex).some((id) => this.needsWeight(id) && wo.ex[id].sets.some((s) => parseNum(s.r) > 0 && !this.hasWeight(s)))) {
@@ -356,7 +374,7 @@ export class WorkoutService {
       const d = (s.days[k] ??= newDay());
       const log = this.ensureIn(d, k);
       sent = this.applyDrafts(log, k);
-      log.savedAt = Date.now();
+      log.savedAt = this.momentOf(k);
       d.checks['workout'] = true;
     }, BUSY.toggle(k, 'workout'));
     if (!saved) return 0;

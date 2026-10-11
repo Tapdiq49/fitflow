@@ -566,6 +566,7 @@
   "workout.finished": "Bitdi",
   "workout.fullBodyN": "FULL BODY {a}",
   "workout.goToThatDay": "O günə keç",
+  "workout.futureDayLocked": "Bu gün hələ gəlməyib: məşq nəticəsini həmin gün və ya sonra yaza bilərsiniz.",
   "workout.goToWeeklyPlan": "Həftə planına keç",
   "workout.heaviestSetKg": "Ən ağır set (kq)",
   "workout.lastWorkoutN": "Son məşq{a}",

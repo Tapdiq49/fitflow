@@ -566,6 +566,7 @@
   "workout.finished": "Finished",
   "workout.fullBodyN": "FULL BODY {a}",
   "workout.goToThatDay": "Go to that day",
+  "workout.futureDayLocked": "This day has not come yet: you can log the workout on that day or later.",
   "workout.goToWeeklyPlan": "Go to the weekly plan",
   "workout.heaviestSetKg": "Heaviest set (kg)",
   "workout.lastWorkoutN": "Last workout{a}",
